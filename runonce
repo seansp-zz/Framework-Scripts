@@ -1,14 +1,8 @@
-#!/usr/bin/powershell
+#!/bin/sh
 #
 #  Reused from the StackOverflow article.  Solution by Dennis Williamson
 #
-#  Place this file in /usr/local/bin
-#  Create directory /etc/local/runonce.d
-#  Add the line "@reboot root /usr/local/bin/runonce" to /etc/crontab
-#
-#  When there's a script you want to run at the next boot, put it in /etc/local/runonce.d.  
-#
-
+set -x
 for file in /etc/local/runonce.d/*
 do
     if [ ! -f "$file" ]
