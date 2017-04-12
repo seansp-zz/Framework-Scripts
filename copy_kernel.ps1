@@ -98,4 +98,4 @@ if ($linuxOs -eq '"centos"') {
 }
 
 echo "Rebooting now..."
-# reboot
+reboot
