@@ -39,12 +39,12 @@ copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
 #
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $linuxOs = $linuxInfo.ID
-echo "Operating system is "$linuxOs
+echo "Operating system is $linuxOs"
 
 #
 #  Do the right thing for the platform
 #
-if ($linuxOs -eq "centos") {
+if ($linuxOs -eq '"centos"') {
     #
     #  Figure out the kernel name
     #
@@ -98,4 +98,4 @@ if ($linuxOs -eq "centos") {
 }
 
 echo "Rebooting now..."
-reboot
+# reboot
