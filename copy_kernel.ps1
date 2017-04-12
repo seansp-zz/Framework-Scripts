@@ -42,42 +42,60 @@ $linuxOs = $linuxInfo.ID
 echo "Operating system is "$linuxOs
 
 #
-#  Figure out the kernel name
-#
-$rpmName=(get-childitem kernel-[0-9]*.rpm).name
-$kernelName=($rpmName -split ".rpm")[0]
-echo "Kernel name is $kernelName" 
-
-$kernelDevelName="kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]
-echo "Kernel Devel Package name is $kerneldevelName" 
-
-$kernelHeadersName="kernel-headers-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]
-echo "Kernel Headers Package name is $kernelHeadersName" 
-
-#
-#  Install the new kernel
+#  Do the right thing for the platform
 #
 if ($linuxOs -eq "centos") {
-    echo "Installing the RPM kernel devel package" 
-    rpm -ivh $kernelDevelName".rpm"
-    echo "Installing the RPM kernel package" 
-    rpm -ivh $kernelName".rpm"
-    # echo "Installing the RPM kernel headers package" 
-    # rpm -ivh $kernelHeadersName".rpm"
-} else {
-    echo "Installing the RPM kernel devel package" 
-    rpm -ivh $kernelDevelName".rpm"
-    echo "Installing the RPM kernel package" 
-    rpm -ivh $kernelName".rpm"
-    # echo "Installing the RPM kernel headers package" 
-    # rpm -ivh $kernelHeadersName".rpm"
-}
+    #
+    #  Figure out the kernel name
+    #
+    $rpmName=(get-childitem kernel-[0-9]*.rpm).name
+    $kernelName=($rpmName -split ".rpm")[0]
+    echo "Kernel name is $kernelName" 
 
-#
-#  Now set the boot order to the first selection, so the new kernel comes up
-#
-echo "Setting the reboot for selection 0"
-grub2-reboot 0
+    #
+    #  CentOS
+    #
+    $kernelDevelName="kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]
+    echo "Kernel Devel Package name is $kerneldevelName" 
+
+    #
+    #  Install the new kernel
+    #
+    echo "Installing the RPM kernel devel package" 
+    rpm -ivh $kernelDevelName".rpm"
+    echo "Installing the RPM kernel package" 
+    rpm -ivh $kernelName".rpm"
+
+    #
+    #  Now set the boot order to the first selection, so the new kernel comes up
+    #
+    echo "Setting the reboot for selection 0"
+    grub2-reboot 0
+} else {
+    #
+    #  Figure out the kernel name
+    #
+    $kernName=(get-childitem linux-image-*.deb)[0].Name
+    echo "Kernel name is $kernName" 
+
+    #
+    #  Debian
+    #
+    $kernDevName=(get-childitem linux-image-*.deb)[1].Name
+    echo "Kernel Devel Package name is $kernDevName" 
+
+    echo "Installing the DEB kernel devel package" 
+    dpkg -i $kernDevName
+
+    echo "Installing the DEB kernel package" 
+    dpkg -i $kernName
+
+    #
+    #  Now set the boot order to the first selection, so the new kernel comes up
+    #
+    echo "Setting the reboot for selection 0"
+    grub-set-default 0
+}
 
 echo "Rebooting now..."
 reboot
