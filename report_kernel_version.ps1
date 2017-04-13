@@ -21,7 +21,7 @@ function phoneHome($m) {
     $c=$c -replace '"',""
     $c=$c+"-boot"
 
-    invoke-command -Credential $cred -ComputerName 10.123.175.125 -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+    invoke-command -Credential $cred -ComputerName MSLK-BOOT-TEST-HOST.redmond.corp.microsoft.com -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
 $kernel_name=uname -r
