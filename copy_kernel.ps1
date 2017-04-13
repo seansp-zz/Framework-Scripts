@@ -6,7 +6,29 @@
 #
 #  Start by cleaning out any existing downloads
 #
-echo "Starting copy file scipt" 
+
+$username="serviceb"
+$password="Pine#Tar*9"
+$cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+#
+#  What OS are we on?
+#
+$osInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+$c = $osInfo.ID
+$c=$c -replace '"',""
+
+function callItIn($c, $m) {
+    $output_path="c:\temp\$c"
+    
+    $m | out-file -Append $output_path
+    return
+}
+
+function phoneHome($m) {
+    invoke-command -Credential $cred -ComputerName 10.123.175.125 -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+}
+
+phoneHome "Starting copy file scipt" 
 cd /tmp
 $kernFolder="./latest_kernel"
 If (Test-Path $kernFolder) {
@@ -22,7 +44,7 @@ if ((Test-Path "/mnt/ostcnix") -eq 0) {
 }
 
 if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
-    echo "Latest directory was not on mount point!  No kernel to install!" 
+    phoneHome "Latest directory was not on mount point!  No kernel to install!" 
     $LASTEXITCODE = 1
     exit $LASTERRORCODE
 }
@@ -30,7 +52,7 @@ if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
 #
 #  Copy the files
 #
-echo "Copying the kernel from the drop share" 
+phoneHome "Copying the kernel from the drop share" 
 cd /tmp/latest_kernel
 copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
 
@@ -39,7 +61,7 @@ copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
 #
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $linuxOs = $linuxInfo.ID
-echo "Operating system is $linuxOs"
+phoneHome "Operating system is $linuxOs"
 
 #
 #  Do the right thing for the platform
@@ -50,52 +72,57 @@ if ($linuxOs -eq '"centos"') {
     #
     $rpmName=(get-childitem kernel-[0-9]*.rpm).name
     $kernelName=($rpmName -split ".rpm")[0]
-    echo "Kernel name is $kernelName" 
+    phoneHome "Kernel name is $kernelName" 
 
     #
     #  CentOS
     #
     $kernelDevelName="kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]
-    echo "Kernel Devel Package name is $kerneldevelName" 
+    phoneHome "Kernel Devel Package name is $kerneldevelName" 
 
     #
     #  Install the new kernel
     #
-    echo "Installing the RPM kernel devel package" 
+    phoneHome "Installing the RPM kernel devel package" 
     rpm -ivh $kernelDevelName".rpm"
-    echo "Installing the RPM kernel package" 
+    phoneHome "Installing the RPM kernel package" 
     rpm -ivh $kernelName".rpm"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
-    echo "Setting the reboot for selection 0"
+    phoneHome "Setting the reboot for selection 0"
     grub2-reboot 0
 } else {
     #
     #  Figure out the kernel name
     #
     $kernName=(get-childitem linux-image-*.deb)[0].Name
-    echo "Kernel name is $kernName" 
+    phoneHome "Kernel name is $kernName" 
 
     #
     #  Debian
     #
     $kernDevName=(get-childitem linux-image-*.deb)[1].Name
-    echo "Kernel Devel Package name is $kernDevName" 
+    phoneHome "Kernel Devel Package name is $kernDevName" 
 
-    echo "Installing the DEB kernel devel package" 
+    phoneHome "Installing the DEB kernel devel package" 
     dpkg -i $kernDevName
 
-    echo "Installing the DEB kernel package" 
+    phoneHome "Installing the DEB kernel package" 
     dpkg -i $kernName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
-    echo "Setting the reboot for selection 0"
+    phoneHome "Setting the reboot for selection 0"
     grub-set-default 0
 }
 
-echo "Rebooting now..."
+#
+#  Copy the post-reboot script to RunOnce
+#
+copy-Item -Path "/root/Framework-Scripts/report_kernel_version.ps1" -Destination "/etc/local/runonce.d"
+
+phoneHome "Rebooting now..."
 reboot

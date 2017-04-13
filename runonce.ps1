@@ -9,6 +9,28 @@
 #  When there's a script you want to run at the next boot, put it in /etc/local/runonce.d.
 #
 
+function callItIn($c, $m) {
+    $output_path="c:\temp\$c"
+    
+    $m | out-file -Append $output_path
+    return
+}
+
+function phoneHome($m) {
+    $username="serviceb"
+    $password="Pine#Tar*9"
+    $cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+
+    #
+    #  What OS are we on?
+    #
+    $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+    $c = $linuxInfo.ID
+    $c=$c -replace '"',""
+
+    invoke-command -Credential $cred -ComputerName 10.123.175.125 -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+}
+
 #
 #  Check for the runonce directory
 #
@@ -23,20 +45,22 @@ if ((Test-Path "/etc/local/runonce.d") -eq 0) {
 #
 Get-ChildItem "/etc/local/runonce.d" -exclude "ran" |
 foreach-Object {
-    echo "Found script $_.Name"
+    echo "Found script $_"
+    phoneHome "RunOnce found script $_"
+
     $movePath=Join-Path -Path $_.Directory -ChildPath "ran"
     echo "Move path is "$movePath
 
     $fileName=$_.Name
-    echo "File name is "$fileName
-
     $fullName="$($movePath)/$($_.Name)"
-    echo "Full name is "$fullName
+
 
     echo "Moving the script so we don't execute again next time"
     logger -t runonce -p local3.info "$fileName"
     Move-Item $_ $movePath -force
 
     echo "Running the script..."
+    phoneHome "RunOnce initiating execution of script $fileName"
     iex $fullName
+    phoneHome "RunOnce execution of script $fileName complete"
 }
