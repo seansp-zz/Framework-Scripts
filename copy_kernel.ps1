@@ -75,6 +75,13 @@ if ($linuxOs -eq '"centos"') {
     phoneHome "Kernel name is $kernelName" 
 
     #
+    #  Figure out the kernel version
+    #
+    $kernelVersion=($kernelName -split "-")[1]
+    phoneHome "Kernel version is $kernelVersion" 
+    $kernelVersion | OutFile -Path "/tmp/expected_version"
+
+    #
     #  CentOS
     #
     $kernelDevelName="kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]

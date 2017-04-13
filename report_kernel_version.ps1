@@ -25,4 +25,9 @@ function phoneHome($m) {
 }
 
 $kernel_name=uname -r
-phoneHome $kernel_name
+$expected=Get-Content /tmp/expected_version
+if ($kenel_name -ne $expected) {
+    phoneHome "Failed $kernel_name $expected"
+} else {
+    phoneHome "Success $kernel_name"
+}
