@@ -64,6 +64,11 @@ $linuxOs = $linuxInfo.ID
 phoneHome "Operating system is $linuxOs"
 
 #
+#  Remove the old sentinel file
+#
+Remove-Item -Force "/tmp/expected_version"
+
+#
 #  Do the right thing for the platform
 #
 if ($linuxOs -eq '"centos"') {
