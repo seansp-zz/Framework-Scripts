@@ -54,10 +54,9 @@ foreach-Object {
     $fileName=$_.Name
     $fullName="$($movePath)/$($_.Name)"
 
-
     echo "Moving the script so we don't execute again next time"
+    Move-Item -force $_ $movePath
     logger -t runonce -p local3.info "$fileName"
-    Move-Item $_ $movePath -force
 
     echo "Running the script..."
     phoneHome "RunOnce initiating execution of script $fileName"
