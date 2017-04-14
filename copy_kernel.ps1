@@ -66,7 +66,7 @@ phoneHome "Operating system is $linuxOs"
 #
 #  Remove the old sentinel file
 #
-Remove-Item -Force "/tmp/expected_version"
+Remove-Item -Force "/root/expected_version"
 
 #
 #  Do the right thing for the platform
@@ -87,9 +87,8 @@ if ($linuxOs -eq '"centos"') {
     #
     #  For some reason, the file is -, but the kernel is _
     #
-    $kernelVersion=$kernelVersion -replace "-","_"
     phoneHome "Kernel version is $kernelVersion" 
-    $kernelVersion | Out-File -Path "/tmp/expected_version"
+    $kernelVersion | Out-File -Path "/root/expected_version"
 
     #
     #  CentOS
@@ -122,7 +121,7 @@ if ($linuxOs -eq '"centos"') {
     #
     $kernelVersion=($kernelName -split "-")[3]
     phoneHome "Kernel version is $kernelVersion" 
-    $kernelVersion | Out-File -Path "/tmp/expected_version"
+    $kernelVersion | Out-File -Path "/root/expected_version"
 
     #
     #  Debian
