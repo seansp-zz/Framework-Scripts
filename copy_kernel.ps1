@@ -87,6 +87,7 @@ if ($linuxOs -eq '"centos"') {
     #
     #  For some reason, the file is -, but the kernel is _
     #
+    $kernelVersion=($kernelVersion -replace "_","-")
     phoneHome "Kernel version is $kernelVersion" 
     $kernelVersion | Out-File -Path "/root/expected_version"
 
@@ -120,6 +121,12 @@ if ($linuxOs -eq '"centos"') {
     #  Figure out the kernel version
     #
     $kernelVersion=($kernName -split "-")[3]
+
+    #
+    #  Construct the right version from the file name
+    #
+    $kernelVerionSplit=$kernelVersion -split "-"
+    $kernelVersion=$kernelVersionSplit[2]+"-"+$kernelVersionSplit[4]
     phoneHome "Kernel version is $kernelVersion" 
     $kernelVersion | Out-File -Path "/root/expected_version"
 
