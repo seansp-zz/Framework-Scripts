@@ -79,7 +79,7 @@ if ($linuxOs -eq '"centos"') {
     #
     $kernelVersion=($kernelName -split "-")[1]
     phoneHome "Kernel version is $kernelVersion" 
-    $kernelVersion | OutFile -Path "/tmp/expected_version"
+    $kernelVersion | Out-File -Path "/tmp/expected_version"
 
     #
     #  CentOS
@@ -106,6 +106,13 @@ if ($linuxOs -eq '"centos"') {
     #
     $kernName=(get-childitem linux-image-*.deb)[0].Name
     phoneHome "Kernel name is $kernName" 
+
+    #
+    #  Figure out the kernel version
+    #
+    $kernelVersion=($kernelName -split "-")[3]
+    phoneHome "Kernel version is $kernelVersion" 
+    $kernelVersion | Out-File -Path "/tmp/expected_version"
 
     #
     #  Debian
