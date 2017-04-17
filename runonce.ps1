@@ -8,17 +8,6 @@
 #
 #  When there's a script you want to run at the next boot, put it in /etc/local/runonce.d.
 #
-$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
-$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
-$s=new-PSSession -computername mslk-boot-test-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
-
-#
-#  What OS are we on?
-#
-$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
-$c = $linuxInfo.ID
-$c=$c -replace '"',""
-
 function callItIn($c, $m) {
     $output_path="c:\temp\$c"
     
@@ -29,6 +18,17 @@ function callItIn($c, $m) {
 function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
+
+$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$s=new-PSSession -computername mslk-boot-test-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+
+#
+#  What OS are we on?
+#
+$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+$c = $linuxInfo.ID
+$c=$c -replace '"',""
 
 #
 #  Check for the runonce directory
