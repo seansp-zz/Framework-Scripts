@@ -1,6 +1,10 @@
 #!/usr/bin/powershell
 #
 
+$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$s=new-PSSession -computername mslk-boot-test-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+
 function callItIn($c, $m) {
     $output_path="c:\temp\$c"
     
@@ -9,9 +13,6 @@ function callItIn($c, $m) {
 }
 
 function phoneHome($m) {
-    $username="serviceb"
-    $password="Pa$$w0rd!"
-    $cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
 
     #
     #  What OS are we on?
@@ -21,7 +22,7 @@ function phoneHome($m) {
     $c=$c -replace '"',""
     $c=$c+"-boot"
 
-    invoke-command -Credential $cred -ComputerName MSLK-BOOT-TEST-HOST.redmond.corp.microsoft.com -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
 $kernel_name=uname -r
@@ -31,3 +32,5 @@ if ($kenel_name -ne $expected) {
 } else {
     phoneHome "Success $kernel_name"
 }
+
+remove-pssession $s

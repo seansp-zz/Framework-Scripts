@@ -8,6 +8,16 @@
 #
 #  When there's a script you want to run at the next boot, put it in /etc/local/runonce.d.
 #
+$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$s=new-PSSession -computername mslk-boot-test-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+
+#
+#  What OS are we on?
+#
+$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+$c = $linuxInfo.ID
+$c=$c -replace '"',""
 
 function callItIn($c, $m) {
     $output_path="c:\temp\$c"
@@ -17,18 +27,7 @@ function callItIn($c, $m) {
 }
 
 function phoneHome($m) {
-    $username="serviceb"
-    $password="Pa$$w0rd!"
-    $cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
-
-    #
-    #  What OS are we on?
-    #
-    $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
-    $c = $linuxInfo.ID
-    $c=$c -replace '"',""
-
-    invoke-command -Credential $cred -ComputerName MSLK-BOOT-TEST-HOST.redmond.corp.microsoft.com -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
 #
@@ -69,3 +68,5 @@ foreach-Object {
     iex $fullName
     phoneHome "RunOnce execution of script $fileName complete"
 }
+
+remove-pssession $s

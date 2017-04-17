@@ -7,14 +7,15 @@
 #  Start by cleaning out any existing downloads
 #
 
-$username="serviceb"
-$password="Pa$$w0rd!"
-$cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
+$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$s=new-PSSession -computername mslk-boot-test-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+
 #
 #  What OS are we on?
 #
-$osInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
-$c = $osInfo.ID
+$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+$c = $linuxInfo.ID
 $c=$c -replace '"',""
 
 function callItIn($c, $m) {
@@ -25,7 +26,7 @@ function callItIn($c, $m) {
 }
 
 function phoneHome($m) {
-    invoke-command -Credential $cred -ComputerName MSLK-BOOT-TEST-HOST.redmond.corp.microsoft.com -Authentication Basic -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
 phoneHome "Starting copy file scipt" 
@@ -150,4 +151,7 @@ if ($linuxOs -eq '"centos"') {
 copy-Item -Path "/root/Framework-Scripts/report_kernel_version.ps1" -Destination "/etc/local/runonce.d"
 
 phoneHome "Rebooting now..."
+
+remove-pssession $s
+
 reboot
