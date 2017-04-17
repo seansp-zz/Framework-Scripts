@@ -6,7 +6,7 @@
 #  Create directory /etc/local/runonce.d
 #  Add the line "@reboot root /usr/local/bin/runonce.ps1" to /etc/crontab
 #
-#  When there's a script you want to run at the next boot, put it in /etc/local/runonce.d.
+#  When there's a script you want to run at the next boot, put it in /root/runonce.d.
 #
 function callItIn($c, $m) {
     $output_path="c:\temp\$c"
@@ -19,6 +19,8 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
+start-sleep 30
+
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
 $s=new-PSSession -computername mslk-boot-test-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
@@ -30,10 +32,12 @@ $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
 
+phoneHome "RunOnce starting up on machine $c"
+
 #
 #  Check for the runonce directory
 #
-if ((Test-Path "/etc/local/runonce.d") -eq 0) {
+if ((Test-Path /root/runonce.d) -eq 0) {
     echo "No runonce directory found"
     $LASTEXITCODE = 1
     exit $LASTERRORCODE
@@ -42,7 +46,8 @@ if ((Test-Path "/etc/local/runonce.d") -eq 0) {
 #
 #  If there are entries, execute them....
 #
-Get-ChildItem "/etc/local/runonce.d" -exclude "ran" |
+
+Get-ChildItem /root/runonce.d -exclude ran |
 foreach-Object {
     echo "Found script $_"
     phoneHome "RunOnce found script $_"
@@ -56,10 +61,10 @@ foreach-Object {
 
     echo "Moving the script so we don't execute again next time"
     phoneHome "Moving the script so we don't execute again next time"
-    $dinfo=dir /etc/local/runonce.d
+    $dinfo=dir /root/runonce.d
     phoneHome "Before move: $dinfo"
     Move-Item -force $_ $movePath
-    $dinfo=dir /etc/local/runonce.d/ran
+    $dinfo=dir /root/runonce.d/ran
     phoneHome "After move: $dinfo"
     logger -t runonce -p local3.info "$fileName"
 

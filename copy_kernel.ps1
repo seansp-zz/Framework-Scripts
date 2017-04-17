@@ -148,7 +148,7 @@ if ($linuxOs -eq '"centos"') {
 #
 #  Copy the post-reboot script to RunOnce
 #
-copy-Item -Path "/root/Framework-Scripts/report_kernel_version.ps1" -Destination "/etc/local/runonce.d"
+copy-Item -Path "/root/Framework-Scripts/report_kernel_version.ps1" -Destination "/root/runonce.d"
 
 phoneHome "Rebooting now..."
 
