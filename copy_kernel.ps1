@@ -8,7 +8,7 @@
 #
 
 $username="serviceb"
-$password="Pine#Tar*9"
+$password="Pa$$w0rd!"
 $cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
 #
 #  What OS are we on?
@@ -69,28 +69,28 @@ phoneHome "Operating system is $linuxOs"
 Remove-Item -Force "/root/expected_version"
 
 #
+#  Figure out the kernel name
+#
+$rpmName=(get-childitem kernel-[0-9]*.rpm).name
+$kernelName=($rpmName -split ".rpm")[0]
+phoneHome "Kernel name is $kernelName" 
+
+#
+#  Figure out the kernel version
+#
+$kernelVersion=($kernelName -split "-")[1]
+
+#
+#  For some reason, the file is -, but the kernel is _
+#
+$kernelVersion=($kernelVersion -replace "_","-")
+phoneHome "Kernel version is $kernelVersion" 
+$kernelVersion | Out-File -Path "/root/expected_version"
+
+#
 #  Do the right thing for the platform
 #
 if ($linuxOs -eq '"centos"') {
-    #
-    #  Figure out the kernel name
-    #
-    $rpmName=(get-childitem kernel-[0-9]*.rpm).name
-    $kernelName=($rpmName -split ".rpm")[0]
-    phoneHome "Kernel name is $kernelName" 
-
-    #
-    #  Figure out the kernel version
-    #
-    $kernelVersion=($kernelName -split "-")[1]
-
-    #
-    #  For some reason, the file is -, but the kernel is _
-    #
-    $kernelVersion=($kernelVersion -replace "_","-")
-    phoneHome "Kernel version is $kernelVersion" 
-    $kernelVersion | Out-File -Path "/root/expected_version"
-
     #
     #  CentOS
     #
@@ -114,13 +114,8 @@ if ($linuxOs -eq '"centos"') {
     #
     #  Figure out the kernel name
     #
-    $kernName=(get-childitem linux-image-*.deb)[0].Name
-    phoneHome "Kernel name is $kernName" 
-
-    #
-    #  Figure out the kernel version
-    #
-    $kernelVersion=($kernName -split "-")[3]
+    $debKernName=(get-childitem linux-image-*.deb)[0].Name
+    phoneHome "Debian Kernel name is $DebKernName" 
 
     #
     #  Construct the right version from the file name
@@ -140,7 +135,7 @@ if ($linuxOs -eq '"centos"') {
     dpkg -i $kernDevName
 
     phoneHome "Installing the DEB kernel package" 
-    dpkg -i $kernName
+    dpkg -i $debKernName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up

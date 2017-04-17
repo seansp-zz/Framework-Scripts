@@ -18,7 +18,7 @@ function callItIn($c, $m) {
 
 function phoneHome($m) {
     $username="serviceb"
-    $password="Pine#Tar*9"
+    $password="Pa$$w0rd!"
     $cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
 
     #
@@ -49,13 +49,19 @@ foreach-Object {
     phoneHome "RunOnce found script $_"
 
     $movePath=Join-Path -Path $_.Directory -ChildPath "ran"
-    echo "Move path is "$movePath
+    echo "Move path is $movePath"
+    phoneHome "Move path is $movePath"
 
     $fileName=$_.Name
     $fullName="$($movePath)/$($_.Name)"
 
     echo "Moving the script so we don't execute again next time"
+    phoneHome "Moving the script so we don't execute again next time"
+    $dinfo=dir /etc/local/runonce.d
+    phoneHome "Before move: $dinfo"
     Move-Item -force $_ $movePath
+    $dinfo=dir /etc/local/runonce.d/ran
+    phoneHome "After move: $dinfo"
     logger -t runonce -p local3.info "$fileName"
 
     echo "Running the script..."

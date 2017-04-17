@@ -10,7 +10,7 @@ function callItIn($c, $m) {
 
 function phoneHome($m) {
     $username="serviceb"
-    $password="Pine#Tar*9"
+    $password="Pa$$w0rd!"
     $cred= New-Object System.Management.Automation.PSCredential -ArgumentList @($username,(ConvertTo-SecureString -String $password -AsPlainText -Force))
 
     #
