@@ -27,9 +27,10 @@ function phoneHome($m) {
 
 $kernel_name=uname -r
 $expected=Get-Content /root/expected_version
-if ($kenel_name -ne $expected) {
+if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Failed $kernel_name $expected"
 } else {
+    echo "Passed"
     phoneHome "Success $kernel_name"
 }
 
