@@ -5,6 +5,8 @@ $global:boot_timeout_minutes=15
 $global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
 $global:found_centos=0
 $global:found_ubuntu=0
+$global:ubunResults=""
+$global:centResults=""
 
 $timer=New-Object System.Timers.Timer
 
@@ -19,11 +21,29 @@ $action={
 
     if (($global:found_centos -eq 0) -and (Test-Path -path "c:\temp\centos-boot") -eq 1) {
         write-host "***** Centos boot has completed"
-        $global:found_centos=1
+        $global:centResults=Get-Content c:\temp\centos-boot
+        $global:centResults=$centResults -split " "
+
+        if ($global:centResults[0] -ne "Success") {
+            Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]"
+        } else {
+            Write-Host "CentOS machine rebooted successfully to kernel version $global:centResults[1]"
+        }
+
+                $global:found_centos=1
     }
 
     if (($global:found_ubuntu -eq 0) -and (Test-Path -path "c:\temp\ubuntu-boot") -eq 1) {
         write-host "***** Ubuntu boot has completed"
+        $global:ubunResults=Get-Content c:\temp\ubuntu-boot
+        $global:ubunResults=$ubunResults -split " "
+
+       if ($global:ubunResults[0] -ne "Success") {
+            Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $global:ubunResults[2] but got $global:ubunResults[1]"
+        } else {
+            Write-Host "Ubuntu machine rebooted successfully to kernel version $global:ubunResults[1]"
+        }
+
         $global:found_ubuntu=1
     }
  
@@ -67,18 +87,26 @@ $timer.start()
 while ($global:completed -eq 0) {
     if (($global:elapsed % 30000) -eq 0) {
         Write-Host "Waiting for remote machines to boot..."
-        if (test-path "c:\temp\centos") {
+        if (((test-path "c:\temp\centos") -eq 1) -and ($global:found_centos -eq 0)) {
+            write-host "---"
             write-host "Last 3 lines from Centos:"
             get-content "c:\temp\centos" | Select-Object -Last 3 | write-host
+            write-host "---"
         } else {
-            Write-Host "CentOS machine has not checked in yet"
+            if ($global:found_centos -eq 0) {
+                Write-Host "CentOS machine has not checked in yet"
+            }
         }
 
-        if (test-path "c:\temp\ubuntu") {
+        if (((test-path "c:\temp\ubuntu") -eq 1) -and $global:found_ubuntu -eq 0) {
+            write-host "---"
             write-host "Last 3 lines from Ubuntu:"
             get-content "c:\temp\ubuntu" | Select-Object -Last 3 | write-host
+            write-host "---"
         } else {
-            Write-Host "Ubuntu machine has not checked in yet"
+            if ($global:found_ubuntu -eq 0) {
+                Write-Host "Ubuntu machine has not checked in yet"
+            }
         }
         [Console]::Out.Flush() 
     }
@@ -94,23 +122,20 @@ write-host "Checking results"
 
 if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
     Write-Host "Both machines have come back up.  Checking versions."
-    $centResults=Get-Content c:\temp\centos-boot
-    $centResults=$centResults -split " "
+    
     $failed=0
-    if ($centResults[0] -ne "Success") {
-        Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $centResults[2] but got $centResults[1]"
+    if ($global:centResults[0] -ne "Success") {
+        Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]"
         $failed=1
     } else {
-        Write-Host "CentOS machine rebooted successfully to kernel version $centResults[1]"
+        Write-Host "CentOS machine rebooted successfully to kernel version $global:centResults[1]"
     }
 
-    $ubunResults=Get-Content c:\temp\ubuntu-boot
-    $ubunResults=$ubunResults -split " "
-    if ($ubunResults[0] -ne "Success") {
-        Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $ubunResults[2] but got $ubunResults[1]"
+    if ($global:ubunResults[0] -ne "Success") {
+        Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $global:ubunResults[2] but got $global:ubunResults[1]"
         $failed=1
     } else {
-        Write-Host "Ubuntu machine rebooted successfully to kernel version $ubunResults[1]"
+        Write-Host "Ubuntu machine rebooted successfully to kernel version $global:ubunResults[1]"
     }
 
     if ($failed -eq 0) {
@@ -136,3 +161,7 @@ if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
             }
         }
     }
+
+echo "Stopping VMs"
+stop-vm -name "CentOS 7.1 MSLK Test 1"
+stop-vm -name "Ubuntu 1604 MSLK Test 1"
