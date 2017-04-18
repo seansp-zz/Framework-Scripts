@@ -22,7 +22,7 @@ $action={
     if (($global:found_centos -eq 0) -and (Test-Path -path "c:\temp\centos-boot") -eq 1) {
         write-host "***** Centos boot has completed"
         $global:centResults=Get-Content c:\temp\centos-boot
-        $global:centResults=$centResults -split " "
+        $global:centResults=$global:centResults -split " "
 
         if ($global:centResults[0] -ne "Success") {
             Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]"
@@ -36,7 +36,7 @@ $action={
     if (($global:found_ubuntu -eq 0) -and (Test-Path -path "c:\temp\ubuntu-boot") -eq 1) {
         write-host "***** Ubuntu boot has completed"
         $global:ubunResults=Get-Content c:\temp\ubuntu-boot
-        $global:ubunResults=$ubunResults -split " "
+        $global:ubunResults=$global:ubunResults -split " "
 
        if ($global:ubunResults[0] -ne "Success") {
             Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $global:ubunResults[2] but got $global:ubunResults[1]"
@@ -57,26 +57,48 @@ $action={
     }
 }
 
+Write-Host "    "
+Write-Host "**********************************************"
+Write-Host "*                                            *"
+Write-Host "*          Microsoft Linux Kernel            *"
+Write-Host "*     Basic Operational Readiness Test       *"
+Write-Host "* Host Infrastructure Validation Environment *"
+Write-Host "*                                            *"
+Write-Host "**********************************************"
+Write-Host "    "
+
+Write-Host "Welcome to the BORG HIVE"
+Write-Host "    "
+Write-Host "Initializing the Customizable Base of Execution"
+Write-Host "    "
 #
 #  Clean up the sentinel files
 #
+Write-Host "Cleaning up sentinel files..."
 remove-item -ErrorAction "silentlycontinue" c:\temp\centos
 remove-item -ErrorAction "silentlycontinue" c:\temp\centos-boot
 remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu
 remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu-boot
 
-# echo "Restoring VM Snapshots"
+# 
+Write-Host "Restoring VM Snapshots"
 get-vm "CentOS 7.1 MSLK Test 1"  | Get-VMSnapshot -name "New Kernel at Startup" | Restore-VMSnapshot -Confirm:$false
 get-vm "Ubuntu 1604 MSLK Test 1"  | Get-VMSnapshot -name "New Kernel at Startup" | Restore-VMSnapshot -Confirm:$false
 
-# echo "Starting the VMs"
+Write-Host "   "
+Write-Host "BORG CUBE is initialized.  Starting the Dedicated Remote Nodes of Execution"
+Write-Host "    "
+
+# 
+Write-Host "Starting the CentOS DRONE"
 start-vm -name "CentOS 7.1 MSLK Test 1"
+Write-Host "Starting the Ubuntu DRONE"
 start-vm -name "Ubuntu 1604 MSLK Test 1"
 
 #
 #  Wait for the two machines to report back
 #
-write-host "Registering the timer"
+write-host "Initiating temporal evaluation loop"
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
 
 write-host "Starting the timer"
@@ -118,7 +140,6 @@ $timer.stop()
 unregister-event bootTimer
 
 write-host "Checking results"
-
 
 if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
     Write-Host "Both machines have come back up.  Checking versions."
@@ -162,6 +183,7 @@ if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
         }
     }
 
-echo "Stopping VMs"
+Write-Host "Stopping VMs"
 stop-vm -name "CentOS 7.1 MSLK Test 1"
 stop-vm -name "Ubuntu 1604 MSLK Test 1"
+Write-Host "Thanks for Playing"
