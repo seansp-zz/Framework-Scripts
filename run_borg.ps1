@@ -1,7 +1,7 @@
 $global:completed=0
 $global:elapsed=0
 $global:interval=500
-$global:boot_timeout_minutes=10
+$global:boot_timeout_minutes=15
 $global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
 $global:found_centos=0
 $global:found_ubuntu=0
@@ -67,6 +67,19 @@ $timer.start()
 while ($global:completed -eq 0) {
     if (($global:elapsed % 30000) -eq 0) {
         Write-Host "Waiting for remote machines to boot..."
+        if (test-path "c:\temp\centos") {
+            write-host "Last 3 lines from Centos:"
+            get-content "c:\temp\centos" | Select-Object -Last 3 | write-host
+        } else {
+            Write-Host "CentOS machine has not checked in yet"
+        }
+
+        if (test-path "c:\temp\ubuntu") {
+            write-host "Last 3 lines from Ubuntu:"
+            get-content "c:\temp\ubuntu" | Select-Object -Last 3 | write-host
+        } else {
+            Write-Host "Ubuntu machine has not checked in yet"
+        }
         [Console]::Out.Flush() 
     }
     start-sleep -s 1
@@ -82,7 +95,7 @@ write-host "Checking results"
 if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
     Write-Host "Both machines have come back up.  Checking versions."
     $centResults=Get-Content c:\temp\centos-boot
-    $centResults -split " "
+    $centResults=$centResults -split " "
     $failed=0
     if ($centResults[0] -ne "Success") {
         Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $centResults[2] but got $centResults[1]"
@@ -92,7 +105,7 @@ if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
     }
 
     $ubunResults=Get-Content c:\temp\ubuntu-boot
-    $ubunResults -split " "
+    $ubunResults=$ubunResults -split " "
     if ($ubunResults[0] -ne "Success") {
         Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $ubunResults[2] but got $ubunResults[1]"
         $failed=1
