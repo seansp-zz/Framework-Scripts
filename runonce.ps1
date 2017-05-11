@@ -49,36 +49,18 @@ if ((Test-Path /root/runonce.d) -eq 0) {
 
 Get-ChildItem /root/runonce.d -exclude ran |
 foreach-Object {
-    echo "Found script $_"
-    phoneHome "RunOnce found script $_"
+    $script=$_.Name
 
-    $movePath=Join-Path -Path $_.Directory -ChildPath "ran"
-    echo "Move path is $movePath"
-    phoneHome "Move path is $movePath"
+    echo "Found script $script"
+    phoneHome "RunOnce found script $script"
+    
+    Move-Item $script ./ran
 
-    $fileName=$_.Name
-    $fullName="$($movePath)/$($_.Name)"
-
-    echo "Moving the script so we don't execute again next time"
-    phoneHome "Moving the script so we don't execute again next time"
-    $dinfo=dir /root/runonce.d
-    phoneHome "Before move: $dinfo"
-    # Move-Item -force $_ $movePath
-    /bin/ls -laF /root/runonce.d | /usr/bin/tee /tmp/FUO1
-    /bin/echo "---------" >> /tmp/FUO
-    /bin/ls -laF $_ | /usr/bin/tee /tmp/FUO2
-    /bin/ls -laF $movePath | /usr/bin/tee /tmp/FUO3
-    /bin/echo "---------" | /usr/bin/tee /tmp/FUO4
-    /bin/mv -f $_ $movePath | /usr/bin/tee /tmp/FUO5
-    /bin/echo "---------" | /usr/bin/tee /tmp/FUO6
-    /bin/ls -laF $movePath | /usr/bin/tee /tmp/FUO7
-    /bin/echo "---------" | /usr/bin/tee /tmp/FUO8
-    $dinfo=dir /root/runonce.d/ran | /usr/bin/tee /tmp/FUO9
-    phoneHome "After move: $dinfo"
-    logger -t runonce -p local3.info "$fileName"
+    $fullName='/root/runonce.d/ran/'+$script
 
     echo "Running the script..."
-    phoneHome "RunOnce initiating execution of script $fileName"
+    phoneHome "RunOnce initiating execution of script $fullName"
+
     iex $fullName
     phoneHome "RunOnce execution of script $fileName complete"
 }
