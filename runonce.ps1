@@ -54,9 +54,11 @@ foreach-Object {
     echo "Found script $script"
     phoneHome "RunOnce found script $script"
     
-    Move-Item $script ./ran
-
     $fullName='/root/runonce.d/ran/'+$script
+
+    Remove-Item $fullName
+
+    Move-Item $script $fullName
 
     echo "Running the script..."
     phoneHome "RunOnce initiating execution of script $fullName"
