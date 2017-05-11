@@ -41,28 +41,33 @@ if ((Test-Path /root/runonce.d) -eq 0) {
     exit $LASTERRORCODE
 }
 
-/bin/ls -laF /root/runonce.d | /usr/bin/tee /tmp/FUO
-
 #
 #  If there are entries, execute them....
 #
+
+$scriptsArray=@()
 
 Get-ChildItem /root/runonce.d -exclude ran |
 foreach-Object {
     $script=$_.Name
 
     echo "Found script $script"
-    phoneHome "RunOnce found script $script"
-    
+    phoneHome "RunOnce has located $script in execution folder"
+
     $fullName='/root/runonce.d/ran/'+$script
 
     Move-Item -force $_ $fullName
 
-    echo "Running the script..."
-    phoneHome "RunOnce initiating execution of script $fullName"
+    $scriptsArray+=$fullName
+    phoneHome "Script has been copied to staging folder"
 
-    iex $fullName
-    phoneHome "RunOnce execution of script $fullName complete"
+}
+
+foreach ($script in $scriptsArray) {
+    phoneHome "RunOnce initiating execution of script $script from staging folder"
+
+    iex $script
+    phoneHome "RunOnce execution of script $script complete"
 }
 
 remove-pssession $s
