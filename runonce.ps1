@@ -56,15 +56,13 @@ foreach-Object {
     
     $fullName='/root/runonce.d/ran/'+$script
 
-    Remove-Item $fullName
-
-    Move-Item $script $fullName
+    Move-Item -force $_ $fullName
 
     echo "Running the script..."
     phoneHome "RunOnce initiating execution of script $fullName"
 
     iex $fullName
-    phoneHome "RunOnce execution of script $fileName complete"
+    phoneHome "RunOnce execution of script $fullName complete"
 }
 
 remove-pssession $s
