@@ -55,12 +55,12 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 yum install -y python-pyasn1 WALinuxAgent
 systemctl enable waagent
 
-setConfig "/etc/waagent.conf" "ResourceDisk.Format" "y" 
-setConfig "/etc/waagent.conf" "ResourceDisk.Filesystem" "ext4" 
-setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource" 
-setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
-setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
+# setConfig "/etc/waagent.conf" "ResourceDisk.Format" "y" 
+# setConfig "/etc/waagent.conf" "ResourceDisk.Filesystem" "ext4" 
+# setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource" 
+# setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
+# setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
 
-waagent -force -deprovision
+# waagent -force -deprovision
 exit
 
