@@ -27,6 +27,9 @@ setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "PEERDNS" "yes"
 setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "IPV6INIT" "no" 
 setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "NM_CONTROLLED" "no" 
 
+$cont=get-content /etc/sysconfig/network-scripts/ifcfg-eth0
+$cont -replace "DNS.*","" | out-file /etc/sysconfig/network-scripts/ifcfg-eth0
+
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 
 #
