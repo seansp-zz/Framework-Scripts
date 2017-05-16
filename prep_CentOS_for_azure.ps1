@@ -2,20 +2,30 @@
 #
 #  Prepare a machine for Azure
 #
-(Get-Content /etc/sysconfig/network) -replace 'HOSTNAME=.*','HOSTNAME=localhost.localdomain' -replace 'NETWORKING=no','NETWORKING=yes' | Set-Content /etc/sysconfig/net
+#  Function setConfig grabbed from an answer on StackOverflow.
+#      http://stackoverflow.com/questions/15662799/powershell-function-to-replace-or-add-lines-in-text-files
+#
+function setConfig( $file, $key, $value ) {
+    $content = Get-Content $file
+    if ( $content -match "^$key\s*=" ) {
+        $content -replace "^$key\s*=.*", "$key=$value" |
+        Set-Content $file     
+    } else {
+        Add-Content $file "$key=$value"
+    }
+}
 
-cd /etc/sysconfig/network-scripts
+setConfig "/etc/sysconfig/network" "NETWORKING" "yes" 
+setConfig "/etc/sysconfig/network" "HOSTNAME" "localhost.localdomain" 
 
-(Get-Content /etc/sysconfig/network-scripts/ifcfg-eth0) -replace 'DEVICE=.*','DEVICE=eth0' `
-							-replace 'ONBOOT=.*','ONBOOT=yes' `
-							-replace 'BOOTPROTO=.*','BOOTPROTO=dhcp' `
-							-replace 'TYPE=.*','TYPE=Ethernet' `
-							-replace 'USERCTL=.*','USERCTL=no' `
-							-replace 'PEERDNS=.*','PEERDNS=yes' `
-							-replace 'IPV6INIT=.*','IPV6INIT=no' `
-							-replace 'NM_CONTROLLED=.*','NM_CONTROLLED=no' `
-		| Set-Content /etc/sysconfig/network-scripts/ifcfg-eth0
-
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "DEVICE" "eth0" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "ONBOOT" "yes" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "BOOTPROTO" "dhcp" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "TYPE" "Ethernet" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "USERCTL" "no" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "PEERDNS" "yes" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "IPV6INIT" "no" 
+setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "NM_CONTROLLED" "no" 
 
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 
@@ -42,14 +52,11 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 yum install -y python-pyasn1 WALinuxAgent
 systemctl enable waagent
 
-(Get-Content /etc/waagent.conf) -replace 'ResourceDisk.Format=.*','ResourceDisk.Format=y' `
-				-replace 'ResourceDisk.Filesystem=.*','ResourceDisk.Filesystem=ext4' `
-				-replace 'ResourceDisk.MountPoint=.*','ResourceDisk.MountPoint=/mnt/resource' `
-				-replace 'ResourceDisk.EnableSwap=.*','ResourceDisk.EnableSwap=y' `
-				-replace 'ResourceDisk.SwapSizeMB=.*','ResourceDisk.SwapSizeMB=2048' `
-		| Set-Content /etc/waagent.conf
-
-
+setConfig "/etc/waagent.conf" "ResourceDisk.Format" "y" 
+setConfig "/etc/waagent.conf" "ResourceDisk.Filesystem" "ext4" 
+setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource" 
+setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
+setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
 
 waagent -force -deprovision
 exit
