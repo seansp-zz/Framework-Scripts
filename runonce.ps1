@@ -2,9 +2,9 @@
 #
 #  Reused from the StackOverflow article.  Solution by Dennis Williamson
 #
-#  Place this file in /usr/local/bin
-#  Create directory /etc/local/runonce.d
-#  Add the line "@reboot root /usr/local/bin/runonce.ps1" to /etc/crontab
+#  Place this file in /root/Framework_Scripts/
+#  Create directory /root//runonce.d
+#  Add the line "@reboot root /root/Framework_Scripts/runonce.ps1" to /etc/crontab
 #
 #  When there's a script you want to run at the next boot, put it in /root/runonce.d.
 #
