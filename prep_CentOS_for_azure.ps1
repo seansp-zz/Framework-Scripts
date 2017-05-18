@@ -62,6 +62,9 @@ $grubLine=$grubLine -replace '"$',' rootdelay=300 console=ttyS0 earlyprintk=ttyS
 
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
+curl -o /etc/yum.repos.d/openlogic.repo https://raw.githubusercontent.com/szarkos/AzureBuildCentOS/master/config/azure/OpenLogic.repo
+curl -o /etc/pki/rpm-gpg/OpenLogic-GPG-KEY https://raw.githubusercontent.com/szarkos/AzureBuildCentOS/master/config/OpenLogic-GPG-KEY
+
 yum install -y python-pyasn1 WALinuxAgent
 systemctl enable waagent
 
