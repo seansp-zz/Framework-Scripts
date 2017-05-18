@@ -71,6 +71,6 @@ setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource"
 setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
 setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
 
-waagent -force -deprovision+user
+waagent -force -deprovision
 exit
 
