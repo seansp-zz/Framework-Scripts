@@ -9,9 +9,9 @@ function setConfig( $file, $key, $value ) {
     $content = Get-Content $file
     if ( $content -match "^$key\s*=" ) {
         $content -replace "^$key\s*=.*", "$key=$value" |
-        Set-Content -encoding UTF8 $file     
+        Set-Content -encoding ASCII $file     
     } else {
-        Add-Content -encoding UTF8 $file "$key=$value"
+        Add-Content -encoding ASCII $file "$key=$value"
     }
 }
 
@@ -58,7 +58,7 @@ $grubLine=$grubLine -replace '"$',' rootdelay=300 console=ttyS0 earlyprintk=ttyS
 #
 #  And finally write it back to the file
 #
-(Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX=.*',$grubLine | Set-Content -encoding UTF8 /etc/default/grub
+(Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX=.*',$grubLine | Set-Content -encoding ASCII /etc/default/grub
 
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
