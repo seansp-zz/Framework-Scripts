@@ -9,9 +9,9 @@ function setConfig( $file, $key, $value ) {
     $content = Get-Content $file
     if ( $content -match "^$key\s*=" ) {
         $content -replace "^$key\s*=.*", "$key=$value" |
-        Set-Content -encoding ASCII $file     
+        Set-Content -encoding UTF8 $file     
     } else {
-        Add-Content -encoding ASCII $file "$key=$value"
+        Add-Content -encoding UTF8 $file "$key=$value"
     }
 }
 
@@ -28,7 +28,7 @@ setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "IPV6INIT" "no"
 setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "NM_CONTROLLED" "no" 
 
 $cont=get-content /etc/sysconfig/network-scripts/ifcfg-eth0
-$cont -replace "DNS.*","" | out-file /etc/sysconfig/network-scripts/ifcfg-eth0
+$cont -replace "DNS.*","" | out-file -encoding UTF8 /etc/sysconfig/network-scripts/ifcfg-eth0
 
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 
@@ -58,7 +58,7 @@ $grubLine=$grubLine -replace '"$',' rootdelay=300 console=ttyS0 earlyprintk=ttyS
 #
 #  And finally write it back to the file
 #
-(Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX=.*',$grubLine | Set-Content -encoding ASCII /etc/default/grub
+(Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX=.*',$grubLine | Set-Content -encoding UTF8 /etc/default/grub
 
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
@@ -74,6 +74,6 @@ setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource"
 setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
 setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
 
-waagent -force -deprovision
-exit
+# waagent -force -deprovision
+# exit
 
