@@ -32,6 +32,7 @@ USERCTL=no
 PEERDNS=yes
 IPV6INIT=no
 NM_CONTROLLED=no' | set-content -encoding UTF8 /etc/sysconfig/network-scripts/ifcfg-eth0
+chmod 755 /etc/sysconfig/network-scripts/ifcfg-*
 
 echo "Linking the rules"
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
