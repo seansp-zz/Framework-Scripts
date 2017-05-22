@@ -18,17 +18,17 @@ function setConfig( $file, $key, $value ) {
 setConfig "/etc/sysconfig/network" "NETWORKING" "yes" 
 setConfig "/etc/sysconfig/network" "HOSTNAME" "localhost.localdomain" 
 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "DEVICE" "eth0" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "ONBOOT" "yes" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "BOOTPROTO" "dhcp" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "TYPE" "Ethernet" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "USERCTL" "no" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "PEERDNS" "yes" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "IPV6INIT" "no" 
-setConfig "/etc/sysconfig/network-scripts/ifcfg-eth0" "NM_CONTROLLED" "no" 
+remove-item -force /etc/sysconfig/network-scripts/ifcfg-eth0
 
-$cont=get-content /etc/sysconfig/network-scripts/ifcfg-eth0
-$cont -replace "DNS.*","" | out-file -encoding UTF8 /etc/sysconfig/network-scripts/ifcfg-eth0
+echo "
+DEVICE=eth0
+ONBOOT=yes
+BOOTPROTO=dhcp
+TYPE=Ethernet 
+USERCTL=no
+PEERDNS=yes
+IPV6INIT=no
+NM_CONTROLLED=no" | set-content -encoding UTF8 /etc/sysconfig/network-scripts/ifcfg-eth0
 
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 
