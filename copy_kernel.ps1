@@ -119,14 +119,6 @@ if ($linuxOs -eq '"centos"') {
     phoneHome "Debian Kernel name is $DebKernName" 
 
     #
-    #  Construct the right version from the file name
-    #
-    $kernelVerionSplit=$kernelVersion -split "-"
-    $kernelVersion=$kernelVersionSplit[2]+"-"+$kernelVersionSplit[4]
-    phoneHome "Kernel version is $kernelVersion" 
-    $kernelVersion | Out-File -Path "/root/expected_version"
-
-    #
     #  Debian
     #
     $kernDevName=(get-childitem linux-image-*.deb)[1].Name
