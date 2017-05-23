@@ -74,7 +74,12 @@ echo "Setting up new GRUB"
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
 echo "Fixing OMI"
-get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding UTF8 /etc/opt/omi/conf/omiserver.conf
+get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding ASCII /etc/opt/omi/conf/omiserver.conf
+
+echo "Allowing OMI port through the firewall"
+systemctl stop firewalld
+firewall-cmd --zone=public --add-port=443/tcp --permanent
+systemctl start firewalld
 
 echo "Installing Python and WAAgent"
 curl -o /etc/yum.repos.d/openlogic.repo https://raw.githubusercontent.com/szarkos/AzureBuildCentOS/master/config/azure/OpenLogic.repo
