@@ -73,6 +73,9 @@ $grubLine=$grubLine -replace '"$',' rootdelay=300 console=ttyS0 earlyprintk=ttyS
 echo "Setting up new GRUB"
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
+echo "Fixing OMI"
+get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding UTF8 /etc/opt/omi/conf/omiserver.conf
+
 echo "Installing Python and WAAgent"
 curl -o /etc/yum.repos.d/openlogic.repo https://raw.githubusercontent.com/szarkos/AzureBuildCentOS/master/config/azure/OpenLogic.repo
 curl -o /etc/pki/rpm-gpg/OpenLogic-GPG-KEY https://raw.githubusercontent.com/szarkos/AzureBuildCentOS/master/config/OpenLogic-GPG-KEY
