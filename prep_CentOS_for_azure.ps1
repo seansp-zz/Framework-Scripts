@@ -68,7 +68,7 @@ $grubLine=$grubLine -replace '"$',' rootdelay=300 console=ttyS0 earlyprintk=ttyS
 #
 #  And finally write it back to the file
 #
-(Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX=.*',$grubLine | Set-Content -encoding UTF8 /etc/default/grub
+(Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX=.*',$grubLine | Set-Content -encoding ASCII /etc/default/grub
 
 echo "Setting up new GRUB"
 grub2-mkconfig -o /boot/grub2/grub.cfg
