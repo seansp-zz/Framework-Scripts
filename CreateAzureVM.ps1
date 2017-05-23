@@ -3,19 +3,20 @@
 #
 # Variables for common values
 $resourceGroup = "azureSmokeResourceGroup"
+$rg=$resourceGroup
+$nm="azuresmokestoragesccount"
 $location = "westus"
-$vmName = "azureSmokeVM"
+$vmName = "azureSmokeVM-1"
 
 echo "********************************************************************"
 echo "*              BORG, Phase II -- Assimilation by Azure             *"
 echo "********************************************************************"
 
 # Login-AzureRmAccount -Credential $cred
-$rg="azuresmokeresourcegroup"
-$tempRg="azureTempResourceGroup"
-$tempRg2="azureTempResourceGroupSecond"
-$nm="azuresmokestoragesccount"
-$cn="azuresmokecontainer"
+$tempRg="azureTempResourceGroup-5"
+$tempRg2="azureTempResourceGroupSecond-5"
+$cn="azuresmokecontainer-5"
+
 $diskname="osdev64-cent7"
 $diskUri="https://$nm.blob.core.windows.net/$cn/osdev64-cent7.vhd"
 $imageName="MSKernelTestImage"
