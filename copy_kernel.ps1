@@ -110,7 +110,7 @@ if ($linuxOs -eq '"centos"') {
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    grub2-reboot 0
+    grub2-set-default 0
 } else {
     #
     #  Figure out the kernel name
