@@ -17,7 +17,7 @@ function setConfig( $file, $key, $value ) {
 
 echo "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local
-rem-ve-item -force -recurse /root/dns
+remove-item -force -recurse /root/dns
 
 echo "setting network script"
 setConfig "/etc/sysconfig/network" "NETWORKING" "yes" 
