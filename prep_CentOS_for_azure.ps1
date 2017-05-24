@@ -15,6 +15,14 @@ function setConfig( $file, $key, $value ) {
     }
 }
 
+echo "Configuring OMI for SSL"
+get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding ASCII /etc/opt/omi/conf/omiserver.conf
+
+echo "Allowing OMI port through the firewall"
+firewall-cmd --zone=public --add-port=443/tcp --permanent
+systemctl stop firewalld
+systemctl start firewalld
+
 echo "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local
 remove-item -force -recurse /root/dns
@@ -72,14 +80,6 @@ $grubLine=$grubLine -replace '"$',' rootdelay=300 console=ttyS0 earlyprintk=ttyS
 
 echo "Setting up new GRUB"
 grub2-mkconfig -o /boot/grub2/grub.cfg
-
-echo "Fixing OMI"
-get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding ASCII /etc/opt/omi/conf/omiserver.conf
-
-echo "Allowing OMI port through the firewall"
-systemctl stop firewalld
-firewall-cmd --zone=public --add-port=443/tcp --permanent
-systemctl start firewalld
 
 echo "Installing Python and WAAgent"
 curl -o /etc/yum.repos.d/openlogic.repo https://raw.githubusercontent.com/szarkos/AzureBuildCentOS/master/config/azure/OpenLogic.repo
