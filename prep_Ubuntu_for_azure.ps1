@@ -15,11 +15,28 @@ function setConfig( $file, $key, $value ) {
     }
 }
 
-echo "Getting rid of updatedns"
+function callItIn($c, $m) {
+    $output_path="c:\temp\$c"
+
+    $m | out-file -Append $output_path
+    return
+}
+
+function phoneHome($m) {
+
+    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+}
+
+$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+$c = $linuxInfo.ID
+$c=$c -replace '"',""
+$c=$c+"-prep_for_azure"
+
+phonehome "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local
 remove-item -force -recurse /root/dns
 
-echo "Fixing sources"
+phonehome "Fixing sources"
 (Get-Content /etc/apt/sources.list) -replace "[a-z][a-z].archive.ubuntu.com","azure.archive.ubuntu.com" | out-file -encoding ASCII -path /etc/apt/sources.list
 apt-get -y update
 apt-get -y dist-upgrade
@@ -29,7 +46,7 @@ apt-get -y dist-upgrade
 #
 #  Get the existing command line
 #
-echo "Fixing GRUB"
+phonehome "Fixing GRUB"
 $grubLine='GRUB_CMDLINE_LINUX_DEFAULT="console=tty1 console=ttyS0,115200n8 earlyprintk=ttyS0,115200 rootdelay=300"'
 
 #
@@ -37,16 +54,16 @@ $grubLine='GRUB_CMDLINE_LINUX_DEFAULT="console=tty1 console=ttyS0,115200n8 early
 #
 (Get-Content /etc/default/grub) -replace 'GRUB_CMDLINE_LINUX_DEFAULT=.*',$grubLine | Set-Content -encoding ASCII /etc/default/grub
 
-echo "Setting up new GRUB"
+phonehome "Setting up new GRUB"
 update-grub
 
-echo "Fixing OMI"
+phonehome "Fixing OMI"
 get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding ASCII /etc/opt/omi/conf/omiserver.conf
 
-echo "Allowing OMI port through the firewall"
+phonehome "Allowing OMI port through the firewall"
 ufw allow 443
 
-echo "Installing Python and WAAgent"
+phonehome "Installing Python and WAAgent"
 apt-get -y update
 apt-get -y install walinuxagent
 
@@ -56,7 +73,7 @@ setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource"
 setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
 setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
 
-echo "Deprovisioning..."
-# waagent -force -deprovision
-# exit
+phonehome "Deprovisioning..."
+waagent -force -deprovision
+shutdown now
 
