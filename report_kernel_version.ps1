@@ -35,4 +35,19 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Success $kernel_name"
 }
 
+$c = $linuxInfo.ID
+$c=$c -replace '"',""
+$c=$c+"-prep_for_azure"
+$linuxOs = $linuxInfo.ID
+phoneHome "Preparing VMs for Azure insertion..."
+
+if ($linuxOs -eq '"centos"') {
+    /root/Framework-Scripts/prep_CentOS_for_azure.ps1
+} else {
+    /root/Framework-Scripts/prep_Ubuntu_for_azure.ps1
+}
+
+#
+#  The following line will never be executed, because the prep_ scripts shut the machine down
+#
 remove-pssession $s
