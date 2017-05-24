@@ -21,8 +21,8 @@ remove-item -force -recurse /root/dns
 
 echo "Fixing sources"
 (Get-Content /etc/apt/sources.list) -replace "[a-z][a-z].archive.ubuntu.com","azure.archive.ubuntu.com" | out-file -encoding ASCII -path /etc/apt/sources.list
-apt-get update
-apt-get dist-upgrade
+apt-get -y update
+apt-get -y dist-upgrade
 
 #
 #  Modify GRUB for Azure
@@ -47,8 +47,8 @@ echo "Allowing OMI port through the firewall"
 ufw allow 443
 
 echo "Installing Python and WAAgent"
-apt-get update
-apt-get install walinuxagent
+apt-get -y update
+apt-get -y install walinuxagent
 
 setConfig "/etc/waagent.conf" "ResourceDisk.Format" "y" 
 setConfig "/etc/waagent.conf" "ResourceDisk.Filesystem" "ext4" 
