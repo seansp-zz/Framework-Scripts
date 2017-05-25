@@ -27,6 +27,10 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
+$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
@@ -35,6 +39,9 @@ $c=$c+"-prep_for_azure"
 phonehome "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local
 remove-item -force -recurse /root/dns
+
+phonehome "Setting up firewall disable runonce script"
+ubuntu_disable_firewall
 
 phonehome "Fixing sources"
 (Get-Content /etc/apt/sources.list) -replace "[a-z][a-z].archive.ubuntu.com","azure.archive.ubuntu.com" | out-file -encoding ASCII -path /etc/apt/sources.list
@@ -72,8 +79,4 @@ setConfig "/etc/waagent.conf" "ResourceDisk.Filesystem" "ext4"
 setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource" 
 setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
 setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
-
-phonehome "Deprovisioning..."
-waagent -force -deprovision
-shutdown now
 
