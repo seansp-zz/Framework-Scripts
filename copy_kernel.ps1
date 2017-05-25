@@ -98,6 +98,11 @@ if ($linuxOs -eq '"centos"') {
     $kernelDevelName="kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
 
+    phoneHome "Making sure the firewall is configured" 
+    firewall-cmd --zone=public --add-port=443/tcp --permanent
+    systemctl stop firewalld
+    systemctl start firewalld
+
     #
     #  Install the new kernel
     #
@@ -123,6 +128,13 @@ if ($linuxOs -eq '"centos"') {
     #
     $kernDevName=(get-childitem linux-image-*.deb)[1].Name
     phoneHome "Kernel Devel Package name is $kernDevName" 
+
+    #
+    #  Make sure it's up to date
+    #
+    phoneHome "Getting the system current" 
+    apt-get -y update
+    apt-get -y dist-upgrade
 
     phoneHome "Installing the DEB kernel devel package" 
     dpkg -i $kernDevName
