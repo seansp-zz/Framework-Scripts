@@ -115,7 +115,3 @@ setConfig "/etc/waagent.conf" "ResourceDisk.MountPoint" "/mnt/resource"
 setConfig "/etc/waagent.conf" "ResourceDisk.EnableSwap" "y" 
 setConfig "/etc/waagent.conf" "ResourceDisk.SwapSizeMB" "2048" 
 
-phonehome "Deprovisioning..."
-waagent -force -deprovision
-shutdown now
-

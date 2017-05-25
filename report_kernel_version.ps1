@@ -23,31 +23,47 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
-$c=$c+"-boot"
+
+$c=$c+"-prep_for_azure"
+$linuxOs = $linuxInfo.ID
+phoneHome "Preparing VMs for Azure insertion..."
 
 $kernel_name=uname -r
 $expected=Get-Content /root/expected_version
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
+    phoneHome "Azure insertion cancelled because OS version did not match expected..."
+
+    $c = $linuxInfo.ID
+    $c=$c -replace '"',""
+    $c=$c+"-boot"
+
     phoneHome "Failed $kernel_name $expected"
+
+    remove-pssession $s
+
+    exit 1
 } else {
-    echo "Passed"
+    echo "Passed.  Preparing for Azure"
+
+    if ($linuxOs -eq '"centos"') {
+        /root/Framework-Scripts/prep_CentOS_for_azure.ps1
+    } else {
+        /root/Framework-Scripts/prep_Ubuntu_for_azure.ps1
+    }
+    echo "Complete.  Comcluding and deprovisioning"
+
+    $c = $linuxInfo.ID
+    $c=$c -replace '"',""
+    $c=$c+"-boot"
+
     phoneHome "Success $kernel_name"
+
+    remove-pssession $s
+
+    waagent -force -deprovision
+    shutdown now
+
+    exit 0
 }
 
-$c = $linuxInfo.ID
-$c=$c -replace '"',""
-$c=$c+"-prep_for_azure"
-$linuxOs = $linuxInfo.ID
-phoneHome "Preparing VMs for Azure insertion..."
-
-if ($linuxOs -eq '"centos"') {
-    /root/Framework-Scripts/prep_CentOS_for_azure.ps1
-} else {
-    /root/Framework-Scripts/prep_Ubuntu_for_azure.ps1
-}
-
-#
-#  The following line will never be executed, because the prep_ scripts shut the machine down
-#
-remove-pssession $s
