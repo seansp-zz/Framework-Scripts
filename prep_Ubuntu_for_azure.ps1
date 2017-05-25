@@ -27,6 +27,10 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
+$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
