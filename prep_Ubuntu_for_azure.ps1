@@ -40,6 +40,9 @@ phonehome "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local
 remove-item -force -recurse /root/dns
 
+phonehome "Setting up firewall disable runonce script"
+ubuntu_disable_firewall
+
 phonehome "Fixing sources"
 (Get-Content /etc/apt/sources.list) -replace "[a-z][a-z].archive.ubuntu.com","azure.archive.ubuntu.com" | out-file -encoding ASCII -path /etc/apt/sources.list
 apt-get -y update

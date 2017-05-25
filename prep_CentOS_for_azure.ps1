@@ -39,11 +39,6 @@ $c=$c+"-prep_for_azure"
 phonehome "Configuring OMI for SSL"
 get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding ASCII /etc/opt/omi/conf/omiserver.conf
 
-phonehome "Allowing OMI port through the firewall"
-firewall-cmd --zone=public --add-port=443/tcp --permanent
-systemctl stop firewalld
-systemctl start firewalld
-
 phonehome "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local
 remove-item -force -recurse /root/dns
@@ -54,6 +49,9 @@ setConfig "/etc/sysconfig/network" "HOSTNAME" "localhost.localdomain"
 
 phonehome "Removing old ifcfg script"
 remove-item -force /etc/sysconfig/network-scripts/ifcfg-eth0
+
+phonehome "Setting firewall script to runonce"
+copy-Item -Path "/root/Framework-Scripts/cent_disable_firewall.ps1" -Destination "/root/runonce.d"
 
 phonehome "setting up new ifcfg script"
 phonehome '
