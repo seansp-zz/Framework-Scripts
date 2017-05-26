@@ -54,7 +54,7 @@ phonehome "Setting firewall script to runonce"
 copy-Item -Path "/root/Framework-Scripts/cent_disable_firewall.ps1" -Destination "/root/runonce.d"
 
 phonehome "setting up new ifcfg script"
-phonehome '
+echo '
 DEVICE=eth0
 ONBOOT=yes
 BOOTPROTO=dhcp
@@ -63,6 +63,7 @@ USERCTL=no
 PEERDNS=yes
 IPV6INIT=no
 NM_CONTROLLED=no' | set-content -encoding UTF8 /etc/sysconfig/network-scripts/ifcfg-eth0
+
 chmod 755 /etc/sysconfig/network-scripts/ifcfg-*
 
 phonehome "Linking the rules"
