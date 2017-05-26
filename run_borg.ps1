@@ -1,10 +1,11 @@
-$global:completed=0
+﻿$global:completed=0
 $global:elapsed=0
 $global:interval=500
 $global:boot_timeout_minutes=15
 $global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
 $global:found_centos=0
 $global:found_ubuntu=0
+$global:failed=0
 $global:ubunResults=""
 $global:centResults=""
 
@@ -77,8 +78,10 @@ Write-Host "    "
 Write-Host "Cleaning up sentinel files..."
 remove-item -ErrorAction "silentlycontinue" c:\temp\centos
 remove-item -ErrorAction "silentlycontinue" c:\temp\centos-boot
+remove-item -ErrorAction "silentlycontinue" c:\temp\centos-prep_for_azure
 remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu
 remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu-boot
+remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu-prep_for_azure
 
 # 
 Write-Host "Restoring VM Snapshots"
@@ -144,22 +147,22 @@ write-host "Checking results"
 if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
     Write-Host "Both machines have come back up.  Checking versions."
     
-    $failed=0
+    $blobal:failed=0
     if ($global:centResults[0] -ne "Success") {
         Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]"
-        $failed=1
+        $global:failed=1
     } else {
         Write-Host "CentOS machine rebooted successfully to kernel version $global:centResults[1]"
     }
 
     if ($global:ubunResults[0] -ne "Success") {
         Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $global:ubunResults[2] but got $global:ubunResults[1]"
-        $failed=1
+        $global:failed=1
     } else {
         Write-Host "Ubuntu machine rebooted successfully to kernel version $global:ubunResults[1]"
     }
 
-    if ($failed -eq 0) {
+    if ($global:failed -eq 0) {
         write-host "BORG has been passed successfully!"
     } else {
         write-host "BORG TESTS HAVE FAILED!!"
@@ -183,7 +186,35 @@ if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
         }
     }
 
-Write-Host "Stopping VMs"
-stop-vm -name "CentOS 7.1 MSLK Test 1"
-stop-vm -name "Ubuntu 1604 MSLK Test 1"
+Write-Host "Log files:"
+Write-Host ""
+Write-Host "CentOS install log:"
+get-content \temp\centos | write-host
+
+Write-Host ""
+Write-Host "CentOS boot results log:"
+get-content \temp\centos-boot | write-host
+
+Write-Host ""
+Write-Host "CentOS Azure Prep log:"
+get-content \temp\centos-prep_for_azure | write-host
+
+Write-Host ""
+Write-Host "Ubuntu install log:"
+get-content \temp\ubuntu | write-host
+
+Write-Host ""
+Write-Host "Ubuntu boot results log:"
+get-content \temp\ubuntu-boot | write-host
+
+Write-Host ""
+Write-Host "Ubuntu Azure Prep log:"
+get-content \temp\ubuntu-prep_for_azure | write-host
+
 Write-Host "Thanks for Playing"
+
+if ($global:failed -eq 0) {
+    exit 0
+} else {
+    exit 1
+}
