@@ -56,7 +56,7 @@ $action={
     if ($global:completed -eq 1) {
         write-host "Completed = $global:completed.  Stopping timer"             
     } else {
-        if (($global:elapsed % 5000) -eq 0) {
+        if (($global:elapsed % 10000) -eq 0) {
             Write-Host "Waiting for remote machines to boot..."
             if (((test-path "c:\temp\centos") -eq 1) -and ($global:found_centos -eq 0)) {
                 write-host "---"
@@ -148,7 +148,7 @@ write-host "Checking results"
 if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
     Write-Host "Both machines have come back up.  Checking versions."
     
-    $blobal:failed=0
+    $global:failed=0
     if ($global:centResults[0] -ne "Success") {
         Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]"
         $global:failed=1
