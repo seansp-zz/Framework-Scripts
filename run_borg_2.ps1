@@ -17,7 +17,7 @@ $tempRg1CentOS="azureTempResourceGroup-4"
 $tempRg1Ubuntu="azureTempResourceGroup-4A"
 $tempRg2CentOS="azureTempResourceGroupSecond-4"
 $tempRg2Ubuntu="azureTempResourceGroupSecond-4A"
-$cn="azuresmokecontainer-4"
+$cn="azuresmokecontainer"
 
 $centdiskname="osdev64-cent7"
 $centdiskUri="https://$nm.blob.core.windows.net/$cn/osdev64-cent7.vhd"
@@ -45,10 +45,6 @@ echo "Whew!  That was painful.  Note to self -- make sure we have to do all of t
 echo "Setting the Azure Storage Account"
 # New-AzureRmStorageAccount -ResourceGroupName $rg -Name $nm -Location westus -SkuName "Standard_LRS" -Kind "Storage"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
-
-echo "Removing and re-creating the container"
-remove-AzureStorageContainer -name $cn -force
-New-AzureStorageContainer -Name $cn -Permission Off 
 
 # $azureCentOSSourceImage="https://azuresmokestoragesccount.blob.core.windows.net/azuresmokecontainer/osdev64-cent7.vhd"
 $azureCentOSTargetImage="/osdev64-cent7.vhd"
@@ -318,8 +314,6 @@ if (($expected_ver.CompareTo($CentOS_installed_vers) -eq 0) -and ($expected_ver.
 #
 #  Clean up
 #
-echo "Removing the container"
-remove-AzureStorageContainer -name $cn -force
 echo "Removing resource groups."
 echo "First, $tempRg1CentOS"
 Remove-AzureRmResourceGroup -Name $tempRg1CentOS -Force
