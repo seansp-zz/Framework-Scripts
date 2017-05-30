@@ -13,10 +13,10 @@ echo "*              BORG, Phase II -- Assimilation by Azure             *"
 echo "********************************************************************"
 
 # Login-AzureRmAccount -Credential $cred
-$tempRg1CentOS="azureTempResourceGroup-3"
-$tempRg1Ubuntu="azureTempResourceGroup-3A"
-$tempRg2CentOS="azureTempResourceGroupSecond-3"
-$tempRg2Ubuntu="azureTempResourceGroupSecond-3A"
+$tempRg1CentOS="azureTempResourceGroup-4"
+$tempRg1Ubuntu="azureTempResourceGroup-4A"
+$tempRg2CentOS="azureTempResourceGroupSecond-4"
+$tempRg2Ubuntu="azureTempResourceGroupSecond-4A"
 $cn="azuresmokecontainer-4"
 
 $centdiskname="osdev64-cent7"
@@ -54,17 +54,20 @@ New-AzureStorageContainer -Name $cn -Permission Off
 $azureCentOSTargetImage="/osdev64-cent7.vhd"
 $azureCentOSDiskImage='D:\Exported Images\CentOS 7.1 MSLK Test 1\Virtual Hard Disks\osdev64-cent7.vhd'
 $hvCentOSVMName="CentOS 7.1 MSLK Test 1"
+$CentOSvmName="CentOSSmoke1"
+$CentOScomputerName="Cent71-mslk-test-1"
 
 $azureUbuntuTargetImage="/ubun16x64dev.vhd"
 $azureUbuntuDiskImage='D:\Exported Images\Ubuntu 1604 MSLK Test 1\Virtual Hard Disks\ubun16x64dev.vhd'
 $hvUbuntuVMName="Ubuntu 1604 MSLK Test 1"
+$UbuntuvmName="UbuntuSmoke1"
+$UbuntucomputerName="Ubuntu-1604-mslk-test-1"
 
 #
 #  Create the checkpoint and snapshot
 #
 echo "Clearing the old VHD checkpoint directory"
-remove-item "D:\Exported Images\$hvCentOSVMName" -recurse -force
-remove-item "D:\Exported Images\$hvUbuntuVMName" -recurse -force
+remove-item "D:\Exported Images\*" -exclude ubuntu-1604-MSLK-Test-1 -recurse -force
 
 echo "Stopping the running VMs"
 Stop-VM -Name $hvCentOSVMName
@@ -89,12 +92,12 @@ $sas = $c | New-AzureStorageContainerSASToken -Permission rwdl
 $CentOSblob = $c.CloudBlobContainer.Uri.ToString() + $azureCentOSTargetImage 
 $CentOSuploadURI = $CentOSblob + $sas
 echo "Uploading the CentOS VHD blob to the cloud"
-Add-AzureRmVhd -Destination $CentOSuploadURI -LocalFilePath $azureCentOSDiskImage
-
+Add-AzureRmVhd -Destination $CentOSuploadURI -LocalFilePath $azureCentOSDiskImage -NumberOfUploaderThreads 32
+ 
 $Ubuntublob = $c.CloudBlobContainer.Uri.ToString() + $azureUbuntuTargetImage 
 $UbuntuuploadURI = $Ubuntublob + $sas
 echo "Uploading the Ubuntu VHD blob to the cloud"
-Add-AzureRmVhd -Destination $UbuntuuploadURI -LocalFilePath $azureUbuntuDiskImage
+Add-AzureRmVhd -Destination $UbuntuuploadURI -LocalFilePath $azureUbuntuDiskImage -NumberOfUploaderThreads 32
 
 #
 #  Go from generalized to specialized state for CentOS
@@ -129,8 +132,8 @@ echo "Logging in to Azure for Azure CLI..."
 az login --service-principal -u 58cfc776-5d1b-4872-bcdb-08ce60b9a66c --tenant 72f988bf-86f1-41af-91ab-2d7cd011db47 --password 'P@{P@$$w0rd!}w0rd!'
 
 echo "Thank you.  Creating CentOS Azure VM..."
-az vm create -g $tempRg1CentOS -n vm3 --image $CentOSimageName --generate-ssh-keys
-az vm create -g $tempRg1Ubuntu -n vm3 --image $UbuntuimageName --generate-ssh-keys
+az vm create -g $tempRg1CentOS -n $CentOSvmName --image $CentOSimageName --generate-ssh-keys
+az vm create -g $tempRg1Ubuntu -n $UbuntuvmName --image $UbuntuimageName --generate-ssh-keys
 
 #
 #  Try starting it up
@@ -182,8 +185,6 @@ echo "Creating a NIC"
 $nic = New-AzureRmNetworkInterface -Name smokeNic -ResourceGroupName $tempRg2CentOS -Location $location `
   -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id -NetworkSecurityGroupId $nsg.Id
 
-$CentOSvmName="CentOSSmoke1"
-$CentOScomputerName="Cent71-mslk-test-1"
 
 $vmSize = "Standard_DS1_v2"
 
@@ -256,8 +257,6 @@ echo "Creating a NIC"
 $nic = New-AzureRmNetworkInterface -Name smokeNic -ResourceGroupName $tempRg2Ubuntu -Location $location `
   -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id -NetworkSecurityGroupId $nsg.Id
 
-$UbuntuvmName="UbuntuSmoke1"
-$UbuntucomputerName="Ubuntu-1604-mslk-test-1"
 
 $vmSize = "Standard_DS1_v2"
 
@@ -289,7 +288,7 @@ $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "azureuser",$pw
 
 $CentOSip=Get-AzureRmPublicIpAddress -ResourceGroupName $tempRg2CentOS
-$centOSs=new-PSSession -computername $CentOSip.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+$CentOSs=new-PSSession -computername $CentOSip.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
 $CentOS_installed_vers=invoke-command -session $CentOSs -ScriptBlock {/bin/uname -r}
 remove-pssession $CentOSs
 
@@ -302,10 +301,10 @@ $expected_boot=Get-Content C:\temp\centos-boot
 $expected_ver=$expected_boot.split(" ")[1]
 
 echo "Stopping the VMs"
-Stop-AzureRmVm -ResourceGroupName $tempRg1CentOS -name $CentOSvmName
-Stop-AzureRmVm -ResourceGroupName $tempRg1Ubuntu -name $UbuntuvmName
-Stop-AzureRmVm -ResourceGroupName $tempRg2CentOS -name $CentOSvmName
-Stop-AzureRmVm -ResourceGroupName $tempRg2Ubuntu -name $UbuntuvmName
+Stop-AzureRmVm -force -ResourceGroupName $tempRg1CentOS -name $CentOSvmName
+Stop-AzureRmVm -force -ResourceGroupName $tempRg1Ubuntu -name $UbuntuvmName
+Stop-AzureRmVm -force -ResourceGroupName $tempRg2CentOS -name $CentOSvmName
+Stop-AzureRmVm -force -ResourceGroupName $tempRg2Ubuntu -name $UbuntuvmName
 
 #
 #  Removing the resource groups takes a long time, and I'd like to know how it went...
@@ -319,6 +318,8 @@ if (($expected_ver.CompareTo($CentOS_installed_vers) -eq 0) -and ($expected_ver.
 #
 #  Clean up
 #
+echo "Removing the container"
+remove-AzureStorageContainer -name $cn -force
 echo "Removing resource groups."
 echo "First, $tempRg1CentOS"
 Remove-AzureRmResourceGroup -Name $tempRg1CentOS -Force

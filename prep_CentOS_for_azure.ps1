@@ -54,7 +54,7 @@ phonehome "Setting firewall script to runonce"
 copy-Item -Path "/root/Framework-Scripts/cent_disable_firewall.ps1" -Destination "/root/runonce.d"
 
 phonehome "setting up new ifcfg script"
-phonehome '
+echo '
 DEVICE=eth0
 ONBOOT=yes
 BOOTPROTO=dhcp
