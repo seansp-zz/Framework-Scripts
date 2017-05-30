@@ -1,7 +1,7 @@
 ﻿$global:completed=0
 $global:elapsed=0
 $global:interval=500
-$global:boot_timeout_minutes=15
+$global:boot_timeout_minutes=20
 $global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
 $global:found_centos=0
 $global:found_ubuntu=0
@@ -31,7 +31,7 @@ $action={
             Write-Host "CentOS machine rebooted successfully to kernel version $global:centResults[1]"
         }
 
-                $global:found_centos=1
+        $global:found_centos=1
     }
 
     if (($global:found_ubuntu -eq 0) -and (Test-Path -path "c:\temp\ubuntu-boot") -eq 1) {
@@ -55,6 +55,32 @@ $action={
 
     if ($global:completed -eq 1) {
         write-host "Completed = $global:completed.  Stopping timer"             
+    } else {
+        if (($global:elapsed % 5000) -eq 0) {
+            Write-Host "Waiting for remote machines to boot..."
+            if (((test-path "c:\temp\centos") -eq 1) -and ($global:found_centos -eq 0)) {
+                write-host "---"
+                write-host "Last 3 lines from Centos:"
+                get-content "c:\temp\centos" | Select-Object -Last 3 | write-host
+                write-host "---"
+            } else {
+                if ($global:found_centos -eq 0) {
+                    Write-Host "CentOS machine has not checked in yet"
+                }
+            }
+
+            if (((test-path "c:\temp\ubuntu") -eq 1) -and $global:found_ubuntu -eq 0) {
+                write-host "---"
+                write-host "Last 3 lines from Ubuntu:"
+                get-content "c:\temp\ubuntu" | Select-Object -Last 3 | write-host
+                write-host "---"
+            } else {
+                if ($global:found_ubuntu -eq 0) {
+                    Write-Host "Ubuntu machine has not checked in yet"
+                }
+            }
+            [Console]::Out.Flush() 
+        }
     }
 }
 
@@ -110,31 +136,6 @@ $timer.Enabled = $true
 $timer.start()
 
 while ($global:completed -eq 0) {
-    if (($global:elapsed % 30000) -eq 0) {
-        Write-Host "Waiting for remote machines to boot..."
-        if (((test-path "c:\temp\centos") -eq 1) -and ($global:found_centos -eq 0)) {
-            write-host "---"
-            write-host "Last 3 lines from Centos:"
-            get-content "c:\temp\centos" | Select-Object -Last 3 | write-host
-            write-host "---"
-        } else {
-            if ($global:found_centos -eq 0) {
-                Write-Host "CentOS machine has not checked in yet"
-            }
-        }
-
-        if (((test-path "c:\temp\ubuntu") -eq 1) -and $global:found_ubuntu -eq 0) {
-            write-host "---"
-            write-host "Last 3 lines from Ubuntu:"
-            get-content "c:\temp\ubuntu" | Select-Object -Last 3 | write-host
-            write-host "---"
-        } else {
-            if ($global:found_ubuntu -eq 0) {
-                Write-Host "Ubuntu machine has not checked in yet"
-            }
-        }
-        [Console]::Out.Flush() 
-    }
     start-sleep -s 1
 }
 
