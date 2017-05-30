@@ -17,7 +17,7 @@ $tempRg1CentOS="azureTempResourceGroup-4"
 $tempRg1Ubuntu="azureTempResourceGroup-4A"
 $tempRg2CentOS="azureTempResourceGroupSecond-4"
 $tempRg2Ubuntu="azureTempResourceGroupSecond-4A"
-$cn="azuresmokecontainer"
+$cn="azuresmokestoragecontainer"
 
 $centdiskname="osdev64-cent7"
 $centdiskUri="https://$nm.blob.core.windows.net/$cn/osdev64-cent7.vhd"
@@ -72,14 +72,21 @@ Stop-VM -Name $hvUbuntuVMName
 echo "Creating checkpoints..."
 
 echo "First CentOS..."
+Get-VM $hvCentOSVMName | Remove-VMSnapshot -Name "Ready for Azure"
 Checkpoint-vm -Name $hvCentOSVMName -Snapshotname "Ready for Azure"
 echo "CentOS Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvCentOSVMName -path 'D:\Exported Images\'
 
 echo "Then Ubuntu..."
+Get-VM $hvUbuntuVMName | Remove-VMSnapshot -Name "Ready for Azure"
 Checkpoint-vm -Name $hvUbuntuVMName -Snapshotname "Ready for Azure"
 echo "Ubuntu Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvUbuntuVMName -path 'D:\Exported Images\'
+
+#
+#  Clear anything in the storage container
+#
+Get-AzureStorageBlob -Container $cn -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $cn}
 
 #
 #  Copy the blob to the storage container
