@@ -75,13 +75,17 @@ echo "Creating checkpoints..."
 
 echo "First CentOS..."
 Get-VM $hvCentOSVMName | Remove-VMSnapshot -Name "Ready for Azure"
+# sleep 10
 Checkpoint-vm -Name $hvCentOSVMName -Snapshotname "Ready for Azure"
+# sleep 10
 echo "CentOS Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvCentOSVMName -path 'D:\Exported Images\'
 
 echo "Then Ubuntu..."
 Get-VM $hvUbuntuVMName | Remove-VMSnapshot -Name "Ready for Azure"
+# sleep 10
 Checkpoint-vm -Name $hvUbuntuVMName -Snapshotname "Ready for Azure"
+# sleep 10
 echo "Ubuntu Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvUbuntuVMName -path 'D:\Exported Images\'
 
