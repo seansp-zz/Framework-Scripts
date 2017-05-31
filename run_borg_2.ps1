@@ -83,14 +83,14 @@ Get-AzureStorageBlob -Container $cn -blob * | ForEach-Object {Remove-AzureStorag
 $c = Get-AzureStorageContainer -Name $cn
 $sas = $c | New-AzureStorageContainerSASToken -Permission rwdl
 $CentOSblob = $c.CloudBlobContainer.Uri.ToString() + $azureCentOSTargetImage 
-$CentOSuploadURI = $CentOSblob + $sas
+$CentOSuploadURI = $CentOSblob + $s
 echo "Uploading the CentOS VHD blob to the cloud"
-Add-AzureRmVhd -Destination $CentOSuploadURI -LocalFilePath $azureCentOSDiskImage -NumberOfUploaderThreads 32
+Add-AzureRmVhd -Destination $CentOSuploadURI -LocalFilePath $azureCentOSDiskImage -NumberOfUploaderThreads 32 -OverWrite
  
 $Ubuntublob = $c.CloudBlobContainer.Uri.ToString() + $azureUbuntuTargetImage 
 $UbuntuuploadURI = $Ubuntublob + $sas
 echo "Uploading the Ubuntu VHD blob to the cloud"
-Add-AzureRmVhd -Destination $UbuntuuploadURI -LocalFilePath $azureUbuntuDiskImage -NumberOfUploaderThreads 32
+Add-AzureRmVhd -Destination $UbuntuuploadURI -LocalFilePath $azureUbuntuDiskImage -NumberOfUploaderThreads 32 -OverWrite
 
 #
 #  Go from generalized to specialized state for CentOS
