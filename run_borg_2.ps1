@@ -65,19 +65,12 @@ $UbuntucomputerName="Ubuntu-1604-mslk-test-1"
 #
 #  Create the checkpoint and snapshot
 #
-echo "Creating checkpoints..."
+echo "Creating VM snapshots..."
 
 echo "First CentOS..."
-Checkpoint-vm -Name $hvCentOSVMName -Snapshotname "Ready for Azure"
-sleep 10
-echo "CentOS Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvCentOSVMName -path 'D:\Exported Images\'
 
 echo "Then Ubuntu..."
-
-Checkpoint-vm -Name $hvUbuntuVMName -Snapshotname "Ready for Azure"
-sleep 10
-echo "Ubuntu Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvUbuntuVMName -path 'D:\Exported Images\'
 
 #

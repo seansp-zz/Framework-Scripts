@@ -221,7 +221,12 @@ get-content \temp\ubuntu-prep_for_azure | write-host
 
 
 if ($global:failed -eq 0) {    
-    Write-Host "Exiting with success.  Thanks for Playing"
+    Write-Host "Exiting with success."
+    echo "Creating checkpoints.  FIrst CentOS..." 
+    Checkpoint-vm -Name $hvCentOSVMName -Snapshotname "Ready for Azure"
+    Write-Host "Then Ubuntu..."
+    Checkpoint-vm -Name $hvUbuntuVMName -Snapshotname "Ready for Azure"
+    Write-Host "Thanks for playing!"
     exit 0
 } else {
     Write-Host "Exiting with failure.  Thanks for Playing"
