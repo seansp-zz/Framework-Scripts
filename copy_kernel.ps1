@@ -158,4 +158,4 @@ phoneHome "Rebooting now..."
 
 remove-pssession $s
 
-reboot
+shutdown -r
