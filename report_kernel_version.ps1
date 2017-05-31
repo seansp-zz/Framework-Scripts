@@ -62,7 +62,7 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
     remove-pssession $s
 
     waagent -force -deprovision
-    shutdown now
+    shutdown
 
     exit 0
 }
