@@ -68,8 +68,8 @@ $UbuntucomputerName="Ubuntu-1604-mslk-test-1"
 
 
 echo "Stopping the running VMs"
-Stop-VM -Name $hvCentOSVMName
-Stop-VM -Name $hvUbuntuVMName
+# Stop-VM -Name $hvCentOSVMName
+# Stop-VM -Name $hvUbuntuVMName
 
 echo "Creating checkpoints..."
 
