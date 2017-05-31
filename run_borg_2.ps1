@@ -27,6 +27,9 @@ $ubundiskname="ubun16x64dev"
 $ubundiskUri="https://$nm.blob.core.windows.net/$cn/ubun16x64dev.vhd"
 $UbuntuimageName="UbuntuMSKernelTestImage"
 
+echo "Clearing the old VHD checkpoint directory"
+remove-item "D:\Exported Images\*" -exclude ubuntu-1604-MSLK-Test-1 -recurse -force
+
 echo "Importing the context...."
 Import-AzureRmContext -Path 'D:\Boot-Ready Images\ProfileContext.ctx'
 
@@ -62,8 +65,7 @@ $UbuntucomputerName="Ubuntu-1604-mslk-test-1"
 #
 #  Create the checkpoint and snapshot
 #
-echo "Clearing the old VHD checkpoint directory"
-remove-item "D:\Exported Images\*" -exclude ubuntu-1604-MSLK-Test-1 -recurse -force
+
 
 echo "Stopping the running VMs"
 Stop-VM -Name $hvCentOSVMName
@@ -282,7 +284,7 @@ echo "And launching the VM..."
 New-AzureRmVM -VM $Ubuntuvm -ResourceGroupName $tempRg2Ubuntu -Location $location
 
 #================================================
-
+sleep 60
 #
 #  Machine should now be up.  Get the version
 #
