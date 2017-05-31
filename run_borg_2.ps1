@@ -48,7 +48,9 @@ echo "Whew!  That was painful.  Note to self -- make sure we have to do all of t
 echo "Setting the Azure Storage Account"
 # New-AzureRmStorageAccount -ResourceGroupName $rg -Name $nm -Location westus -SkuName "Standard_LRS" -Kind "Storage"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
-
+Get-VM $hvCentOSVMName | Remove-VMSnapshot -Name "Ready for Azure"
+Get-VM $hvUbuntuVMName | Remove-VMSnapshot -Name "Ready for Azure"
+sleep 30
 # $azureCentOSSourceImage="https://azuresmokestoragesccount.blob.core.windows.net/azuresmokecontainer/osdev64-cent7.vhd"
 $azureCentOSTargetImage="/osdev64-cent7.vhd"
 $azureCentOSDiskImage='D:\Exported Images\CentOS 7.1 MSLK Test 1\Virtual Hard Disks\osdev64-cent7.vhd'
@@ -74,7 +76,7 @@ echo "Stopping the running VMs"
 echo "Creating checkpoints..."
 
 echo "First CentOS..."
-Get-VM $hvCentOSVMName | Remove-VMSnapshot -Name "Ready for Azure"
+
 # sleep 10
 Checkpoint-vm -Name $hvCentOSVMName -Snapshotname "Ready for Azure"
 # sleep 10
@@ -82,7 +84,7 @@ echo "CentOS Checkpoint created.  Exporting VM"
 Export-VMSnapshot -name "Ready for Azure" -VMName $hvCentOSVMName -path 'D:\Exported Images\'
 
 echo "Then Ubuntu..."
-Get-VM $hvUbuntuVMName | Remove-VMSnapshot -Name "Ready for Azure"
+
 # sleep 10
 Checkpoint-vm -Name $hvUbuntuVMName -Snapshotname "Ready for Azure"
 # sleep 10
