@@ -109,10 +109,16 @@ remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu
 remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu-boot
 remove-item -ErrorAction "silentlycontinue" c:\temp\ubuntu-prep_for_azure
 
+Write-Host "Cleaning up snapshots in preparation for submission"
+$hvCentOSVMName="CentOS 7.1 MSLK Test 1"
+Get-VM $hvCentOSVMName | Remove-VMSnapshot -Name "Ready for Azure"
+$hvUbuntuVMName="Ubuntu 1604 MSLK Test 1"
+Get-VM $hvUbuntuVMName | Remove-VMSnapshot -Name "Ready for Azure"
+
 # 
 Write-Host "Restoring VM Snapshots"
-get-vm "CentOS 7.1 MSLK Test 1"  | Get-VMSnapshot -name "New Kernel at Startup" | Restore-VMSnapshot -Confirm:$false
-get-vm "Ubuntu 1604 MSLK Test 1"  | Get-VMSnapshot -name "New Kernel at Startup" | Restore-VMSnapshot -Confirm:$false
+get-vm $hvCentOSVMName  | Get-VMSnapshot -name "New Kernel at Startup" | Restore-VMSnapshot -Confirm:$false
+get-vm $hvUbuntuVMName  | Get-VMSnapshot -name "New Kernel at Startup" | Restore-VMSnapshot -Confirm:$false
 
 Write-Host "   "
 Write-Host "BORG CUBE is initialized.  Starting the Dedicated Remote Nodes of Execution"
@@ -120,9 +126,9 @@ Write-Host "    "
 
 # 
 Write-Host "Starting the CentOS DRONE"
-start-vm -name "CentOS 7.1 MSLK Test 1"
+start-vm -name $hvCentOSVMName
 Write-Host "Starting the Ubuntu DRONE"
-start-vm -name "Ubuntu 1604 MSLK Test 1"
+start-vm -name $hvUbuntuVMName
 
 #
 #  Wait for the two machines to report back
@@ -212,10 +218,12 @@ Write-Host ""
 Write-Host "Ubuntu Azure Prep log:"
 get-content \temp\ubuntu-prep_for_azure | write-host
 
-Write-Host "Thanks for Playing"
 
-if ($global:failed -eq 0) {
+
+if ($global:failed -eq 0) {    
+    Write-Host "Exiting with success.  Thanks for Playing"
     exit 0
 } else {
+    Write-Host "Exiting with failure.  Thanks for Playing"
     exit 1
 }
