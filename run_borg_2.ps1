@@ -13,10 +13,10 @@ echo "*              BORG, Phase II -- Assimilation by Azure             *"
 echo "********************************************************************"
 
 # Login-AzureRmAccount -Credential $cred
-$tempRg1CentOS="azureTempResourceGroup-4"
-$tempRg1Ubuntu="azureTempResourceGroup-4A"
-$tempRg2CentOS="azureTempResourceGroupSecond-4"
-$tempRg2Ubuntu="azureTempResourceGroupSecond-4A"
+$tempRg1CentOS="azureTempResourceGroup-2"
+$tempRg1Ubuntu="azureTempResourceGroup-2A"
+$tempRg2CentOS="azureTempResourceGroupSecond-2"
+$tempRg2Ubuntu="azureTempResourceGroupSecond-2A"
 $cn="azuresmokestoragecontainer"
 
 $centdiskname="osdev64-cent7"
@@ -85,12 +85,12 @@ $sas = $c | New-AzureStorageContainerSASToken -Permission rwdl
 $CentOSblob = $c.CloudBlobContainer.Uri.ToString() + $azureCentOSTargetImage 
 $CentOSuploadURI = $CentOSblob + $s
 echo "Uploading the CentOS VHD blob to the cloud"
-Add-AzureRmVhd –ResourceGroupName $rg -Destination $CentOSuploadURI -LocalFilePath $azureCentOSDiskImage -NumberOfUploaderThreads 32 -OverWrite
+Add-AzureRmVhd –ResourceGroupName $rg -Destination $CentOSuploadURI -LocalFilePath $azureCentOSDiskImage -OverWrite
  
 $Ubuntublob = $c.CloudBlobContainer.Uri.ToString() + $azureUbuntuTargetImage 
 $UbuntuuploadURI = $Ubuntublob + $sas
 echo "Uploading the Ubuntu VHD blob to the cloud"
-Add-AzureRmVhd –ResourceGroupName $rg -Destination $UbuntuuploadURI -LocalFilePath $azureUbuntuDiskImage -NumberOfUploaderThreads 32 -OverWrite
+Add-AzureRmVhd –ResourceGroupName $rg -Destination $UbuntuuploadURI -LocalFilePath $azureUbuntuDiskImage -OverWrite
 
 #
 #  Go from generalized to specialized state for CentOS
