@@ -23,8 +23,9 @@ function callItIn($c, $m) {
 }
 
 function phoneHome($m) {
+    $message="(Prep for Azure) " + $m
 
-    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$message
 }
 
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
@@ -34,7 +35,6 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
-$c=$c+"-prep_for_azure"
 
 phonehome "Configuring OMI for SSL"
 get-content /etc/opt/omi/conf/omiserver.conf | /opt/omi/bin/omiconfigeditor httpsport -a 443 | set-content -encoding ASCII /etc/opt/omi/conf/omiserver.conf

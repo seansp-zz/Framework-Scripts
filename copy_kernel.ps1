@@ -95,8 +95,9 @@ if ($linuxOs -eq '"centos"') {
     #
     #  CentOS
     #
-    $kernelDevelName="kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2]
+    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+".rpm"
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
+    $kernelPackageName=$kernelName+".rpm"
 
     phoneHome "Making sure the firewall is configured" 
     firewall-cmd --zone=public --add-port=443/tcp --permanent
@@ -106,10 +107,10 @@ if ($linuxOs -eq '"centos"') {
     #
     #  Install the new kernel
     #
-    phoneHome "Installing the RPM kernel devel package" 
-    rpm -ivh $kernelDevelName".rpm"
-    phoneHome "Installing the RPM kernel package" 
-    rpm -ivh $kernelName".rpm"
+    phoneHome "Installing the RPM kernel devel package $kernelDevelName"
+    rpm -ivh $kernelDevelName
+    phoneHome "Installing the RPM kernel package $kernelPackageName"
+    rpm -ivh $kernelPackageName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up

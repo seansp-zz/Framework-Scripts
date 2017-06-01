@@ -203,22 +203,12 @@ Write-Host "CentOS boot results log:"
 get-content \temp\centos-boot | write-host
 
 Write-Host ""
-Write-Host "CentOS Azure Prep log:"
-get-content \temp\centos-prep_for_azure | write-host
-
-Write-Host ""
 Write-Host "Ubuntu install log:"
 get-content \temp\ubuntu | write-host
 
 Write-Host ""
 Write-Host "Ubuntu boot results log:"
 get-content \temp\ubuntu-boot | write-host
-
-Write-Host ""
-Write-Host "Ubuntu Azure Prep log:"
-get-content \temp\ubuntu-prep_for_azure | write-host
-
-
 
 if ($global:failed -eq 0) {    
     Write-Host "Exiting with success."

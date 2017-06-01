@@ -24,7 +24,6 @@ $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
 
-$c=$c+"-prep_for_azure"
 $linuxOs = $linuxInfo.ID
 phoneHome "Preparing VMs for Azure insertion..."
 

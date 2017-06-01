@@ -23,8 +23,9 @@ function callItIn($c, $m) {
 }
 
 function phoneHome($m) {
+    $message="(Prep for Azure) " + $m
 
-    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$message
 }
 
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
