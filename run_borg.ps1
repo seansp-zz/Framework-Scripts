@@ -152,43 +152,44 @@ unregister-event bootTimer
 write-host "Checking results"
 
 if (($global:found_centos -eq 1) -and ($global:found_ubuntu -eq 1)) {
-    Write-Host "Both machines have come back up.  Checking versions."
+    Write-Host "Both machines have come back up.  Checking versions." -ForegroundColor green
     
     $global:failed=0
     if ($global:centResults[0] -ne "Success") {
-        Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]"
+        Write-Host "CentOS machine rebooted, but wrong version detected.  Expected $global:centResults[2] but got $global:centResults[1]" -ForegroundColor red
         $global:failed=1
     } else {
-        Write-Host "CentOS machine rebooted successfully to kernel version $global:centResults[1]"
+        Write-Host "CentOS machine rebooted successfully to kernel version $global:centResults[1]" -ForegroundColor green
     }
 
     if ($global:ubunResults[0] -ne "Success") {
-        Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $global:ubunResults[2] but got $global:ubunResults[1]"
+        Write-Host "Ubuntu machine rebooted, but wrong version detected.  Expected $global:ubunResults[2] but got $global:ubunResults[1]" -ForegroundColor red
         $global:failed=1
     } else {
-        Write-Host "Ubuntu machine rebooted successfully to kernel version $global:ubunResults[1]"
+        Write-Host "Ubuntu machine rebooted successfully to kernel version $global:ubunResults[1]" -ForegroundColor green
     }
 
     if ($global:failed -eq 0) {
-        write-host "BORG has been passed successfully!"
+        write-host "BORG has been passed successfully!" -ForegroundColor green
     } else {
-        write-host "BORG TESTS HAVE FAILED!!"
+        write-host "BORG TESTS HAVE FAILED!!" -ForegroundColor red
     }
 } else {
-        write-host "BORG TEST FAILURE!!"
+        write-host "BORG TEST FAILURE!!" -ForegroundColor red
 
         if (($global:found_centos -eq 0) -and ($global:found_ubuntu -eq 0)) {
-            write-host "Timeout waiting for both machines!  Build log for Ubuntu:"
+            write-host "Timeout waiting for both machines!  Build log for Ubuntu:" -ForegroundColor red
             type c:\temp\ubuntu
         } else {
             if ($global:found_centos -eq 0) {
-                write-host "CentOS machine did not report in.  This is the log:"
-                type c:\temp\centos
+                write-host "CentOS machine did not report in.  This is the log:" -ForegroundColor red
+                get-content \temp\centos | write-host -ForegroundColor red
+
             }
 
             if ($global:found_ubuntu -eq 0) {
-                write-host "Ubuntu machine did not report in.  This is the log:"
-                type c:\temp\ubuntu
+                write-host "Ubuntu machine did not report in.  This is the log:" -ForegroundColor red
+                get-content \temp\ubuntu | write-host -ForegroundColor red
             }
         }
     }
@@ -211,14 +212,14 @@ Write-Host "Ubuntu boot results log:"
 get-content \temp\ubuntu-boot | write-host
 
 if ($global:failed -eq 0) {    
-    Write-Host "Exiting with success."
-    echo "Creating checkpoints.  First CentOS..." 
+    Write-Host "Exiting with success." -ForegroundColor green
+    echo "Creating checkpoints.  First CentOS..." -ForegroundColor green
     Checkpoint-vm -Name $hvCentOSVMName -Snapshotname "Ready for Azure"
     Write-Host "Then Ubuntu..."
     Checkpoint-vm -Name $hvUbuntuVMName -Snapshotname "Ready for Azure"
-    Write-Host "Thanks for playing!"
+    Write-Host "Thanks for playing!" -ForegroundColor green
     exit 0
 } else {
-    Write-Host "Exiting with failure.  Thanks for Playing"
+    Write-Host "Exiting with failure.  Thanks for Playing" -ForegroundColor red
     exit 1
 }
