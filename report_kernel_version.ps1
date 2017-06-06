@@ -25,7 +25,7 @@ $c = $linuxInfo.ID
 $c = $c + $linuxInfo.VERSION_ID
 $c=$c -replace '"',""
 $c=$c -replace '\.',""
-$c="progress_logs/$c
+$c="progress_logs/$c"
 
 $linuxOs = $linuxInfo.ID
 phoneHome "Preparing VMs for Azure insertion..."
