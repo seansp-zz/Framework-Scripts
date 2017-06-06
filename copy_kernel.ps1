@@ -43,7 +43,7 @@ new-item $kernFolder -type directory
 #
 #  Now see if we can mount the drop folder
 #
-if ((Test-Path "/mnt/ostcnix") -eq 0) {
+if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
     mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
 }
 
