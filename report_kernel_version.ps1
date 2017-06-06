@@ -25,7 +25,7 @@ $c = $linuxInfo.ID
 $c = $c + $linuxInfo.VERSION_ID
 $c=$c -replace '"',""
 $c=$c -replace '\.',""
-$c="progress_logs/$c"
+$c="progress_logs/" + $c
 
 $linuxOs = $linuxInfo.ID
 phoneHome "Preparing VMs for Azure insertion..."
@@ -37,8 +37,6 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Azure insertion cancelled because OS version did not match expected..."
 }
 
-$c = $linuxInfo.ID
-$c=$c -replace '"',""
 $c=$c -replace "progress_logs","boot_results"
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
@@ -48,7 +46,7 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
 
     exit 1
 } else {
-    echo "Passed.  Preparing for Azure"
+    echo "Passed.  Let's go to Azure!!"
 
     phoneHome "Success $kernel_name"
 
