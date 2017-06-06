@@ -35,7 +35,6 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
 $c=$c -replace '"',""
-$c=$c+"-prep_for_azure"
 
 phonehome "Getting rid of updatedns"
 remove-item -force /etc/rc.d/rc.local

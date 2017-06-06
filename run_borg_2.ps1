@@ -31,16 +31,16 @@ write-host "Clearing the old VHD checkpoint directory" -ForegroundColor green
 remove-item "D:\Exported Images\*" -exclude ubuntu-1604-MSLK-Test-1 -recurse -force
 
 write-host "Importing the context...." -ForegroundColor green
-Import-AzureRmContext -Path 'D:\Boot-Ready Images\ProfileContext.ctx'
+Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
 write-host "Selecting the Azure subscription..." -ForegroundColor green
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 
 write-host "Removing old resource groups.  These should all fail" -ForegroundColor green
-write-host "First, $tempRg1CentOS" -ForegroundColor green
+write-host "First, $tempRg1CentOS" -ForegroundColor magenta
 Remove-AzureRmResourceGroup -Name $tempRg1CentOS -Force
 Remove-AzureRmResourceGroup -Name $tempRg1Ubuntu -Force
-write-host "Then, $tempRg2CentOS" -ForegroundColor green
+write-host "Then, $tempRg2CentOS" -ForegroundColor cyan
 Remove-AzureRmResourceGroup -Name $tempRg2CentOS -Force
 Remove-AzureRmResourceGroup -Name $tempRg2Ubuntu -Force
 
