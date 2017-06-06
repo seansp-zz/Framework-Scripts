@@ -27,7 +27,10 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 #
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
+$c = $c + $linuxInfo.VERSION_ID
 $c=$c -replace '"',""
+$c=$c -replace '\.',""
+$c="progress_logs/$c"
 
 phoneHome "Starting copy file scipt" 
 cd /tmp
@@ -41,7 +44,7 @@ new-item $kernFolder -type directory
 #  Now see if we can mount the drop folder
 #
 if ((Test-Path "/mnt/ostcnix") -eq 0) {
-    mount /mnt/ostcnix
+    mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
 }
 
 if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
@@ -63,6 +66,8 @@ copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $linuxOs = $linuxInfo.ID
 phoneHome "Operating system is $linuxOs"
+$linuxVers = $linuxInfo.VERSION_ID
+phoneHome "Operating system version is $linuxVersion"
 
 #
 #  Remove the old sentinel file
@@ -91,9 +96,9 @@ $kernelVersion | Out-File -Path "/root/expected_version"
 #
 #  Do the right thing for the platform
 #
-if ($linuxOs -eq '"centos"') {
+If (Test-Path /bin/rpm) {
     #
-    #  CentOS
+    #  RPM-based system
     #
     $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+".rpm"
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
