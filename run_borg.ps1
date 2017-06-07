@@ -8,6 +8,8 @@ $global:num_remaining=0
 $global:failed=0
 $global:booted_version="Unknown"
 
+Import-Module C:\Framework-Scripts\clone_RvVm.ps1
+
 $timer=New-Object System.Timers.Timer
 
 function new-monitor()
@@ -124,6 +126,7 @@ Write-Host "BORG CUBE is initialized.  Starting the Dedicated Remote Nodes of Ex
 Write-Host "    "
 
 Write-Host "Checking to see which VMs we need to bring up..."
+
 Get-ChildItem 'D:\azure_images' |
 foreach-Object {
     
@@ -141,9 +144,8 @@ foreach-Object {
     $vhdPath="D:\azure_images\"+$vhdFile
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
-    new-vm -Name $vhdFileName -MemoryStartupBytes 7168MB -VHDPath $vhdPath -path 'C:\Exported Images\'
-
-    $machine.status = "Starting"
+     
+    new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
     Start-VM -Name $vhdFileName
     $machine.Status = "Booting"
 }

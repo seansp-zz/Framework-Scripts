@@ -85,8 +85,12 @@ $kernelVersion=($kernelName -split "-")[1]
 #  For some reason, the file is -, but the kernel is _
 #
 $kernelVersion=($kernelVersion -replace "_","-")
-phoneHome "Kernel version is $kernelVersion" 
+phoneHome "Expected Kernel version is $kernelVersion" 
 $kernelVersion | Out-File -Path "/root/expected_version"
+$oldc=$c
+$c="\temp\expected_version"
+phoneHome $kernelVersion
+$c=$oldc
 
 #
 #  Do the right thing for the platform

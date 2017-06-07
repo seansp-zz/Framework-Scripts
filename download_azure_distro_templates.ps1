@@ -30,11 +30,15 @@ if ($getAll -eq $true -and $replaceVHD -eq $true) {
         if ((Test-Path D:\azure_images\$machineName) -eq $true -and $replaceVHD -eq $true) {
             Write-Host "Machine $machineName is being deleted from the disk and will be downloaded again..." -ForegroundColor green
             remove-item "D:\azure_images\$machineName" -recurse -force
+            stop-vm -Name $machine
+            remove-vm -Name $machine -Force
             $neededVms.Add($machineName)
         } elseIf (Test-Path D:\azure_images\$machineName) {
             Write-Host "Machine $machineName was already on the disk and the replaceVHD flag was not given.  Machine will not be updated." -ForegroundColor red            
         } else {
             Write-Host "Machine $machineName does not yet exist on the disk.  Machine will be downloaded..." -ForegroundColor green
+            stop-vm -Name $machine
+            remove-vm -Name $machine -Force
             $neededVms.Add($machineName)
         }
     }
@@ -46,11 +50,15 @@ if ($getAll -eq $true -and $replaceVHD -eq $true) {
         if ((Test-Path D:/azure_images/$machineName) -eq $true -and $replaceVHD -eq $true) {
             Write-Host "Machine $machine is being deleted from the disk and will be downloaded again..." -ForegroundColor green
             remove-item "D:/azure_images/$machineName" -recurse -force
+            stop-vm -Name $machine
+            remove-vm -Name $machine -Force
             $neededVms.Add($machine)
         } elseIf (Test-Path D:\azure_images\$machineName) {
             Write-Host "Machine $machine was already on the disk and the replaceVHD flag was not given.  Machine will not be updated." -ForegroundColor red            
         } else {
             Write-Host "Machine $machine does not yet exist on the disk.  Machine will be downloaded..." -ForegroundColor green
+            stop-vm -Name $machine
+            remove-vm -Name $machine -Force
             $neededVms.Add($machine)
         }
     }
