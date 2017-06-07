@@ -20,12 +20,13 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 #
 #  What OS are we on?
 #
-$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
-$c = $linuxInfo.ID
-$c = $c + $linuxInfo.VERSION_ID
-$c=$c -replace '"',""
-$c=$c -replace '\.',""
-$c="progress_logs/" + $c
+# $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+# $c = $linuxInfo.ID
+# $c = $c + $linuxInfo.VERSION_ID
+# $c=$c -replace '"',""
+# $c=$c -replace '\.',""
+# $c="progress_logs/" + $c
+$c=hostname
 
 $linuxOs = $linuxInfo.ID
 phoneHome "Preparing VMs for Azure insertion..."

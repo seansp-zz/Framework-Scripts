@@ -8,8 +8,6 @@ $global:num_remaining=0
 $global:failed=0
 $global:booted_version="Unknown"
 
-Import-Module C:\Framework-Scripts\clone_RvVm.ps1
-
 $timer=New-Object System.Timers.Timer
 
 function new-monitor()
@@ -31,8 +29,8 @@ $global:monitoredMachines = {$monitoredMachines_Array}.Invoke()
 function checkMachine($machine) {
     Write-Host "Checking boot results for machine $machine.MachineName"
 
-    $resultsFile="c:\temp\boot_results\" + $machineName + "_boot"
-    $progressFile="c:\temp\progress_logs\" + $machineName + "_progress.log"
+    $resultsFile="c:\temp\boot_results\" + $machineName
+    $progressFile="c:\temp\progress_logs\" + $machineName
 
     if ((test-path $resultsFile) -eq 0) {
         return
@@ -49,8 +47,8 @@ function checkMachine($machine) {
         $global:booted_version=$ResultsSplit[1]
     }
 
-    Move-Item $resultsFile -Destination "c:\temp\completed_boots\"
-    Move-Item $progressFile -Destination "c:\temp\completed_boots\"
+    Move-Item $resultsFile -Destination "c:\temp\completed_boots\{$machineName}_boot"
+    Move-Item $progressFile -Destination "c:\temp\completed_boots\{$machineName}_progress"
 
     $machine.status = "Complete"
     $global:num_remaining--
@@ -84,7 +82,7 @@ $action={
         Write-Host "Waiting for remote machines to boot.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($monitoredMachine in $global:monitoredMachines) {
-            $logFile="c:\temp\progress_logs\" + $monitoredMachine.MachineName + "_progress.log"
+            $logFile="c:\temp\progress_logs\" + $monitoredMachine.MachineName
             if ((test-path $logFile) -eq 1) {
                 write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
                 get-content "c:\temp\centos" | Select-Object -Last 3 | write-host  -ForegroundColor cyan
@@ -140,10 +138,16 @@ foreach-Object {
     $machine = new-monitor -name $vhdFileName -status $status
     $global:monitoredMachines.Add($machine)
     
-    $machine.status = "Allocating"
-    $vhdPath="D:\azure_images\"+$vhdFile
+    Write-Host "Stopping and cleaning any existing VMs.  Any errors here may be ignored."
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
+
+    Wtite-Host "Start paying attention to errors again..."
+    Write-Host "Copying VHD to working directory..."
+    $machine.status = "Allocating"
+    Copy-Item "D:\azure_images\"+$vhdFile "D:\working_images\"+$vhdFile -Force
+
+    $vhdPath="D:\working_images\"+$vhdFile
      
     new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
     Start-VM -Name $vhdFileName
