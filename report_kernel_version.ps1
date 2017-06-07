@@ -22,7 +22,10 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 #
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c = $linuxInfo.ID
+$c = $c + $linuxInfo.VERSION_ID
 $c=$c -replace '"',""
+$c=$c -replace '\.',""
+$c="progress_logs/" + $c
 
 $linuxOs = $linuxInfo.ID
 phoneHome "Preparing VMs for Azure insertion..."
@@ -32,36 +35,22 @@ $expected=Get-Content /root/expected_version
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Azure insertion cancelled because OS version did not match expected..."
+}
 
-    $c = $linuxInfo.ID
-    $c=$c -replace '"',""
-    $c=$c+"-boot"
+$c=$c -replace "progress_logs","boot_results"
 
+if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Failed $kernel_name $expected"
 
     remove-pssession $s
 
     exit 1
 } else {
-    echo "Passed.  Preparing for Azure"
-
-    if ($linuxOs -eq '"centos"') {
-        /root/Framework-Scripts/prep_CentOS_for_azure.ps1
-    } else {
-        /root/Framework-Scripts/prep_Ubuntu_for_azure.ps1
-    }
-    echo "Complete.  Comcluding and deprovisioning"
-
-    $c = $linuxInfo.ID
-    $c=$c -replace '"',""
-    $c=$c+"-boot"
+    echo "Passed.  Let's go to Azure!!"
 
     phoneHome "Success $kernel_name"
 
     remove-pssession $s
-
-    waagent -force -deprovision
-    shutdown
 
     exit 0
 }
