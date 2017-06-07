@@ -127,7 +127,7 @@ Write-Host "    "
 
 Write-Host "Checking to see which VMs we need to bring up..."
 
-Get-ChildItem 'D:\azure_images' |
+Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     
     $vhdFile=$_.Name

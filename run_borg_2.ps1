@@ -33,7 +33,7 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName 
 #  Copy the files to the cloud
 #
 $failed=0
-Get-ChildItem 'D:\azure_images' |
+Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     # $sourceVHd=get-item -Path D:\azure_images\RHEL71-Smoke-1.vhd
 
