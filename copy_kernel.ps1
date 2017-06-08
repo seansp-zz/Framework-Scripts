@@ -4,7 +4,7 @@
 #  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
 function callItIn($c, $m) {
-    $output_path="c:\temp\$c"
+    $output_path="c:\temp\progress_logs\$c"
     
     $m | out-file -Append $output_path
     return
@@ -12,6 +12,18 @@ function callItIn($c, $m) {
 
 function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+}
+
+function callVersionIn($m) {
+    $output_path="c:\temp\expected_version"
+    
+    $m | out-file -Force $output_path
+    return
+}
+
+
+function phoneVersionHome($m) {
+    invoke-command -session $s -ScriptBlock ${function:callVersionIn} -ArgumentList $m
 }
 
 #
@@ -26,11 +38,12 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 #  What OS are we on?
 #
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
-$c = $linuxInfo.ID
-$c = $c + $linuxInfo.VERSION_ID
-$c=$c -replace '"',""
-$c=$c -replace '\.',""
-$c="progress_logs/$c"
+# $c = $linuxInfo.ID
+# $c = $c + $linuxInfo.VERSION_ID
+# $c=$c -replace '"',""
+# $c=$c -replace '\.',""
+# $c="progress_logs/$c"
+$c=hostname
 
 phoneHome "Starting copy file scipt" 
 cd /tmp
@@ -92,10 +105,7 @@ $kernelVersion=($kernelName -split "-")[1]
 $kernelVersion=($kernelVersion -replace "_","-")
 phoneHome "Expected Kernel version is $kernelVersion" 
 $kernelVersion | Out-File -Path "/root/expected_version"
-$oldc=$c
-$c="\temp\expected_version"
-phoneHome $kernelVersion
-$c=$oldc
+phoneVersionHome $kernelVersion
 
 #
 #  Do the right thing for the platform

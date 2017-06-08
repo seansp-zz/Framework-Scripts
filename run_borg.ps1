@@ -50,8 +50,10 @@ function checkMachine($machine) {
     Move-Item $resultsFile -Destination "c:\temp\completed_boots\{$machineName}_boot"
     Move-Item $progressFile -Destination "c:\temp\completed_boots\{$machineName}_progress"
 
-    $machine.status = "Complete"
+    $machine.status = "Azure"
     $global:num_remaining--
+
+    start-job -Name $machineName -ScriptBlock {C:\Framework-Scripts\run_borg_2.ps1 $machine.MachineName}
 }
 
 $action={
@@ -142,10 +144,12 @@ foreach-Object {
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
 
-    Wtite-Host "Start paying attention to errors again..."
+    Write-Host "Start paying attention to errors again..."
     Write-Host "Copying VHD to working directory..."
     $machine.status = "Allocating"
-    Copy-Item "D:\azure_images\"+$vhdFile "D:\working_images\"+$vhdFile -Force
+    $sourceFile="D:\azure_images\"+$vhdFile
+    $destFile="D:\working_images\"+$vhdFile
+    Copy-Item $sourceFile $destFile -Force
 
     $vhdPath="D:\working_images\"+$vhdFile
      
@@ -188,9 +192,21 @@ if ($global:num_remaining -eq 0) {
 } else {
         write-host "BORG TEST FAILURE!!  Not all machines booted in the allocated time!" -ForegroundColor red
 
-        Write-Host "Not all test machines reported in.  Machines states are:"
+        Write-Host "Not all test machines reported in.  Machines states are:" -ForegroundColor red
         foreach ($machine in $global:montiroedMachines) {
-            echo "Machine $machine.MachnineName is in state $machine.state"
+            echo "Machine $machine.MachnineName is in state $machine.state" -ForegroundColor red
+        }
+    }
+
+foreach ($monitoredMachine in $global:montiroedMachines) {
+        Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
+        $jobStatus=get-job -Name $monitoredMachine.MachineName
+
+        Write-Host "Current state is $jobStatus.State"
+
+        if (($jobStatus.State -ne "Completed") -and 
+            ($jobStatus.State -ne "Failed")) {
+            sleep 10
         }
     }
 
