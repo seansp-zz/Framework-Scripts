@@ -41,7 +41,7 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
 
-    $c="boot_logs/" + $ourHost
+    $c="boot_results/" + $ourHost
     phoneHome "Failed $kernel_name $expected"
 
     remove-pssession $s
@@ -50,7 +50,7 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
 } else {
     phoneHome "Passed.  Let's go to Azure!!"
 
-    $c="boot_logs/" + $ourHost
+    $c="boot_results/" + $ourHost
     phoneHome "Success $kernel_name"
 
     remove-pssession $s
