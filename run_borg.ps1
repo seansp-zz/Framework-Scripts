@@ -208,7 +208,7 @@ foreach ($monitoredMachine in $global:montiroedMachines) {
             ($jobStatus.State -ne "Failed")) {
             sleep 10
         }
-        else if ($jobStatus.State -eq "Failed")
+        elseif ($jobStatus.State -eq "Failed")
         {
             $global:failed = 1
             Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
