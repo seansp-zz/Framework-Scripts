@@ -56,19 +56,14 @@ new-item $kernFolder -type directory
 #
 #  Now see if we can mount the drop folder
 #
-if ((Test-Path "/mnt/ostcnix") -eq 0) {
-    new-item -ItemType directory -path "/mnt/ostcnix"
+if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
     mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
 }
 
 if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
-    mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
-} elseif ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
     phoneHome "Latest directory was not on mount point!  No kernel to install!" 
     $LASTEXITCODE = 1
     exit $LASTERRORCODE
-} else {
-    phoneHome "Located the Latest directory on the mount point"
 }
 
 #
@@ -146,7 +141,7 @@ If (Test-Path /bin/rpm) {
     #  Figure out the kernel name
     #
     $debKernName=(get-childitem linux-image-*.deb)[0].Name
-    phoneHome "Debian Kernel name is $DebKernName" 
+    phoneHome "Kernel Package name is $DebKernName" 
 
     #
     #  Debian
@@ -159,7 +154,6 @@ If (Test-Path /bin/rpm) {
     #
     phoneHome "Getting the system current" 
     apt-get -y update
-    apt-get -y dist-upgrade
 
     phoneHome "Installing the DEB kernel devel package" 
     dpkg -i $kernDevName

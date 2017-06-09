@@ -25,8 +25,7 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 # $c = $c + $linuxInfo.VERSION_ID
 # $c=$c -replace '"',""
 # $c=$c -replace '\.',""
-# $c="progress_logs/" + $c
-$c=hostname
+$c="progress_logs/" + hostname
 
 $linuxOs = $linuxInfo.ID
 phoneHome "Preparing VMs for Azure insertion..."
@@ -38,17 +37,20 @@ if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Azure insertion cancelled because OS version did not match expected..."
 }
 
-$c=$c -replace "progress_logs","boot_results"
+$ourHost=hostname
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
+
+    $c="boot_logs/" + $ourHost
     phoneHome "Failed $kernel_name $expected"
 
     remove-pssession $s
 
     exit 1
 } else {
-    echo "Passed.  Let's go to Azure!!"
+    phoneHome "Passed.  Let's go to Azure!!"
 
+    $c="boot_logs/" + $ourHost
     phoneHome "Success $kernel_name"
 
     remove-pssession $s

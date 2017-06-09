@@ -27,7 +27,7 @@ $monitoredMachines_Array=@()
 $global:monitoredMachines = {$monitoredMachines_Array}.Invoke()
 
 function checkMachine($machine) {
-    Write-Host "Checking boot results for machine $machine.MachineName"
+    Write-Host "Checking boot results for machine $machine.MachineName" -ForegroundColor green
 
     $resultsFile="c:\temp\boot_results\" + $machineName
     $progressFile="c:\temp\progress_logs\" + $machineName
@@ -53,7 +53,12 @@ function checkMachine($machine) {
     $machine.status = "Azure"
     $global:num_remaining--
 
-    start-job -Name $machineName -ScriptBlock {C:\Framework-Scripts\run_borg_2.ps1 $machine.MachineName}
+    if ($global:failed -eq $false) {
+        Write-Host "Chainging to Azure valication job..." -ForegroundColor green
+        start-job -Name $machineName -ScriptBlock {C:\Framework-Scripts\run_borg_2.ps1 $machine.MachineName}
+    } else {
+        Write-Host "This, or another, machine has failed to boot.  Machines will not progress to Azure" -ForegroundColor red
+    }
 }
 
 $action={
@@ -106,12 +111,10 @@ Write-Host "*            Microsoft Linux Kernel          *" -ForegroundColor gre
 Write-Host "*     Basic Operational Readiness Gateway    *" -ForegroundColor green
 Write-Host "* Host Infrastructure Validation Environment *" -ForegroundColor green
 Write-Host "*                                            *" -ForegroundColor green
+Write-Host "*           Welcome to the BORG HIVE         *" -ForegroundColor green
 Write-Host "**********************************************" -ForegroundColor green
-Write-Host "    " -ForegroundColor green
-
-Write-Host "Welcome to the BORG HIVE" -ForegroundColor yellow
 Write-Host "    "
-Write-Host "Initializing the Customizable Universal Base of Execution" -ForegroundColor yellow
+Write-Host "Initializing the CUBE (Customizable Universal Base of Execution)" -ForegroundColor yellow
 Write-Host "    "
 #
 #  Clean up the sentinel files
@@ -122,7 +125,7 @@ remove-item -ErrorAction "silentlycontinue" C:\temp\boot_results\*
 remove-item -ErrorAction "silentlycontinue" C:\temp\progress_logs\*
 
 Write-Host "   "
-Write-Host "BORG CUBE is initialized.  Starting the Dedicated Remote Nodes of Execution" -ForegroundColor yellow
+Write-Host "BORG CUBE is initialized.  Starting the DRONES (Dedicated Remote Node of Execution)" -ForegroundColor yellow
 Write-Host "    "
 
 Write-Host "Checking to see which VMs we need to bring up..."
@@ -140,31 +143,45 @@ foreach-Object {
     $machine = new-monitor -name $vhdFileName -status $status
     $global:monitoredMachines.Add($machine)
     
-    Write-Host "Stopping and cleaning any existing VMs.  Any errors here may be ignored."
+    Write-Host "Stopping and cleaning any existing VMs.  Any errors here may be ignored." -ForegroundColor green
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
 
-    Write-Host "Start paying attention to errors again..."
-    Write-Host "Copying VHD to working directory..."
+    Write-Host "Start paying attention to errors again..." -ForegroundColor green
+    Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
     $machine.status = "Allocating"
     $sourceFile="D:\azure_images\"+$vhdFile
     $destFile="D:\working_images\"+$vhdFile
     Copy-Item $sourceFile $destFile -Force
 
-    $vhdPath="D:\working_images\"+$vhdFile
-     
+    if ($? -eq $false) {
+        Write-Host "Copy failed.  The BORG cannot continue." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "Copy complete.  Starting the VM on Hyper-V" -ForegroundColor green
+    $vhdPath="D:\working_images\"+$vhdFile   
     new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
+    if ($? -eq $false) {
+        Write-Host "Unable to create Hyper-V VM.  The BORG cannot continue." -ForegroundColor Red
+        exit 1
+    }
+
     Start-VM -Name $vhdFileName
+    if ($? -eq $false) {
+        Write-Host "Unable to start Hyper-V VM.  The BORG cannot continue." -ForegroundColor Red
+        exit 1
+    }
+
     $machine.Status = "Booting"
+    Write-Host "BORG DRONE $vhdFileName has started" -ForegroundColor green
 }
 
 #
 #  Wait for the machines to report back
 #
-write-host "Initiating temporal evaluation loop" -ForegroundColor yellow
+write-host "Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
-
-write-host "Starting the timer" -ForegroundColor green
 $timer.Interval = 500
 $timer.Enabled = $true
 $timer.start()
@@ -173,7 +190,7 @@ while ($global:completed -eq 0) {
     start-sleep -s 1
 }
 
-write-host "Unregistering the timer" -ForegroundColor green
+write-host "Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor green
 $timer.stop()
 unregister-event bootTimer
 
