@@ -128,13 +128,14 @@ Write-Host "   "
 Write-Host "BORG CUBE is initialized.  Starting the DRONES (Dedicated Remote Node of Execution)" -ForegroundColor yellow
 Write-Host "    "
 
-Write-Host "Checking to see which VMs we need to bring up..."
+Write-Host "Checking to see which VMs we need to bring up..." -ForegroundColor green
 
+<#
 Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     
     $vhdFile=$_.Name
-    $status="initializing"
+    $status="Copying"
 
     $global:num_remaining++
 
@@ -159,11 +160,23 @@ foreach-Object {
         exit 1
     }
 }
+#>
 
 Write-Host "Copy complete.  Starting the VM on Hyper-V" -ForegroundColor green
 
 Get-ChildItem 'D:\working_images\*.vhd' |
 foreach-Object {   
+    $vhdFile=$_.Name
+    $status="Copying"
+
+    $vhdFileName=$vhdFile.Split('.')[0]
+    
+    foreach ($machine in $global:monitoredMachines) {
+        if ($machine.MachineName -eq $vhdFileName) {
+             $machine.Status = "Starting Hyper-V"
+        }
+    }
+    
     $vhdPath="D:\working_images\"+$vhdFile   
     new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
     if ($? -eq $false) {
