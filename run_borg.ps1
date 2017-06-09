@@ -43,7 +43,7 @@ function checkMachine($machine) {
         Write-Host "Machine $machineName rebooted, but wrong version detected.  Expected $resultsSplit[2] but got $resultsSplit[1]" -ForegroundColor red
         $global:failed=$true
     } else {
-        Write-Host "CentOS machine rebooted successfully to kernel version " -ForegroundColor green
+        Write-Host "Machine rebooted successfully to kernel version " -ForegroundColor green
         $global:booted_version=$ResultsSplit[1]
     }
 
@@ -87,7 +87,7 @@ $action={
             $logFile="c:\temp\progress_logs\" + $monitoredMachine.MachineName
             if ((test-path $logFile) -eq 1) {
                 write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
-                get-content "c:\temp\centos" | Select-Object -Last 3 | write-host  -ForegroundColor cyan
+                get-content $logFile | Select-Object -Last 3 | write-host  -ForegroundColor cyan
                 write-host "---" -ForegroundColor magenta
             } else {
                 $machineName = $monitoredMachine.MachineName
@@ -207,6 +207,17 @@ foreach ($monitoredMachine in $global:montiroedMachines) {
         if (($jobStatus.State -ne "Completed") -and 
             ($jobStatus.State -ne "Failed")) {
             sleep 10
+        }
+        else if ($jobStatus.State -eq "Failed")
+        {
+            $global:failed = 1
+            Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
+            $monitoredMachine.status = "Completed"
+        }
+        else
+        {
+            Write-Host "Azure job $monitoredMachine.MachineName booted successfully." -ForegroundColor green
+            $monitoredMachine.status = "Completed"
         }
     }
 
