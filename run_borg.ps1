@@ -158,8 +158,12 @@ foreach-Object {
         Write-Host "Copy failed.  The BORG cannot continue." -ForegroundColor Red
         exit 1
     }
+}
 
-    Write-Host "Copy complete.  Starting the VM on Hyper-V" -ForegroundColor green
+Write-Host "Copy complete.  Starting the VM on Hyper-V" -ForegroundColor green
+
+Get-ChildItem 'D:\working_images\*.vhd' |
+foreach-Object {   
     $vhdPath="D:\working_images\"+$vhdFile   
     new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
     if ($? -eq $false) {
@@ -174,7 +178,7 @@ foreach-Object {
     }
 
     $machine.Status = "Booting"
-    Write-Host "BORG DRONE $vhdFileName has started" -ForegroundColor green
+    Write-Host "BORG DRONE $vhdFileName is starting" -ForegroundColor green
 }
 
 #

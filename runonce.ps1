@@ -29,7 +29,8 @@ $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -crede
 $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 # $c = $linuxInfo.ID
 # $c=$c -replace '"',""
-$c=hostname + "_RunOnce"
+$ourHost=hostname
+$c=$ourHost + "_RunOnce"
 
 phoneHome "RunOnce starting up on machine $c"
 
