@@ -56,14 +56,19 @@ new-item $kernFolder -type directory
 #
 #  Now see if we can mount the drop folder
 #
-if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
+if ((Test-Path "/mnt/ostcnix") -eq 0) {
+    new-item -ItemType directory -path "/mnt/ostcnix"
     mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
 }
 
 if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
+    mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
+} elseif ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
     phoneHome "Latest directory was not on mount point!  No kernel to install!" 
     $LASTEXITCODE = 1
     exit $LASTERRORCODE
+} else {
+    phoneHome "Located the Latest directory on the mount point"
 }
 
 #
