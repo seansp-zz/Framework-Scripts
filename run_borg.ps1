@@ -50,8 +50,7 @@ function checkMachine($machine) {
     Move-Item $resultsFile -Destination "c:\temp\completed_boots\{$machineName}_boot"
     Move-Item $progressFile -Destination "c:\temp\completed_boots\{$machineName}_progress"
 
-    $machine.status = "Azure"
-    $global:num_remaining--
+    $machine.Status = "Azure"
 
     if ($global:failed -eq $false) {
         Write-Host "Chainging to Azure valication job..." -ForegroundColor green
@@ -70,9 +69,12 @@ $action={
         $global:completed=1
     }
 
-    foreach ($monitoredMachine in $global:montiroedMachines) {
-        if ($monitoredMachine.Status -ne "Complete") {
-            checkMachine($monitoredMachine.MachineName)
+    #
+    #  Check for Hyper-V completion
+    foreach ($monitoredMachine in $global:monitoredMachines) {
+        $bootFile="c:\temp\boot_logs\" + $monitoredMachine.MachineName
+        if ((test-path $bootFile) -eq 1) {
+            checkmachine($monitoredMachine)
         }
     }
 
@@ -83,6 +85,32 @@ $action={
         }
         write-host "Stopping the timer" -ForegroundColor green
         $global:completed=1
+        exit 1
+    }
+
+    #
+    #  Check for Azure completion
+    #
+    foreach ($monitoredMachine in $global:montiroedMachines) {
+        # Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
+        $jobStatus=get-job -Name $monitoredMachine.MachineName
+        if ($jobStatus -eq $true) {
+            Write-Host "Current state is $jobStatus.State"
+
+            if (($jobStatus.State -ne "Completed") -and 
+                ($jobStatus.State -ne "Failed")) {
+                sleep 10
+            } elseif ($jobStatus.State -eq "Failed") {
+                Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
+                $global:failed = 1
+                $monitoredMachine.status = "Completed"
+                $global:num_remaining--
+            } else {
+                Write-Host "Azure job $monitoredMachine.MachineName booted successfully." -ForegroundColor green
+                $monitoredMachine.status = "Completed"
+                $global:num_remaining--
+            }
+        }
     }
  
     if (($global:elapsed % 10000) -eq 0) {
@@ -130,7 +158,6 @@ Write-Host "    "
 
 Write-Host "Checking to see which VMs we need to bring up..." -ForegroundColor green
 
-<#
 Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     
@@ -144,7 +171,7 @@ foreach-Object {
     $machine = new-monitor -name $vhdFileName -status $status
     $global:monitoredMachines.Add($machine)
     
-    Write-Host "Stopping and cleaning any existing VMs.  Any errors here may be ignored." -ForegroundColor green
+    Write-Host "Stopping and cleaning any existing instances of machine $vhdFileName.  Any errors here may be ignored." -ForegroundColor green
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
 
@@ -160,14 +187,12 @@ foreach-Object {
         exit 1
     }
 }
-#>
 
-Write-Host "Copy complete.  Starting the VM on Hyper-V" -ForegroundColor green
+Write-Host "All machines template images have been copied.  Starting the VMs in Hyper-V" -ForegroundColor green
 
 Get-ChildItem 'D:\working_images\*.vhd' |
 foreach-Object {   
     $vhdFile=$_.Name
-    $status="Copying"
 
     $vhdFileName=$vhdFile.Split('.')[0]
     
@@ -178,6 +203,10 @@ foreach-Object {
     }
     
     $vhdPath="D:\working_images\"+$vhdFile   
+
+    $machine.Status = "Booting"
+    Write-Host "BORG DRONE $vhdFileName is starting" -ForegroundColor green
+
     new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
     if ($? -eq $false) {
         Write-Host "Unable to create Hyper-V VM.  The BORG cannot continue." -ForegroundColor Red
@@ -189,9 +218,6 @@ foreach-Object {
         Write-Host "Unable to start Hyper-V VM.  The BORG cannot continue." -ForegroundColor Red
         exit 1
     }
-
-    $machine.Status = "Booting"
-    Write-Host "BORG DRONE $vhdFileName is starting" -ForegroundColor green
 }
 
 #
@@ -233,6 +259,7 @@ if ($global:num_remaining -eq 0) {
     }
 
 foreach ($monitoredMachine in $global:montiroedMachines) {
+
         Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
         $jobStatus=get-job -Name $monitoredMachine.MachineName
 

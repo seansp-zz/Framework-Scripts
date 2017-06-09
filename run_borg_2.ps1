@@ -14,24 +14,24 @@ $location = "westus"
 $vmName = "azureSmokeVM-1"
 $cn="azuresmokestoragecontainer"
 
-write-host "********************************************************************" -ForegroundColor green
-write-host "*              BORG, Phase II -- Assimilation by Azure             *" -ForegroundColor green
-write-host "********************************************************************" -ForegroundColor green
+echo "********************************************************************"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+echo "*              BORG, Phase II -- Assimilation by Azure             *"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+echo "********************************************************************"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
 
 try {
-    write-host "Importing the context...." -ForegroundColor green
+    echo "Importing the context...."  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
-    write-host "Selecting the Azure subscription..." -ForegroundColor green
+    echo "Selecting the Azure subscription..."  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 
-    write-host "Setting the Azure Storage Account" -ForegroundColor green
+    echo "Setting the Azure Storage Account"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     # New-AzureRmStorageAccount -ResourceGroupName $rg -Name $nm -Location westus -SkuName "Standard_LRS" -Kind "Storage"
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 }
 Catch
 {
-    Write-Error "Caught exception attempting to log into Azure.  Aborting..."
+    echo "Caught exception attempting to log into Azure.  Aborting..." | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     exit 1
 }
 
@@ -45,7 +45,7 @@ Catch
 #
 $failed=0
 
-$fileName = "D:\azure_images\" + $requestedVM + ".vhd"
+$fileName = "D:\working_images\" + $requestedVM + ".vhd"
 $sourceVHd=get-item -Path $filename
 
 $vhdFile=$sourceVHd
@@ -61,69 +61,69 @@ try {
 }
 Catch
 {
-    Write-Error "Caught exception attempting to get the storage container.  Aborting..."
+    echo "Caught exception attempting to get the storage container.  Aborting..." | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     exit 1
 }
 
 try {
-    write-host "Creating a resource group for machine $vhdFileName" -ForegroundColor magenta
+    echo "Creating a resource group for machine $vhdFileName"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $newRGName=$vhdFileName+"-SmokeRG"
     New-AzureRmResourceGroup -Name $newRGName -Location westus
 
-    Write-Host "Making sure the VM is stopped..." -ForegroundColor magenta
+    echo "Making sure the VM is stopped..."  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     stop-vm $vhdFileName
 
-    write-host "Uploading the $vhdFileName VHD blob to the cloud" -ForegroundColor magenta
+    echo "Uploading the $vhdFileName VHD blob to the cloud"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $localFilePath=$sourceVHd.FullName
-    Add-AzureRmVhd –ResourceGroupName $rg -Destination "$blobuploadURI" -LocalFilePath $localFilePath -OverWrite
+    Add-AzureRmVhd –ResourceGroupName $rg -Destination "$blobuploadURI" -LocalFilePath $localFilePath -OverWrite -NumberOfUploaderThreads 10
 
-    Write-Host "Creating a new VM config..."  -ForegroundColor magenta
+    echo "Creating a new VM config..."   | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $vm=New-AzureRmVMConfig -vmName $vhdFileName -vmSize 'Standard_D2'
 
-    Write-Host "Assigning resource group $rg network and subnet config to new machine"
+    echo "Assigning resource group $rg network and subnet config to new machine" | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $VMVNETObject = Get-AzureRmVirtualNetwork -Name  azuresmokeresourcegroup-vnet -ResourceGroupName $rg
     $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name default -VirtualNetwork $VMVNETObject
 
-    write-host "Creating the public IP address" -ForegroundColor magenta
+    echo "Creating the public IP address"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $pip = New-AzureRmPublicIpAddress -ResourceGroupName $newRGName -Location $location `
             -Name $vhdFileName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
 
-    write-host "Creating the network interface" -ForegroundColor magenta
+    echo "Creating the network interface"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $VNIC = New-AzureRmNetworkInterface -Name $vhdFileName -ResourceGroupName $newRGName -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
 
-    write-host "Adding the network interface" -ForegroundColor magenta
+    echo "Adding the network interface"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
-    write-host "Assigning the OS disk to URI $blobuploadURIRaw" -ForegroundColor magenta
+    echo "Assigning the OS disk to URI $blobuploadURIRaw"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Set-AzureRmVMOSDisk -VM $vm -Name $vhdFileName -VhdUri $blobuploadURIRaw -CreateOption "Attach" -linux
 }
 Catch
 {
-    Write-Error "Caught exception attempting to create the Azure VM.  Aborting..."
+    echo "Caught exception attempting to create the Azure VM.  Aborting..." | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     exit 1
 }
 
 try {
-    write-host "Starting the VM" -ForegroundColor magenta
+    echo "Starting the VM"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $NEWVM = New-AzureRmVM -ResourceGroupName $newRGName -Location westus -VM $vm
     if ($NEWVM -eq $null) {
-        write-host "FAILED TO CREATE VM!!" -ForegroundColor red
+        echo "FAILED TO CREATE VM!!" 
         exit 1
     }
 }
 Catch
 {
-    Write-Error "Caught exception attempting to start the new VM.  Aborting..."
+    echo "Caught exception attempting to start the new VM.  Aborting..." | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     exit 1
 }
 
 #
 #  Give the VM time to get to user level and start OMI
 #
-write-host "Giving it a minute to wake up" -ForegroundColor magenta
+echo "Giving it a minute to wake up"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
 sleep 60
 
-write-host "Checking OS versions..." -ForegroundColor cyan
+echo "Checking OS versions..."  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
@@ -135,34 +135,34 @@ $failed=0
 try {
     $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
     $ipAddress=$ip.IpAddress
-    write-host "Creating PowerShell Remoting session to machine at IP $ipAddress" -ForegroundColor cyan
+    echo "Creating PowerShell Remoting session to machine at IP $ipAddress"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     $session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
 
     if ($session -eq $null) {
-        write-host "FAILED to contact Azure guest VM" -ForegroundColor red
+        echo "FAILED to contact Azure guest VM"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
         exit 1
     }
 
     $installed_vers=invoke-command -session $session -ScriptBlock {/bin/uname -r}
     remove-pssession $session
-    write-host "vhdFileName installed version retrieved as $installed_vers"  -ForegroundColor green
+    echo "vhdFileName installed version retrieved as $installed_vers"   | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
 }
 Catch
 {
-    Write-Error "Caught exception attempting to verify Azure installed kernel version.  Aborting..."
+    echo "Caught exception attempting to verify Azure installed kernel version.  Aborting..."
     exit 1
 }
 
 try {
-    Write-Host "Stopping the Azure VM" -ForegroundColor cyan
+    echo "Stopping the Azure VM"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Stop-AzureRmVm -force -ResourceGroupName $vhdFileName -name $vhdFileName
 
-    write-host "Removing resource group." -ForegroundColor cyan
+    echo "Removing resource group."  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Remove-AzureRmResourceGroup -Name $vhdFileName -Force
 }
 Catch
 {
-    Write-Error "Caught exception attempting to clean up Azure.  Aborting..."
+    echo "Caught exception attempting to clean up Azure.  Aborting..." | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     exit 1
 }
 
