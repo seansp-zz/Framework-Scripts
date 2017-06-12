@@ -1,0 +1,10 @@
+{
+    "server": "azure-apt-cat.cloudapp.net",
+    "protocol": "https",
+    "port": "443",
+    "repositoryId": "REPOSITORYID",
+    "username": "azure-kernel",
+    "password": "FXLbvQzRHN8x97ca4f"
+}
+
+
