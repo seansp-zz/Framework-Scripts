@@ -27,10 +27,17 @@ $monitoredMachines_Array=@()
 $global:monitoredMachines = {$monitoredMachines_Array}.Invoke()
 
 function checkMachine($machine) {
-    Write-Host "Checking boot results for machine $machine.MachineName" -ForegroundColor green
+    if ($machine.Status -ne "Booting") {
+        return
+    }
 
+    Write-Host "Checking boot results for machine $machine" -ForegroundColor green
+
+    $machineName=$machine.MachineName
     $resultsFile="c:\temp\boot_results\" + $machineName
     $progressFile="c:\temp\progress_logs\" + $machineName
+    $res_dest="c:\temp\completed_boots\" + $machineName + "_boot"
+    $prog_dest="c:\temp\completed_boots\" + $machineName + "_progress"
 
     if ((test-path $resultsFile) -eq 0) {
         return
@@ -47,8 +54,8 @@ function checkMachine($machine) {
         $global:booted_version=$ResultsSplit[1]
     }
 
-    Move-Item $resultsFile -Destination "c:\temp\completed_boots\{$machineName}_boot"
-    Move-Item $progressFile -Destination "c:\temp\completed_boots\{$machineName}_progress"
+    Move-Item $resultsFile -Destination $res_dest
+    Move-Item $progressFile -Destination $prog_dest
 
     $machine.Status = "Azure"
 
@@ -72,9 +79,37 @@ $action={
     #
     #  Check for Hyper-V completion
     foreach ($monitoredMachine in $global:monitoredMachines) {
-        $bootFile="c:\temp\boot_logs\" + $monitoredMachine.MachineName
-        if ((test-path $bootFile) -eq 1) {
+        $bootFile="c:\temp\boot_results\" + $monitoredMachine.MachineName
+        if ($machine.Status -eq "Booting" -and (test-path $bootFile) -eq 1) {
             checkmachine($monitoredMachine)
+        }
+    }
+
+    
+    #
+    #  Check for Azure completion
+    #
+    foreach ($monitoredMachine in $global:montiroedMachines) {
+        # Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
+        if ($monitoredMachine.Status -eq "Azure") {
+            $jobStatus=get-job -Name $monitoredMachine.MachineName
+            if ($jobStatus -eq $true) {
+                Write-Host "Current state is $jobStatus.State"
+
+                if (($jobStatus.State -ne "Completed") -and 
+                    ($jobStatus.State -ne "Failed")) {
+                    sleep 10
+                } elseif ($jobStatus.State -eq "Failed") {
+                    Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
+                    $global:failed = 1
+                    $monitoredMachine.status = "Completed"
+                    $global:num_remaining--
+                } else {
+                    Write-Host "Azure job $monitoredMachine.MachineName booted successfully." -ForegroundColor green
+                    $monitoredMachine.status = "Completed"
+                    $global:num_remaining--
+                }
+            }
         }
     }
 
@@ -87,44 +122,21 @@ $action={
         $global:completed=1
         exit 1
     }
-
-    #
-    #  Check for Azure completion
-    #
-    foreach ($monitoredMachine in $global:montiroedMachines) {
-        # Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
-        $jobStatus=get-job -Name $monitoredMachine.MachineName
-        if ($jobStatus -eq $true) {
-            Write-Host "Current state is $jobStatus.State"
-
-            if (($jobStatus.State -ne "Completed") -and 
-                ($jobStatus.State -ne "Failed")) {
-                sleep 10
-            } elseif ($jobStatus.State -eq "Failed") {
-                Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
-                $global:failed = 1
-                $monitoredMachine.status = "Completed"
-                $global:num_remaining--
-            } else {
-                Write-Host "Azure job $monitoredMachine.MachineName booted successfully." -ForegroundColor green
-                $monitoredMachine.status = "Completed"
-                $global:num_remaining--
-            }
-        }
-    }
  
     if (($global:elapsed % 10000) -eq 0) {
-        Write-Host "Waiting for remote machines to boot.  There are $global:num_remaining machines left.." -ForegroundColor green
+        Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($monitoredMachine in $global:monitoredMachines) {
             $logFile="c:\temp\progress_logs\" + $monitoredMachine.MachineName
-            if ((test-path $logFile) -eq 1) {
-                write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
-                get-content $logFile | Select-Object -Last 3 | write-host  -ForegroundColor cyan
-                write-host "---" -ForegroundColor magenta
-            } else {
-                $machineName = $monitoredMachine.MachineName
-                Write-Host "--- Machine $machineName has not checked in yet"
+            if ($monitoredMachine.Status -eq "Booting" -or $monitoredMachine.Status -eq "Azure") {
+                if ((test-path $logFile) -eq 1) {
+                    write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
+                    get-content $logFile | Select-Object -Last 3 | write-host  -ForegroundColor cyan
+                    write-host "---" -ForegroundColor magenta
+                } else {
+                    $machineName = $monitoredMachine.MachineName
+                    Write-Host "--- Machine $machineName has not checked in yet"
+                }
             }
         }
 
@@ -178,14 +190,27 @@ foreach-Object {
     Write-Host "Start paying attention to errors again..." -ForegroundColor green
     Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
     $machine.status = "Allocating"
-    $sourceFile="D:\azure_images\"+$vhdFile
-    $destFile="D:\working_images\"+$vhdFile
-    Copy-Item $sourceFile $destFile -Force
+    # Copy-Item $sourceFile $destFile -Force
+    $destFile="d:\working_images\" + $vhdFile
+    Remove-Item -Path $destFile -Force
+    robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $vhdFile
 
-    if ($? -eq $false) {
-        Write-Host "Copy failed.  The BORG cannot continue." -ForegroundColor Red
-        exit 1
+    # Check exit code
+    $color="green"
+    If ($LASTEXITCODE -eq 0) {
+        $copyRes = "Copy succeeded"
+    } elseif (($LASTEXITCODE -gt 0) -and ($LASTEXITCODE -lt 16)) {
+        $copyRes = "Robocopy exited with Warning $LASTEXITCODE"
+        $color="yellow"
+    } elseif ($LASTEXITCODE -eq 16) {
+        $copyRes = "Robocopy exited with unrecoverable Error."
+        $color="red"
+    } else {
+        $color="red"
+        $copyRes = "Robocopy did not run"
     }
+ 
+    Write-Host $copyRes -foregroundcolor $color
 }
 
 Write-Host "All machines template images have been copied.  Starting the VMs in Hyper-V" -ForegroundColor green

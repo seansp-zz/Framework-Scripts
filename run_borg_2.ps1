@@ -65,10 +65,26 @@ Catch
     exit 1
 }
 
+$newRGName=$vhdFileName+"-SmokeRG"
+$existingRG=Get-AzureRmResourceGroup -Name $newRGName
+
+$groupExists=$false
+if ($? -eq $true) {
+    $groupExists=$true
+}
+
 try {
-    echo "Creating a resource group for machine $vhdFileName"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-    $newRGName=$vhdFileName+"-SmokeRG"
-    New-AzureRmResourceGroup -Name $newRGName -Location westus
+    
+
+    if ($groupExists -eq $false)
+    {
+        echo "Creating a resource group for machine $vhdFileName"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+        New-AzureRmResourceGroup -Name $newRGName -Location westus
+    }
+    else
+    {
+        echo "Using existing resource group for machine $vhdFileName"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+    }
 
     echo "Making sure the VM is stopped..."  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     stop-vm $vhdFileName
@@ -77,22 +93,25 @@ try {
     $localFilePath=$sourceVHd.FullName
     Add-AzureRmVhd –ResourceGroupName $rg -Destination "$blobuploadURI" -LocalFilePath $localFilePath -OverWrite -NumberOfUploaderThreads 10
 
-    echo "Creating a new VM config..."   | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-    $vm=New-AzureRmVMConfig -vmName $vhdFileName -vmSize 'Standard_D2'
+    if ($groupExists -eq $false)
+    {
+        echo "Creating a new VM config..."   | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+        $vm=New-AzureRmVMConfig -vmName $vhdFileName -vmSize 'Standard_D2'
 
-    echo "Assigning resource group $rg network and subnet config to new machine" | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-    $VMVNETObject = Get-AzureRmVirtualNetwork -Name  azuresmokeresourcegroup-vnet -ResourceGroupName $rg
-    $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name default -VirtualNetwork $VMVNETObject
+        echo "Assigning resource group $rg network and subnet config to new machine" | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+        $VMVNETObject = Get-AzureRmVirtualNetwork -Name  azuresmokeresourcegroup-vnet -ResourceGroupName $rg
+        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name default -VirtualNetwork $VMVNETObject
 
-    echo "Creating the public IP address"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-    $pip = New-AzureRmPublicIpAddress -ResourceGroupName $newRGName -Location $location `
-            -Name $vhdFileName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
+        echo "Creating the public IP address"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+        $pip = New-AzureRmPublicIpAddress -ResourceGroupName $newRGName -Location $location `
+                -Name $vhdFileName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
 
-    echo "Creating the network interface"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-    $VNIC = New-AzureRmNetworkInterface -Name $vhdFileName -ResourceGroupName $newRGName -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+        echo "Creating the network interface"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+        $VNIC = New-AzureRmNetworkInterface -Name $vhdFileName -ResourceGroupName $newRGName -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
 
-    echo "Adding the network interface"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-    Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
+        echo "Adding the network interface"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
+        Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
+    }
 
     echo "Assigning the OS disk to URI $blobuploadURIRaw"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
     Set-AzureRmVMOSDisk -VM $vm -Name $vhdFileName -VhdUri $blobuploadURIRaw -CreateOption "Attach" -linux
