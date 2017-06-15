@@ -45,13 +45,16 @@ function checkMachine($machine) {
 
     $results=get-content $resultsFile
     $resultsSplit = $results.split(' ')
+    $resultsWord=$resultsSplit[0]
+    $resustsgot=$resultsSplit[1]
 
     if ($resultsSplit[0] -ne "Success") {
-        Write-Host "Machine $machineName rebooted, but wrong version detected.  Expected $resultsSplit[2] but got $resultsSplit[1]" -ForegroundColor red
+        $resultExpected = $resultsSplit[2]
+        Write-Host "Machine $machineName rebooted, but wrong version detected.  Expected resultExpected but got $resustsgot" -ForegroundColor red
         $global:failed=$true
     } else {
         Write-Host "Machine rebooted successfully to kernel version " -ForegroundColor green
-        $global:booted_version=$ResultsSplit[1]
+        $global:booted_version=$resustsgot
     }
 
     Move-Item $resultsFile -Destination $res_dest
@@ -61,9 +64,10 @@ function checkMachine($machine) {
 
     if ($global:failed -eq $false) {
         Write-Host "Chainging to Azure valication job..." -ForegroundColor green
-        start-job -Name $machineName -ScriptBlock {C:\Framework-Scripts\run_borg_2.ps1 $machine.MachineName}
+        start-job -Name $machineName -ScriptBlock {C:\Framework-Scripts\run_borg_2.ps1 $args[0] } -ArgumentList @($machineName)
     } else {
         Write-Host "This, or another, machine has failed to boot.  Machines will not progress to Azure" -ForegroundColor red
+        exit 1
     }
 }
 
@@ -79,8 +83,10 @@ $action={
     #
     #  Check for Hyper-V completion
     foreach ($monitoredMachine in $global:monitoredMachines) {
-        $bootFile="c:\temp\boot_results\" + $monitoredMachine.MachineName
-        if ($machine.Status -eq "Booting" -and (test-path $bootFile) -eq 1) {
+        $monitoredMachineName=$monitoredMachine.MachineName
+        $monitoredMachineStatus=$monitoredMachine.Status
+        $bootFile="c:\temp\boot_results\" + $monitoredMachineName
+        if ($monitoredMachineStatus -eq "Booting" -and (test-path $bootFile) -eq 1) {
             checkmachine($monitoredMachine)
         }
     }
@@ -91,21 +97,24 @@ $action={
     #
     foreach ($monitoredMachine in $global:montiroedMachines) {
         # Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
-        if ($monitoredMachine.Status -eq "Azure") {
-            $jobStatus=get-job -Name $monitoredMachine.MachineName
+        $monitoredMachineName=$monitoredMachine.MachineName
+        $monitoredMachineStatus=$monitoredMachine.Status
+        if ($monitoredMachineStatus -eq "Azure") {
+            $jobStatus=get-job -Name $monitoredMachineName
             if ($jobStatus -eq $true) {
-                Write-Host "Current state is $jobStatus.State"
+                $jobState = $jobStatus.State
+                Write-Host "Current state is $jobState"
 
-                if (($jobStatus.State -ne "Completed") -and 
-                    ($jobStatus.State -ne "Failed")) {
+                if (($jobState -ne "Completed") -and 
+                    ($jobState -ne "Failed")) {
                     sleep 10
-                } elseif ($jobStatus.State -eq "Failed") {
-                    Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
+                } elseif ($jobState -eq "Failed") {
+                    Write-Host "Azure job $monitoredMachineName exited with FAILED state!" -ForegroundColor red
                     $global:failed = 1
                     $monitoredMachine.status = "Completed"
                     $global:num_remaining--
                 } else {
-                    Write-Host "Azure job $monitoredMachine.MachineName booted successfully." -ForegroundColor green
+                    Write-Host "Azure job $monitoredMachineName booted successfully." -ForegroundColor green
                     $monitoredMachine.status = "Completed"
                     $global:num_remaining--
                 }
@@ -127,15 +136,17 @@ $action={
         Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($monitoredMachine in $global:monitoredMachines) {
-            $logFile="c:\temp\progress_logs\" + $monitoredMachine.MachineName
-            if ($monitoredMachine.Status -eq "Booting" -or $monitoredMachine.Status -eq "Azure") {
+            
+            $monitoredMachineName=$monitoredMachine.MachineName
+            $logFile="c:\temp\progress_logs\" + $monitoredMachineName
+            $monitoredMachineStatus=$monitoredMachine.Status
+            if ($monitoredMachineStatus -eq "Booting" -or $monitoredMachineStatus -eq "Azure") {
                 if ((test-path $logFile) -eq 1) {
                     write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
                     get-content $logFile | Select-Object -Last 3 | write-host  -ForegroundColor cyan
                     write-host "---" -ForegroundColor magenta
                 } else {
-                    $machineName = $monitoredMachine.MachineName
-                    Write-Host "--- Machine $machineName has not checked in yet"
+                    Write-Host "--- Machine $monitoredMachineName has not checked in yet"
                 }
             }
         }
@@ -145,16 +156,16 @@ $action={
 }
 
 Write-Host "    " -ForegroundColor green
-Write-Host "**********************************************" -ForegroundColor green
-Write-Host "*                                            *" -ForegroundColor green
-Write-Host "*            Microsoft Linux Kernel          *" -ForegroundColor green
-Write-Host "*     Basic Operational Readiness Gateway    *" -ForegroundColor green
-Write-Host "* Host Infrastructure Validation Environment *" -ForegroundColor green
-Write-Host "*                                            *" -ForegroundColor green
-Write-Host "*           Welcome to the BORG HIVE         *" -ForegroundColor green
-Write-Host "**********************************************" -ForegroundColor green
+Write-Host "                 **********************************************" -ForegroundColor yellow
+Write-Host "                 *                                            *" -ForegroundColor yellow
+Write-Host "                 *            Microsoft Linux Kernel          *" -ForegroundColor yellow
+Write-Host "                 *     Basic Operational Readiness Gateway    *" -ForegroundColor yellow
+Write-Host "                 * Host Infrastructure Validation Environment *" -ForegroundColor yellow
+Write-Host "                 *                                            *" -ForegroundColor yellow
+Write-Host "                 *           Welcome to the BORG HIVE         *" -ForegroundColor yellow
+Write-Host "                 **********************************************" -ForegroundColor yellow
 Write-Host "    "
-Write-Host "Initializing the CUBE (Customizable Universal Base of Execution)" -ForegroundColor yellow
+Write-Host "          Initializing the CUBE (Customizable Universal Base of Execution)" -ForegroundColor yellow
 Write-Host "    "
 #
 #  Clean up the sentinel files
@@ -165,11 +176,14 @@ remove-item -ErrorAction "silentlycontinue" C:\temp\boot_results\*
 remove-item -ErrorAction "silentlycontinue" C:\temp\progress_logs\*
 
 Write-Host "   "
-Write-Host "BORG CUBE is initialized.  Starting the DRONES (Dedicated Remote Node of Execution)" -ForegroundColor yellow
+Write-Host "                                BORG CUBE is initialized"                   -ForegroundColor Yellow
+Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRONES)" -ForegroundColor yellow
 Write-Host "    "
 
 Write-Host "Checking to see which VMs we need to bring up..." -ForegroundColor green
-
+Write-Host "Errors may appear here depending on the state of the system.  They're almost all OK.  If things go bad, we'll let you know." -ForegroundColor Green
+Write-Host "For now, though, please feel free to ignore the following errors..." -fore Green
+Write-Host " "
 Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     
@@ -187,30 +201,65 @@ foreach-Object {
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
 
-    Write-Host "Start paying attention to errors again..." -ForegroundColor green
-    Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
     $machine.status = "Allocating"
     # Copy-Item $sourceFile $destFile -Force
     $destFile="d:\working_images\" + $vhdFile
     Remove-Item -Path $destFile -Force
-    robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $vhdFile
+    
+    Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
+    $jobName=$vhdFileName + "_copy_job"
 
-    # Check exit code
-    $color="green"
-    If ($LASTEXITCODE -eq 0) {
-        $copyRes = "Copy succeeded"
-    } elseif (($LASTEXITCODE -gt 0) -and ($LASTEXITCODE -lt 16)) {
-        $copyRes = "Robocopy exited with Warning $LASTEXITCODE"
-        $color="yellow"
-    } elseif ($LASTEXITCODE -eq 16) {
-        $copyRes = "Robocopy exited with unrecoverable Error."
-        $color="red"
-    } else {
-        $color="red"
-        $copyRes = "Robocopy did not run"
+    $existingJob = get-job  $jobName
+    if ($? -eq $true) {
+        stop-job $jobName
+        remove-job $jobName
     }
- 
-    Write-Host $copyRes -foregroundcolor $color
+
+    Start-Job -Name $jobName -ScriptBlock { robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $args[0] } -ArgumentList @($vhdFile)
+}
+Write-Host " "
+Write-Host "Start paying attention to errors again..." -ForegroundColor green
+Write-Host " "
+
+while ($true) {
+    Write-Host "Waiting for copying to complete..." -ForegroundColor green
+    $copy_complete=$true
+    Get-ChildItem 'D:\azure_images\*.vhd' |
+    foreach-Object {
+        $vhdFile=$_.Name
+        $vhdFileName=$vhdFile.Split('.')[0]
+
+        $jobName=$vhdFileName + "_copy_job"
+
+        $jobStatus=get-job -Name $jobName
+        $jobState = $jobStatus.State
+        
+        if (($jobState -ne "Completed") -and 
+            ($jobState -ne "Failed")) {
+            Write-Host "      Current state of job $jobName is $jobState" -ForegroundColor yellow
+            $copy_complete = $false
+        }
+        elseif ($jobState -eq "Failed")
+        {
+            $global:failed = 1
+            Write-Host "----> Copy job $jobName exited with FAILED state!" -ForegroundColor red
+        }
+        else
+        {
+            Write-Host "      Copy job $jobName completed successfully." -ForegroundColor green
+        }    
+    }
+
+    if ($copy_complete -eq $false) {
+        sleep 30
+    } else {
+        break
+    }
+}
+
+if ($global:failed -eq 1) {
+    write-host "Copy failed.  Cannot continue..."
+    exit 1
 }
 
 Write-Host "All machines template images have been copied.  Starting the VMs in Hyper-V" -ForegroundColor green
@@ -222,14 +271,15 @@ foreach-Object {
     $vhdFileName=$vhdFile.Split('.')[0]
     
     foreach ($machine in $global:monitoredMachines) {
-        if ($machine.MachineName -eq $vhdFileName) {
-             $machine.Status = "Starting Hyper-V"
+        $monitoredMachineName=$machine.MachineName
+        if ($monitoredMachineName -eq $vhdFileName) {
+             $machine.Status = "Booting"
+             break
         }
     }
     
     $vhdPath="D:\working_images\"+$vhdFile   
 
-    $machine.Status = "Booting"
     Write-Host "BORG DRONE $vhdFileName is starting" -ForegroundColor green
 
     new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
@@ -247,8 +297,8 @@ foreach-Object {
 
 #
 #  Wait for the machines to report back
-#
-write-host "Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
+#                       
+write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
 $timer.Interval = 500
 $timer.Enabled = $true
@@ -258,7 +308,7 @@ while ($global:completed -eq 0) {
     start-sleep -s 1
 }
 
-write-host "Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor green
+write-host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor green
 $timer.stop()
 unregister-event bootTimer
 
@@ -269,32 +319,35 @@ if ($global:num_remaining -eq 0) {
     
     if ($global:failed -eq $true) {
         Write-Host "Failures were detected in reboot and/or reporting of kernel version.  See log above for details." -ForegroundColor red
-        write-host "BORG TESTS HAVE FAILED!!" -ForegroundColor red
+        write-host "                            BORG TESTS HAVE FAILED!!" -ForegroundColor red
     } else {
         Write-Host "All machines rebooted successfully to kernel version $global:booted_version" -ForegroundColor green
-        write-host "BORG has been passed successfully!" -ForegroundColor green
+        write-host "                      BORG has been passed successfully!" -ForegroundColor green
     }
 } else {
-        write-host "BORG TEST FAILURE!!  Not all machines booted in the allocated time!" -ForegroundColor red
-
-        Write-Host "Not all test machines reported in.  Machines states are:" -ForegroundColor red
+        write-host "Not all machines booted in the allocated time!" -ForegroundColor red
+        Write-Host " Machines states are:" -ForegroundColor red
         foreach ($machine in $global:montiroedMachines) {
             echo "Machine $machine.MachnineName is in state $machine.state" -ForegroundColor red
         }
     }
 
 foreach ($monitoredMachine in $global:montiroedMachines) {
+        $monitoredMachineName=$monitoredMachine.Name
+        $monitoredMachineState=$monitoredMachine.State
 
-        Write-Host "Checking state of Azure job $monitoredMachine.MachineName" -ForegroundColor green
-        $jobStatus=get-job -Name $monitoredMachine.MachineName
+        Write-Host "Checking state of Azure job $monitoredMachineName" -ForegroundColor green
 
-        Write-Host "Current state is $jobStatus.State"
+        $jobStatus=get-job -Name $monitoredMachineName
+        $jobState = $jobStatus.State
 
-        if (($jobStatus.State -ne "Completed") -and 
-            ($jobStatus.State -ne "Failed")) {
+        Write-Host "Current state is $jobState"
+
+        if (($jobState -ne "Completed") -and 
+            ($jobState -ne "Failed")) {
             sleep 10
         }
-        elseif ($jobStatus.State -eq "Failed")
+        elseif ($jobState -eq "Failed")
         {
             $global:failed = 1
             Write-Host "Azure job $monitoredMachine.MachineName exited with FAILED state!" -ForegroundColor red
@@ -308,9 +361,9 @@ foreach ($monitoredMachine in $global:montiroedMachines) {
     }
 
 if ($global:failed -eq 0) {    
-    Write-Host "Exiting with success.  Thanks for Playing" -ForegroundColor green
+    Write-Host "                       BORG is   Exiting with success.  Thanks for Playing" -ForegroundColor green
     exit 0
 } else {
-    Write-Host "Exiting with failure.  Thanks for Playing" -ForegroundColor red
+    Write-Host "                        BORG is Exiting with failure.  Thanks for Playing" -ForegroundColor red
     exit 1
 }

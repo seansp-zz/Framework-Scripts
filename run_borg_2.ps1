@@ -99,8 +99,8 @@ try {
         $vm=New-AzureRmVMConfig -vmName $vhdFileName -vmSize 'Standard_D2'
 
         echo "Assigning resource group $rg network and subnet config to new machine" | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
-        $VMVNETObject = Get-AzureRmVirtualNetwork -Name  azuresmokeresourcegroup-vnet -ResourceGroupName $rg
-        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name default -VirtualNetwork $VMVNETObject
+        $VMVNETObject = Get-AzureRmVirtualNetwork -Name SmokeVNet -ResourceGroupName $rg
+        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name SmokeSubnet-1 -VirtualNetwork $VMVNETObject
 
         echo "Creating the public IP address"  | Out-File -Append -FilePath C:\temp\progress_logs\$requestedVM
         $pip = New-AzureRmPublicIpAddress -ResourceGroupName $newRGName -Location $location `

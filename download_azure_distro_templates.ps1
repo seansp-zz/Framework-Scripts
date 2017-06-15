@@ -1,14 +1,27 @@
-﻿param (
-    [switch]$getAll=$false,
-    [switch]$replaceVHD=$false,
-    [string[]] $requestedVMs=""
+﻿##############################################################
+#
+#  Microsoft Linux Kernel Build and Validation Pipeline
+#
+#  Script Name:  download_azure_distro_templates
+#
+#  Script Summary:  This script will create a VHD in Azure
+#         assigned to the azuresmokeresourcegroup so it can be
+#         discovered by the download monitoring job.
+#
+##############################################################
+param (
+    [Parameter(Mandatory=$false)] [switch] $getAll,
+    [Parameter(Mandatory=$false)] [switch] $replaceVHD,
+    [Parameter(Mandatory=$false)] [string[]] $requestedVMs
 )
 
-$rg="azuresmokeresourcegroup"
+$rg="azureSmokeResourceGroup"
 $nm="azuresmokestoragesccount"
 
 write-host "Importing the context...." -ForegroundColor green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+
+$requestedVMs
 
 write-host "Selecting the Azure subscription..." -ForegroundColor green
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
@@ -27,39 +40,41 @@ if ($getAll -eq $true -and $replaceVHD -eq $true) {
 } elseif ($requestedVMs.Length -eq 0) {
     foreach ($machine in $smoke_machines) {
         $machineName=$machine.Name+".vhd"
+        $vmName=$machine.Name
         if ((Test-Path D:\azure_images\$machineName) -eq $true -and $replaceVHD -eq $true) {
-            Write-Host "Machine $machineName is being deleted from the disk and will be downloaded again..." -ForegroundColor green
+            Write-Host "Machine $vmName is being deleted from the disk and will be downloaded again..." -ForegroundColor green
             remove-item "D:\azure_images\$machineName" -recurse -force
-            stop-vm -Name $machine
-            remove-vm -Name $machine -Force
-            $neededVms.Add($machineName)
+            stop-vm -Name $vmName
+            remove-vm -Name $vmName -Force
+            $neededVms.Add($vmName)
         } elseIf (Test-Path D:\azure_images\$machineName) {
-            Write-Host "Machine $machineName was already on the disk and the replaceVHD flag was not given.  Machine will not be updated." -ForegroundColor red            
+            Write-Host "Machine $vmName was already on the disk and the replaceVHD flag was not given.  Machine will not be updated." -ForegroundColor red            
         } else {
-            Write-Host "Machine $machineName does not yet exist on the disk.  Machine will be downloaded..." -ForegroundColor green
-            stop-vm -Name $machine
-            remove-vm -Name $machine -Force
-            $neededVms.Add($machineName)
+            Write-Host "Machine $vmName does not yet exist on the disk.  Machine will be downloaded..." -ForegroundColor green
+            stop-vm -Name $vmName
+            remove-vm -Name $vmName -Force
+            $neededVms.Add($vmName)
         }
     }
 } else {
     foreach ($machine in $requestedVMs) {
         Write-Host "Downloading per user-defined list"
-        $machineName=$machine+".vhd"
-        write-host "Looking for machine $machienName"
+        $machineName=$machine.Name +".vhd"
+        $vmName=$machine.Name
+        write-host "Looking for machine $vmName"
         if ((Test-Path D:/azure_images/$machineName) -eq $true -and $replaceVHD -eq $true) {
-            Write-Host "Machine $machine is being deleted from the disk and will be downloaded again..." -ForegroundColor green
+            Write-Host "Machine $vmName is being deleted from the disk and will be downloaded again..." -ForegroundColor green
             remove-item "D:/azure_images/$machineName" -recurse -force
-            stop-vm -Name $machine
-            remove-vm -Name $machine -Force
-            $neededVms.Add($machine)
+            stop-vm -Name $vmName
+            remove-vm -Name $vmName -Force
+            $neededVms.Add($vmName)
         } elseIf (Test-Path D:\azure_images\$machineName) {
-            Write-Host "Machine $machine was already on the disk and the replaceVHD flag was not given.  Machine will not be updated." -ForegroundColor red            
+            Write-Host "Machine $vmName was already on the disk and the replaceVHD flag was not given.  Machine will not be updated." -ForegroundColor red            
         } else {
-            Write-Host "Machine $machine does not yet exist on the disk.  Machine will be downloaded..." -ForegroundColor green
-            stop-vm -Name $machine
-            remove-vm -Name $machine -Force
-            $neededVms.Add($machine)
+            Write-Host "Machine $vmName does not yet exist on the disk.  Machine will be downloaded..." -ForegroundColor green
+            stop-vm -Name $vmName
+            remove-vm -Name $vmName -Force
+            $neededVms.Add($vmName)
         }
     }
 }
@@ -68,39 +83,37 @@ if ($getAll -eq $true) {
     Write-Host "Downloading all machines.  This may take some time..." -ForegroundColor green
     foreach ($machine in $smoke_machines) {
         $vhd_name=$machine.Name + ".vhd"
-        $machine_name = "D:/azure_images/" + $machine.Name + ".vhd"
-        $neededVMs.Add($machine.Name)
+        $machine_name = "D:/azure_images/" + $machine.Name
 
-        function downloadMachine {
-            param (
-               [Parameter(Mandatory=$true)] [string] $g,
-               [Parameter(Mandatory=$true)] [string] $u,
-               [Parameter(Mandatory=$true)] [string] $n
-            )
-            Save-AzureRmVhd -ResourceGroupName $g -SourceUri $u -LocalFilePath $n -OverWrite
-        }
+        $vmName=$machine.Name
 
-        $jobName = $machine.Name + "_SaveVhd"
+        $neededVMs.Add($vmName)
+
+        $jobName = $vmName + "_SaveVhd"
         $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
+
         Write-Host "Starting job $jobName to download machine $vhd_name from uri $uri to directory $machine_name" -ForegroundColor green
 
-        start-job -name $jobName -ScriptBlock {C:\Framework-Scripts\download_single_vm.ps1 -g $args[0] -u $args[1] -n $args[2] } -ArgumentList $rg,$uri,$machine_name
+        Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\download_single_vm.ps1 -g $args[0] -u $args[1] -n $args[2] -j $args[3] } -ArgumentList @($rg, $uri, $machine_name, $jobName)
     }
 } else {
     foreach ($neededMachine in $neededVms) {
        
         foreach ($machine in $smoke_machines) {
-            if ($machine.Name -eq $neededMachine) {
+            $vmName=$machine.Name
+            if ($vmName -eq $neededMachine) {
                 break;
             }
         }
         $vhd_name=$machine.Name + ".vhd"
         $machine_name = "D:/azure_images/" + $machine.Name + ".vhd"
+        $vmName=$machine.Name
 
-        $jobName = $machine.Name + "_SaveVhd"
+        $jobName = $vmName + "_SaveVhd"
         $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
         Write-Host "Starting job $jobName to download machine $vhd_name from uri $uri to directory $machine_name" -ForegroundColor green
-        start-job -name $jobName -ScriptBlock {C:\Framework-Scripts\download_single_vm.ps1 -g $args[0] -u $args[1] -n $args[2] } -ArgumentList $rg,$uri,$machine_name
+
+        Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\download_single_vm.ps1 -g $args[0] -u $args[1] -n $args[2] -j $args[3] } -ArgumentList @($rg, $uri, $machine_name, $jobName)
     }
 }
 
@@ -122,7 +135,9 @@ while ($stop_checking -eq $false) {
 
         if ($jobState.State -eq "Running") {
             if (($sleepCount % 6) -eq 0) {
-                Write-Host "Download still in progress..." -ForegroundColor green
+                $dlLog="c:\temp\"+ $jobName+ "_download.log"
+                Write-Host "Download still in progress.  Last line from log file is:" -ForegroundColor green
+                get-content $dlLog | Select-Object -Last 1 | write-host  -ForegroundColor cyan
                 $failed=$false
             }
         } elseif ($jobState.State -eq "Completed") {

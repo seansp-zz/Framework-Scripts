@@ -1,10 +1,21 @@
-﻿param (
+﻿##############################################################
+#
+#  Microsoft Linux Kernel Build and Validation Pipeline
+#
+#  Script Name:  create_vm_from_vhd
+#
+#  Script Summary:  This script will create a VHD in Azure
+#         assigned to the azuresmokeresourcegroup so it can be
+#         discovered by the download monitoring job.
+#
+##############################################################
+param (
     [Parameter(Mandatory=$true)]
-    [string] $vhdFile="",
-    [Parameter(Mandatory=$true)]
-    [string] $vhdFileName=""
+    [string] $blobName=""
 )
 
+$vhdFileName = $blobName
+$vhdFile = $vhdFileName + ".vhd"
 
 $resourceGroup = "azureSmokeResourceGroup"
 $rg=$resourceGroup
@@ -35,6 +46,8 @@ $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name SmokeSubnet-1 -Vir
 $nsgObject = Get-AzureRmNetworkSecurityGroup -ResourceGroupName $rg -name SmokeNSG
 write-host "Creating the NIC"
 $VNIC = New-AzureRmNetworkInterface -Name $vhdFileName -ResourceGroupName $rg -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id -NetworkSecurityGroupId $nsgObject.Id
+
+$sshPublicKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4JIoy6xOt+zkw73tNOs7+6pDJi02fkQndTdjcEkG0LwOr1su9s3evV+O59/ZcumP9uo5zZLKPA1IHT0LuZlaEzq6s978bw1c6v5E/AefM00hwsiAwsQD+RWe0F70F4ayqlsMVfb6MBbykyu1JtoXkAeiYHhsw4sVw9PZfzowAgXhTjWaGOo/vmG4YcwghUM/SrSuNH+jcoUz+T2T8RwfB+zvIMwWjsA0S18ZU7ZUjIEED/ansbcJ5umL7kxftKe3Njes3GvQDIUThBDuJs5IDp+CqwwwjHqgWFBgE3EITwqGeZheuRX+mQ3YuR2G52dqUhySUiLwnr4RtHBo5p59j"
 
 write-host "Creating the VM.  This usually takes a few minutes.  It will be running when we're done."
 
