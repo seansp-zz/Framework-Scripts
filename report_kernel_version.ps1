@@ -37,6 +37,8 @@ $expected=Get-Content /root/expected_version
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Azure insertion cancelled because OS version did not match expected..."
+    phoneHome "Installed version is $kernel_name"
+    phoneHome "Expected version is $expected"
 }
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {

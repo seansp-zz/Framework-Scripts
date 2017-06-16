@@ -12,6 +12,17 @@ function callItIn($c, $m) {
 
 function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+
+    if ($? -eq $false)
+    {
+        #
+        #  Error on ps.  Try reconnecting.
+        #
+        Exit-PSSession $s
+        $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+        $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+        $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+    }
 }
 
 function callVersionIn($m) {
