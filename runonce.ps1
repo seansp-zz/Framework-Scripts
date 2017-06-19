@@ -19,6 +19,11 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
+#
+#  Give the machine 30 seconds to settle down
+#
+sleep 30
+
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
 $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
