@@ -27,7 +27,7 @@ function phoneHome($m) {
             $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
         }
     } else {
-        $output_path=/tmp/borg_progress.log
+        $output_path="/tmp/borg_progress.log"
 
         $m | out-file -Append $output_path
     }
@@ -46,12 +46,16 @@ function phoneVersionHome($m) {
 }
 
 #
+#  Now see if we can mount the drop folder
+#
+$global:isHyperV=nslookup cdmbuildsna01.redmond.corp.microsoft.com
+
+#
 #  Start by cleaning out any existing downloads
 #
-
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
-$s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+# $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
 
 #
 #  What OS are we on?
@@ -72,10 +76,7 @@ If (Test-Path $kernFolder) {
 }
 new-item $kernFolder -type directory
 
-#
-#  Now see if we can mount the drop folder
-#
-$global:isHyperV=nslookup cdmbuildsna01.redmond.corp.microsoft.com
+
 
 if ($? -eq $true) {
     if ((Test-Path "/mnt/ostcnix") -eq 0) {
