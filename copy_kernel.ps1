@@ -1,7 +1,7 @@
 #!/usr/bin/powershell
 #
 #  Copy the latest kernel build from the secure share to the local directory,
-#  then install it, set the default kernel, switch out this script for the
+  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
@@ -48,17 +48,21 @@ function phoneVersionHome($m) {
 #
 #  Now see if we can mount the drop folder
 #
-$global:isHyperV=true
+echo "Checking for platform..."
+$global:isHyperV=$true
 $lookup=nslookup cdmbuildsna01.redmond.corp.microsoft.com
 if ($? -eq $false) {
     $global:isHyperV = $false
+    echo "It looks like we're in Azure"
+} else {
+    echo "It looks like we're in Hyper-V"
 }
 
 #
 #  Start by cleaning out any existing downloads
 #
 $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-$cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
 if ($global:isHyperV -eq $true) {
     $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
 }
@@ -82,7 +86,7 @@ If (Test-Path $kernFolder) {
 }
 new-item $kernFolder -type directory
 
-if ($isHyperV -eq $true) {
+if ($global:isHyperV -eq $true) {
     if ((Test-Path "/mnt/ostcnix") -eq 0) {
         New-Item -ItemType Directory -Path /mnt/ostcnix
     }
