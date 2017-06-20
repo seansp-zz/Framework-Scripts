@@ -106,12 +106,12 @@ function launch_azure_vms {
             if ($groupExists -eq $true)
             {
                 echo "Removing previous resource group for machine $vmName" 
-                Remove-AzureRmResourceGroup -Name $newRGName -Force
+                Remove-AzureRmResourceGroup -Name $newRGName - -Force
             }
             New-AzureRmResourceGroup -Name $newRGName -Location westus
 
             echo "Making sure the VM is stopped..." 
-            stop-vm $vmName
+            stop-vm $vmName -TurnOff -Force
 
             echo "Creating a new VM config..."  
             $vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2'

@@ -13,7 +13,7 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
-$pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+$pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
 $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
 
