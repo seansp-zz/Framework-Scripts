@@ -1,7 +1,7 @@
 #!/usr/bin/powershell
 #
 #  Copy the latest kernel build from the secure share to the local directory,
-#  then install it, set the default kernel, switch out this script for the
+  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
@@ -184,6 +184,7 @@ If (Test-Path /bin/rpm) {
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
+    grub2-mkconfig -o /boot/grub2/grub.cfg
     grub2-set-default 0
 } else {
     #
@@ -214,6 +215,7 @@ If (Test-Path /bin/rpm) {
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
+    grub-mkconfig -o /boot/grub/grub.cfg
     grub-set-default 0
 }
 
