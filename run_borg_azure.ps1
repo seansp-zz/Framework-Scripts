@@ -21,6 +21,7 @@ class MonitoredMachine {
     [string] $name="unknown"
     [string] $status="Unitialized"
     [string] $ipAddress="Unitialized"
+    $session
 }
 
 $timer=New-Object System.Timers.Timer
@@ -150,6 +151,27 @@ function launch_azure_vms {
                 echo "FAILED TO CREATE VM!!" 
                 exit 1
             } else {
+                #
+                #  Attempt to create the PowerShell PSRP session
+                #
+                foreach ($localMachine in $global:monitoredMachines) {
+                    [MonitoredMachine]$monitoredMachine=$localMachine
+
+                    if ($localMachine.Name -eq $vmName) {
+                        echo "Creating PowerShell Remoting session to machine at IP $pip" 
+                        $ipAddress=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
+                        $ipAddress=$ip.IpAddress
+                        # echo "Creating PowerShell Remoting session to machine at IP $ipAddress" 
+                        $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+                        break
+                    }
+
+                    if ($machine.session -eq $null) {
+                        # echo "FAILED to contact Azure guest VM" 
+                        goto :NOCONNECTION
+                    }
+                }
+
                 $global:num_remaining++
             }
         }
@@ -170,10 +192,6 @@ $action={
             return
         }
 
-        $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-        $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-        $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
-
         Write-Host "Checking boot results for machine $machineName" -ForegroundColor green
 
         if ($machineStatus -ne "Booting") {
@@ -186,19 +204,8 @@ $action={
         $failed=0
         $newRGName=$machineName + "-SmokeRG"
 
-        try {
-            $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
-            $ipAddress=$ip.IpAddress
-            # echo "Creating PowerShell Remoting session to machine at IP $ipAddress" 
-            $session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
-
-            if ($session -eq $null) {
-                # echo "FAILED to contact Azure guest VM" 
-                goto :NOCONNECTION
-            }
-
-            $installed_vers=invoke-command -session $session -ScriptBlock {/bin/uname -r}
-            remove-pssession $session
+        try {            
+            $installed_vers=invoke-command -session $machine.session -ScriptBlock {/bin/uname -r}
             echo "$machineName installed version retrieved as $installed_vers"
             $machine.Status = "Completed"
             $global:num_remaining--
@@ -273,18 +280,14 @@ $action={
             if ($monitoredMachineStatus -ne "Completed") {
                 Write-Host "--- Machine $monitoredMachineName has not completed yet"
             }
-            $ipAddress=$monitoredMachine.ipAddress
-
-            # echo "Creating PowerShell Remoting session to machine at IP $ipAddress" 
-            $session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+            $ipAddress=$monitoredMachine.ipAddress            
 
             if ($session -eq $null) {
                 # echo "FAILED to contact Azure guest VM" 
                 goto :NOCONNECTION
             }
 
-            $last_lines=invoke-command -session $session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 | write-host  -ForegroundColor cyan}
-            remove-pssession $session                        
+            $last_lines=invoke-command -session $machine.session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 | write-host  -ForegroundColor cyan}
          }
     }
 

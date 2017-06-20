@@ -26,7 +26,7 @@ sleep 30
 
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
-$s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+$s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
 
 #
 #  What OS are we on?

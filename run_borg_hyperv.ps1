@@ -1,4 +1,8 @@
-﻿$global:completed=0
+﻿param (
+    [Parameter(Mandatory=$false)] [switch] $skipCopy
+)
+
+$global:completed=0
 $global:elapsed=0
 $global:interval=500
 $global:boot_timeout_minutes=20
@@ -174,63 +178,70 @@ foreach-Object {
     $machine.status = "Allocating"
     # Copy-Item $sourceFile $destFile -Force
     $destFile="d:\working_images\" + $vhdFile
+
+    if ($skipCopy -eq $false) {
     Remove-Item -Path $destFile -Force
     
-    Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
-    $jobName=$vhdFileName + "_copy_job"
+        Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
+        $jobName=$vhdFileName + "_copy_job"
 
-    $existingJob = get-job  $jobName
-    if ($? -eq $true) {
-        stop-job $jobName
-        remove-job $jobName
+        $existingJob = get-job  $jobName
+        if ($? -eq $true) {
+            stop-job $jobName
+            remove-job $jobName
+        }
+
+        Start-Job -Name $jobName -ScriptBlock { robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $args[0] } -ArgumentList @($vhdFile)
+    } else {
+        Write-Host "Skipping copy per command line option"
     }
-
-    Start-Job -Name $jobName -ScriptBlock { robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $args[0] } -ArgumentList @($vhdFile)
 }
 
 Write-Host " "
 Write-Host "Start paying attention to errors again..." -ForegroundColor green
 Write-Host " "
 
-while ($true) {
-    Write-Host "Waiting for copying to complete..." -ForegroundColor green
-    $copy_complete=$true
-    Get-ChildItem 'D:\azure_images\*.vhd' |
-    foreach-Object {
-        $vhdFile=$_.Name
-        $vhdFileName=$vhdFile.Split('.')[0]
+if ($skipCopy -eq $false) {
+    while ($true) {
+        Write-Host "Waiting for copying to complete..." -ForegroundColor green
+        $copy_complete=$true
+        Get-ChildItem 'D:\azure_images\*.vhd' |
+        foreach-Object {
+            $vhdFile=$_.Name
+            $vhdFileName=$vhdFile.Split('.')[0]
 
-        $jobName=$vhdFileName + "_copy_job"
+            $jobName=$vhdFileName + "_copy_job"
 
-        $jobStatus=get-job -Name $jobName
-        $jobState = $jobStatus.State
+            $jobStatus=get-job -Name $jobName
+            $jobState = $jobStatus.State
         
-        if (($jobState -ne "Completed") -and 
-            ($jobState -ne "Failed")) {
-            Write-Host "      Current state of job $jobName is $jobState" -ForegroundColor yellow
-            $copy_complete = $false
+            if (($jobState -ne "Completed") -and 
+                ($jobState -ne "Failed")) {
+                Write-Host "      Current state of job $jobName is $jobState" -ForegroundColor yellow
+                $copy_complete = $false
+            }
+            elseif ($jobState -eq "Failed")
+            {
+                $global:failed = 1
+                Write-Host "----> Copy job $jobName exited with FAILED state!" -ForegroundColor red
+            }
+            else
+            {
+                Write-Host "      Copy job $jobName completed successfully." -ForegroundColor green
+            }    
         }
-        elseif ($jobState -eq "Failed")
-        {
-            $global:failed = 1
-            Write-Host "----> Copy job $jobName exited with FAILED state!" -ForegroundColor red
+
+        if ($copy_complete -eq $false) {
+            sleep 30
+        } else {
+            break
         }
-        else
-        {
-            Write-Host "      Copy job $jobName completed successfully." -ForegroundColor green
-        }    
     }
 
-    if ($copy_complete -eq $false) {
-        sleep 30
-    } else {
-        break
+    if ($global:failed -eq 1) {
+        write-host "Copy failed.  Cannot continue..."
+        exit 1
     }
-}
-
-if ($global:failed -eq 1) {
-    write-host "Copy failed.  Cannot continue..."
-    exit 1
 }
 
 Write-Host "All machines template images have been copied.  Starting the VMs in Hyper-V" -ForegroundColor green
@@ -253,7 +264,7 @@ foreach-Object {
 
     Write-Host "BORG DRONE $vhdFileName is starting" -ForegroundColor green
 
-    new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "Microsoft Hyper-V Network Adapter - Virtual Switch" -VHDPath $vhdPath
+    new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "External" -VHDPath $vhdPath
     $monitoredMachine.status = "Booting"
 
     if ($? -eq $false) {

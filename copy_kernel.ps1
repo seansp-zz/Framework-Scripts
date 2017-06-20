@@ -24,7 +24,7 @@ function phoneHome($m) {
             Exit-PSSession $s
             $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
             $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
-            $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+            $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
         }
     } else {
         $output_path="/tmp/borg_progress.log"
@@ -60,7 +60,7 @@ if ($? -eq $false) {
 $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
 if ($global:isHyperV -eq $true) {
-    $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+    $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
 }
 
 #
