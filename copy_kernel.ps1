@@ -22,9 +22,10 @@ function phoneHome($m) {
             #  Error on ps.  Try reconnecting.
             #
             Exit-PSSession $s
+            $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
             $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
             $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
-            $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
+            $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
         }
     } else {
         $output_path="/root/borg_progress.log"
@@ -61,10 +62,11 @@ if ($? -eq $false) {
 #
 #  Start by cleaning out any existing downloads
 #
+$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
 if ($global:isHyperV -eq $true) {
-    $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
+    $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
 }
 
 #

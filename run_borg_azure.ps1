@@ -32,10 +32,10 @@ $timer=New-Object System.Timers.Timer
 
 function copy_azure_machines {
 
-    write-host "Importing the context...." -ForegroundColor green
+    Write-Host "Importing the context...." -ForegroundColor green
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
-    write-host "Selecting the Azure subscription..." -ForegroundColor green
+    Write-Host "Selecting the Azure subscription..." -ForegroundColor green
     Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
@@ -65,7 +65,7 @@ function copy_azure_machines {
     dir z: > c:\temp\file_list
     Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container "latest-packages" -force
 
-    Write-Host "Getting the list of machines and disks..."
+    Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
     $smoke_machines=Get-AzureRmVm -ResourceGroupName $rg
     $smoke_disks=Get-AzureRmDisk -ResourceGroupName $rg
 
@@ -104,83 +104,63 @@ function launch_azure_vms {
         try {
             if ($groupExists -eq $true)
             {
-                echo "Removing previous resource group for machine $vmName" 
+                Write-Host "Removing previous resource group for machine $vmName"  -ForegroundColor green
                 Remove-AzureRmResourceGroup -Name $newRGName -Force
             }
-            echo "Creating new resource group for VM $vmName"
+            Write-Host "Creating new resource group for VM $vmName" -ForegroundColor green
             New-AzureRmResourceGroup -Name $newRGName -Location westus
 
-            echo "Making sure the VM is stopped..." 
+            Write-Host "Making sure the VM is stopped..."  -ForegroundColor green
             stop-vm $vmName -TurnOff -Force
 
-            echo "Creating a new VM config..."  
+            Write-Host "Creating a new VM config..."   -ForegroundColor green
             $vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2'
 
-            echo "Assigning resource group $rg network and subnet config to new machine"
+            Write-Host "Assigning resource group $rg network and subnet config to new machine" -ForegroundColor green
             $VMVNETObject = Get-AzureRmVirtualNetwork -Name SmokeVNet -ResourceGroupName $rg
             $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name SmokeSubnet-1 -VirtualNetwork $VMVNETObject
 
-            echo "Creating the public IP address" 
+            Write-Host "Creating the public IP address"  -ForegroundColor green
             $pip = New-AzureRmPublicIpAddress -ResourceGroupName $newRGName -Location $location `
                     -Name $vmName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
 
-            echo "Creating the network interface" 
+            Write-Host "Creating the network interface"  -ForegroundColor green
             $VNIC = New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $newRGName -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
 
-            echo "Adding the network interface" 
+            Write-Host "Adding the network interface"  -ForegroundColor green
             Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
-            echo "Getting the source disk URI"
+            Write-Host "Getting the source disk URI" -ForegroundColor green
             $c = Get-AzureStorageContainer -Name $destContainerName
             $blobName=$vmName + ".vhd"
             $blobURIRaw = $c.CloudBlobContainer.Uri.ToString() + "/" + $blobName
 
-            echo "Setting the OS disk to interface $blobURIRaw"
+            Write-Host "Setting the OS disk to interface $blobURIRaw" -ForegroundColor green
             Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -linux
         }
         Catch
         {
-            echo "Caught exception attempting to create the Azure VM.  Aborting..."
+            Write-Host "Caught exception attempting to create the Azure VM.  Aborting..." -ForegroundColor Red
             exit 1
         }
 
         try {
-            echo "Starting the VM" 
+            Write-Host "Starting the VM"  -ForegroundColor green
             $NEWVM = New-AzureRmVM -ResourceGroupName $newRGName -Location westus -VM $vm
             if ($NEWVM -eq $null) {
-                echo "FAILED TO CREATE VM!!" 
+                Write-Host "FAILED TO CREATE VM!!" 
                 exit 1
             } else {
-                #
-                #  Attempt to create the PowerShell PSRP session
-                #
-                foreach ($localMachine in $global:monitoredMachines) {
-                    [MonitoredMachine]$monitoredMachine=$localMachine
-
-                    if ($localMachine.Name -eq $vmName) {
-                        echo "Creating PowerShell Remoting session to machine at IP $pip" 
-                        $ipAddress=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
-                        $ipAddress=$ip.IpAddress
-                        # echo "Creating PowerShell Remoting session to machine at IP $ipAddress" 
-                        $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
-                        break
-                    }
-
-                    if ($machine.session -eq $null) {
-                        # echo "FAILED to contact Azure guest VM" 
-                        goto :NOCONNECTION
-                    }
-                }
-
                 $global:num_remaining++
             }
         }
         Catch
         {
-            echo "Caught exception attempting to start the new VM.  Aborting..."
+            Write-Host "Caught exception attempting to start the new VM.  Aborting..." -ForegroundColor red
             exit 1
         }
     }
+}
 
 $action={
     function checkMachine ([MonitoredMachine]$machine) {
@@ -195,7 +175,7 @@ $action={
         Write-Host "Checking boot results for machine $machineName" -ForegroundColor green
 
         if ($machineStatus -ne "Booting") {
-            Write-Host "??? Machine was not in state Booting.  Cannot process"
+            Write-Host "??? Machine was not in state Booting.  Cannot process" -ForegroundColor red
             return
         }
 
@@ -204,28 +184,61 @@ $action={
         $failed=0
         $newRGName=$machineName + "-SmokeRG"
 
-        try {            
-            $installed_vers=invoke-command -session $machine.session -ScriptBlock {/bin/uname -r}
-            echo "$machineName installed version retrieved as $installed_vers"
-            $machine.Status = "Completed"
-            $global:num_remaining--
+        #
+        #  Attempt to create the PowerShell PSRP session
+        #
+        $machineIsUp = $false
+        try {
+            foreach ($localMachine in $global:monitoredMachines) {
+                [MonitoredMachine]$monitoredMachine=$localMachine
+
+                if ($localMachine.Name -eq $vmName) {
+                    Write-Host "Creating PowerShell Remoting session to machine at IP $pip"  -ForegroundColor green
+                    $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
+                    $ipAddress=$ip.IpAddress
+
+                    Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
+                    $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
+                    $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+                    $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
+                    $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+                    $machineIsUp = $true
+                    break
+                }
+
+                if ($machine.session -eq $null) {
+                    Write-Host "FAILED to contact Azure guest VM"  -ForegroundColor red
+                    goto :NOCONNECTION
+                }
+            }
         }
         Catch
         {
-            echo "Caught exception attempting to verify Azure installed kernel version.  Aborting..."
+            goto :NOCONNECTION
+        }
+
+        $machine.Status = "Completed"
+        $global:num_remaining--
+        try {            
+            $installed_vers=invoke-command -session $machine.session -ScriptBlock {/bin/uname -r}
+            Write-Host "$machineName installed version retrieved as $installed_vers"
+        }
+        Catch
+        {
+            Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
             goto :NOCONNECTION
         }
 
         try {
-            echo "Stopping the Azure VM" 
+            Write-Host "Stopping the Azure VM"  -ForegroundColor green
             Stop-AzureRmVm -force -ResourceGroupName $newRGName -name $machineName
 
-            echo "Removing resource group." 
+            Write-Host "Removing resource group."  -ForegroundColor green
             Remove-AzureRmResourceGroup -Name $newRGName -Force
         }
         Catch
         {
-            echo "Caught exception attempting to clean up Azure.  Aborting..."
+            Write-Host "Caught exception attempting to clean up Azure.  Aborting..." -ForegroundColor red
             goto :NOCONNECTION
         }
 
@@ -233,18 +246,19 @@ $action={
         #  Now, check for success
         #
         if ($expected_ver.CompareTo($installed_vers) -ne 0) {
+            Write-Host "Machine came back up, but the new kernel version is $installed_vers when we expected $expected_ver" -ForegroundColor Red
             $global:failed = 1
-            $machine.Status = "Completed"
-            $global:num_remaining--
+        } else {
+            Write-Host "Machine came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
         }
      }
      
      :NOCONNECTION
     }
 
-    write-host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals"    
+    Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
     if ($elapsed -ge $global:boot_timeout_intervals) {
-        write-host "Timer has timed out." -ForegroundColor red
+        Write-Host "Timer has timed out." -ForegroundColor red
         $global:completed=1
     }
 
@@ -257,37 +271,37 @@ $action={
         $monitoredMachineStatus=$monitoredMachine.status
 
         if ($monitoredMachineStatus -ne "Completed") {
-            Write-Host "Checking machine..."
+            Write-Host "Checking machine..." -ForegroundColor yellow
             checkMachine $monitoredMachine
         }
     }
 
     if ($global:num_remaining -eq 0) {
-        write-host "***** All machines have reported in."  -ForegroundColor magenta
+        Write-Host "***** All machines have reported in."  -ForegroundColor magenta
         if ($global:failed) {
             Write-Host "One or more machines have failed to boot.  This job has failed." -ForegroundColor Red
         }
-        write-host "Stopping the timer" -ForegroundColor green
+        Write-Host "Stopping the timer" -ForegroundColor green
         $global:completed=1
     }
 
-    if (($global:elapsed % 10000) -eq 0) {
+    if (($global:elapsed % 100) -eq 0) {
         Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($localMachine in $global:monitoredMachines) {
             [MonitoredMachine]$monitoredMachine=$localMachine
 
             if ($monitoredMachineStatus -ne "Completed") {
-                Write-Host "--- Machine $monitoredMachineName has not completed yet"
+                Write-Host "--- Machine $monitoredMachineName has not completed yet" -ForegroundColor yellow
             }
-            $ipAddress=$monitoredMachine.ipAddress            
+                        
 
-            if ($session -eq $null) {
-                # echo "FAILED to contact Azure guest VM" 
-                goto :NOCONNECTION
+            if ($machine.session -ne $null) {
+                Write-Host "Last three lines of the log file..." -ForegroundColor Magenta                
+                $ipAddress=$monitoredMachine.ipAddress
+                $last_lines=invoke-command -session $machine.session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 | Write-Host  -ForegroundColor Green
+                $last_lines
             }
-
-            $last_lines=invoke-command -session $machine.session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 | write-host  -ForegroundColor cyan}
          }
     }
 
@@ -320,9 +334,9 @@ copy_azure_machines
 #
 #  Wait for the machines to report back
 #                    
-write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-unregister-event bootTimer
-Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
+Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
+unregister-event AzureBootTimer
+Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
 $timer.Interval = 500
 $timer.Enabled = $true
 $timer.start()
@@ -333,24 +347,24 @@ while ($global:completed -eq 0) {
     start-sleep -s 1
 }
 
-write-host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
+Write-Host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
 $timer.stop()
-unregister-event bootTimer
+unregister-event AzureBootTimer
 
-write-host "Checking results" -ForegroundColor green
+Write-Host "Checking results" -ForegroundColor green
 
 if ($global:num_remaining -eq 0) {
     Write-Host "All machines have come back up.  Checking results." -ForegroundColor green
     
     if ($global:failed -eq $true) {
         Write-Host "Failures were detected in reboot and/or reporting of kernel version.  See log above for details." -ForegroundColor red
-        write-host "             BORG TESTS HAVE FAILED!!" -ForegroundColor red
+        Write-Host "             BORG TESTS HAVE FAILED!!" -ForegroundColor red
     } else {
         Write-Host "All machines rebooted successfully to kernel version $global:booted_version" -ForegroundColor green
-        write-host "             BORG has been passed successfully!" -ForegroundColor yellow
+        Write-Host "             BORG has been passed successfully!" -ForegroundColor yellow
     }
 } else {
-        write-host "Not all machines booted in the allocated time!" -ForegroundColor red
+        Write-Host "Not all machines booted in the allocated time!" -ForegroundColor red
         Write-Host " Machines states are:" -ForegroundColor red
         foreach ($localMachine in $global:monitoredMachines) {
             [MonitoredMachine]$monitoredMachine=$localMachine

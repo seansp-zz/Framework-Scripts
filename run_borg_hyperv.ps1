@@ -58,7 +58,9 @@ $action={
         }
 
         $machine.status = "Completed"
-        if ($global:failed -eq $false) {
+        $global:num_remaining--
+
+        if ($global:failed -eq $true) {
             $global:completed = 1
         } else {
             Write-Host "This, or another, machine has failed to boot.  Machines will not progress to Azure" -ForegroundColor red
