@@ -62,10 +62,8 @@ $action={
 
         if ($global:failed -eq $true) {
             $global:completed = 1
-        } else {
             Write-Host "This, or another, machine has failed to boot.  Machines will not progress to Azure" -ForegroundColor red
-            exit 1
-        }
+        } 
     }
 
     $global:elapsed=$global:elapsed+$global:interval

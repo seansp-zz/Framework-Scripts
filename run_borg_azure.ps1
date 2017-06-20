@@ -146,12 +146,13 @@ function launch_azure_vms {
 
         try {
             Write-Host "Starting the VM"  -ForegroundColor green
+            $global:num_remaining++
             $NEWVM = New-AzureRmVM -ResourceGroupName $newRGName -Location westus -VM $vm
             if ($NEWVM -eq $null) {
                 Write-Host "FAILED TO CREATE VM!!" 
-                exit 1
+                $global:num_remaining--
             } else {
-                $global:num_remaining++
+                Write-Host "VM number $global:num_remaining started successfully..." -ForegroundColor Green
             }
         }
         Catch
@@ -188,33 +189,26 @@ $action={
         #  Attempt to create the PowerShell PSRP session
         #
         $machineIsUp = $false
-        try {
-            foreach ($localMachine in $global:monitoredMachines) {
-                [MonitoredMachine]$monitoredMachine=$localMachine
+        foreach ($localMachine in $global:monitoredMachines) {
+            [MonitoredMachine]$monitoredMachine=$localMachine
 
-                if ($localMachine.Name -eq $vmName) {
-                    Write-Host "Creating PowerShell Remoting session to machine at IP $pip"  -ForegroundColor green
-                    $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
-                    $ipAddress=$ip.IpAddress
+            if ($localMachine.Name -eq $vmName) {
+                Write-Host "Creating PowerShell Remoting session to machine at IP $pip"  -ForegroundColor green
+                $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
+                $ipAddress=$ip.IpAddress
 
-                    Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
-                    $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-                    $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-                    $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
-                    $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+                Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
+                $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
+                $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+                $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
+                $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+                if ($?) {
                     $machineIsUp = $true
-                    break
+                } else {
+                    return
                 }
-
-                if ($machine.session -eq $null) {
-                    Write-Host "FAILED to contact Azure guest VM"  -ForegroundColor red
-                    goto :NOCONNECTION
-                }
+                break
             }
-        }
-        Catch
-        {
-            goto :NOCONNECTION
         }
 
         $machine.Status = "Completed"
@@ -226,7 +220,6 @@ $action={
         Catch
         {
             Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
-            goto :NOCONNECTION
         }
 
         try {
@@ -239,7 +232,6 @@ $action={
         Catch
         {
             Write-Host "Caught exception attempting to clean up Azure.  Aborting..." -ForegroundColor red
-            goto :NOCONNECTION
         }
 
         #
@@ -252,8 +244,6 @@ $action={
             Write-Host "Machine came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
         }
      }
-     
-     :NOCONNECTION
     }
 
     Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
@@ -330,10 +320,13 @@ Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRON
 Write-Host "    "
 
 copy_azure_machines
+launch_azure_vms
 
 #
 #  Wait for the machines to report back
 #                    
+write-host "$global:num_left machines have been launched.  Waiting for completion..."
+
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 unregister-event AzureBootTimer
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
@@ -341,7 +334,7 @@ $timer.Interval = 500
 $timer.Enabled = $true
 $timer.start()
 
-launch_azure_vms
+sleep 5
 
 while ($global:completed -eq 0) {
     start-sleep -s 1
