@@ -53,12 +53,9 @@ $action={
             $global:booted_version=$resustsgot
         }
 
-        
-        $machine.status = "Azure"
-
+        $machine.status = "Completed"
         if ($global:failed -eq $false) {
-            Write-Host "------------>>>  Hyper-V Chaining to Azure valication job..." -ForegroundColor magenta
-            start-job -Name $machineName -ScriptBlock {C:\Framework-Scripts\run_borg_2.ps1 $args[0] } -ArgumentList @($machineName)
+            $global:completed = 1
         } else {
             Write-Host "This, or another, machine has failed to boot.  Machines will not progress to Azure" -ForegroundColor red
             exit 1
@@ -89,38 +86,6 @@ $action={
         }
     }
 
-    
-    #
-    #  Check for Azure completion
-    #
-    foreach ($localMachine in $global:monitoredMachines) {
-
-        [MonitoredMachine]$monitoredMachine=$localMachine
-        # Write-Host "Checking state of Azure job $monitoredMachine.name" -ForegroundColor green
-        $monitoredMachineName=$monitoredMachine.name
-        $monitoredMachineStatus=$monitoredMachine.status
-        if ($monitoredMachineStatus -eq "Azure") {
-            $jobStatus=get-job -Name $monitoredMachineName
-            if ($jobStatus -eq $true) {
-                $jobState = $jobStatus.State
-                Write-Host "Current state  of Azure job $monitoredMachineName is $jobState"
-
-                if (($jobState -ne "Completed") -and ($jobState -ne "Failed")) {
-                    # Do nothing
-                } elseif ($jobState -eq "Failed") {
-                    Write-Host "Azure job $monitoredMachineName exited with FAILED state!" -ForegroundColor red
-                    $global:failed = 1
-                    $monitoredMachine.status = "Completed"
-                    $global:num_remaining--
-                } else {
-                    Write-Host "Azure job $monitoredMachineName booted successfully." -ForegroundColor green
-                    $monitoredMachine.status = "Completed"
-                    $global:num_remaining--
-                }
-            }
-        }
-    }
-
     if ($global:num_remaining -eq 0) {
         write-host "***** All machines have reported in."  -ForegroundColor magenta
         if ($global:failed) {
@@ -141,7 +106,7 @@ $action={
             $logFile="c:\temp\progress_logs\" + $monitoredMachineName
             $monitoredMachineStatus=$monitoredMachine.status
 
-            if ($monitoredMachineStatus -eq "Booting" -or $monitoredMachineStatus -eq "Azure") {
+            if ($monitoredMachineStatus -eq "Booting") {
                 if ((test-path $logFile) -eq $true) {
                     write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
                     get-content $logFile | Select-Object -Last 3 | write-host  -ForegroundColor cyan
@@ -346,67 +311,6 @@ if ($global:num_remaining -eq 0) {
             Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor red
         }
     }
-
-#
-#  Wait for Azure completion...
-#
-$max_wait_minutes=30
-$intervals_per_minute=4
-$numLoops = $max_wait_minutes * $intervals_per_minute
-$loopCounter = 0
-while ($loopCounter -lt $numLoops) {
-    $allComplete = $true
-    $loopCounter++
-
-    foreach ($localMachine in $global:monitoredMachines) {
-        [MonitoredMachine]$monitoredMachine=$localMachine
-        $monitoredMachineName=$monitoredMachine.name
-        $monitoredMachineState=$monitoredMachine.status
-
-        Write-Host "Checking state of Azure job $monitoredMachineName" -ForegroundColor green
-
-        $jobStatus=get-job -Name $monitoredMachineName
-        $jobState = $jobStatus.State
-
-        Write-Host "Current state is $jobState"
-
-        if (($jobState -ne "Completed") -and ($jobState -ne "Failed")) {
-            $allComplete = $false
-
-            $res_dest="c:\temp\completed_boots\" + $monitoredMachineName + "_boot"
-            $prog_dest="c:\temp\completed_boots\" + $monitoredMachineName + "_progress"
-
-            if ((Test-Path $resultsFile) -eq $true)
-            {
-                Move-Item $resultsFile -Destination $res_dest
-            }
-
-            if ((Test-Path $resultsFile) -eq $true)
-            {
-                Move-Item $resultsFile -Destination $prog_dest
-            }
-        }
-        elseif ($jobState -eq "Failed")
-        {
-            $global:failed = 1
-            Write-Host "Azure job $monitoredMachineName exited with FAILED state!" -ForegroundColor red
-            $monitoredMachine.status = "Completed"
-        }
-        else
-        {
-            Write-Host "Azure job $monitoredMachineName booted successfully." -ForegroundColor green
-            $monitoredMachine.status = "Completed"
-        }
-    }
-
-    if ($allComplete -eq $true) {
-        Write-Host "All Azure machines have checked in."
-        break
-    } else {
-        $sleepTime = 60 / $intervals_per_minute
-        sleep $sleepTime
-    }
-}
 
 if ($global:failed -eq 0) {    
     Write-Host "     BORG is   Exiting with success.  Thanks for Playing" -ForegroundColor green

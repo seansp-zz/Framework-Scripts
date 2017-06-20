@@ -65,10 +65,10 @@ Catch
     exit 1
 }
 
+$groupExists=$false
 $newRGName=$vhdFileName+"-SmokeRG"
 $existingRG=Get-AzureRmResourceGroup -Name $newRGName
 
-$groupExists=$false
 if ($? -eq $true) {
     $groupExists=$true
 }

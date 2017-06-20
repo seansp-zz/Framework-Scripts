@@ -10,18 +10,26 @@ function callItIn($c, $m) {
     return
 }
 
-function phoneHome($m) {
-    invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+$global:isHyperV = $false
 
-    if ($? -eq $false)
-    {
-        #
-        #  Error on ps.  Try reconnecting.
-        #
-        Exit-PSSession $s
-        $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
-        $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
-        $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+function phoneHome($m) {
+    if ($global:isHyperV -eq $true) {
+        invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
+
+        if ($? -eq $false)
+        {
+            #
+            #  Error on ps.  Try reconnecting.
+            #
+            Exit-PSSession $s
+            $pw=convertto-securestring -AsPlainText -force -string 'Pa$$w0rd!'
+            $cred=new-object -typename system.management.automation.pscredential -argumentlist "psRemote",$pw
+            $s=new-PSSession -computername mslk-smoke-host.redmond.corp.microsoft.com -credential $cred -authentication Basic
+        }
+    } else {
+        $output_path=/tmp/borg_progress.log
+
+        $m | out-file -Append $output_path
     }
 }
 
@@ -67,26 +75,43 @@ new-item $kernFolder -type directory
 #
 #  Now see if we can mount the drop folder
 #
-if ((Test-Path "/mnt/ostcnix") -eq 0) {
-    New-Item -ItemType Directory -Path /mnt/ostcnix
-}
+$global:isHyperV=nslookup cdmbuildsna01.redmond.corp.microsoft.com
 
-if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
-    mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
-}
+if ($? -eq $true) {
+    if ((Test-Path "/mnt/ostcnix") -eq 0) {
+        New-Item -ItemType Directory -Path /mnt/ostcnix
+    }
 
-if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
-    phoneHome "Latest directory was not on mount point!  No kernel to install!" 
-    $LASTEXITCODE = 1
-    exit $LASTERRORCODE
-}
+    if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
+        mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
+    }
 
+    if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
+        phoneHome "Latest directory was not on mount point!  No kernel to install!" 
+        $LASTEXITCODE = 1
+        exit $LASTERRORCODE
+    }
+
+    #
+    #  Copy the files
+    #
+    phoneHome "Copying the kernel from the drop share" 
+    cd /tmp/latest_kernel
+    copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
+} else {
 #
-#  Copy the files
+#  If we can't mount the drop folder, maybe we can get the files from Azure
 #
-phoneHome "Copying the kernel from the drop share" 
-cd /tmp/latest_kernel
-copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
+    phoneHome "Copying the kernel from Azure blob storage"
+    wget -m https://azuresmokestoragesccount.blob.core.windows.net/latest-packages/file_list -O file_list
+
+    $files=Get-Content file_list
+    
+    foreach ($file in $files) {
+        $fileName="https://azuresmokestoragesccount.blob.core.windows.net/latest-packages/" + $file
+        wget -m $fileName -O $file
+    }
+}
 
 #
 #  What OS are we on?
