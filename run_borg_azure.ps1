@@ -16,6 +16,8 @@ $neededVms = {$neededVms_array}.Invoke()
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
 $destContainerName = "working-vhds"
+$rg="azureSmokeResourceGroup"
+$nm="azuresmokestoragesccount"  
 
 class MonitoredMachine {
     [string] $name="unknown"
@@ -29,9 +31,6 @@ $timer=New-Object System.Timers.Timer
 [System.Collections.ArrayList]$global:monitoredMachines = @()
 
 function copy_azure_machines {
-    $rg="azureSmokeResourceGroup"
-    $nm="azuresmokestoragesccount"  
-    
 
     write-host "Importing the context...." -ForegroundColor green
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
@@ -106,8 +105,9 @@ function launch_azure_vms {
             if ($groupExists -eq $true)
             {
                 echo "Removing previous resource group for machine $vmName" 
-                Remove-AzureRmResourceGroup -Name $newRGName - -Force
+                Remove-AzureRmResourceGroup -Name $newRGName -Force
             }
+            echo "Creating new resource group for VM $vmName"
             New-AzureRmResourceGroup -Name $newRGName -Location westus
 
             echo "Making sure the VM is stopped..." 

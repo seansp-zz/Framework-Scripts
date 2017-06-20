@@ -27,7 +27,7 @@ function phoneHome($m) {
             $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic
         }
     } else {
-        $output_path="/tmp/borg_progress.log"
+        $output_path="/root/borg_progress.log"
 
         $m | out-file -Append $output_path
     }
@@ -79,7 +79,7 @@ $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $c=hostname
 
 phoneHome "Starting copy file scipt" 
-cd /tmp
+cd /root
 $kernFolder="./latest_kernel"
 If (Test-Path $kernFolder) {
     Remove-Item -Recurse -Force $kernFolder
@@ -105,7 +105,7 @@ if ($global:isHyperV -eq $true) {
     #  Copy the files
     #
     phoneHome "Copying the kernel from the drop share" 
-    cd /tmp/latest_kernel
+    cd /root/latest_kernel
     copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
 } else {
 #
@@ -228,4 +228,4 @@ phoneHome "Rebooting now..."
 
 remove-pssession $s
 
-shutdown -r
+shutdown -r now

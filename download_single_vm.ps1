@@ -7,7 +7,7 @@ param (
 )
 
 $logFileName="c:/temp/"+$j +"_download.log"
-$localFileName=$n + ".vhd"
+$localFileName=$n
 
 remove-item -path $logFileName -Force
 Write-Host "DownloadSingleVM called for RG $g, URI $u, path $n" | out-file $logFileName 
