@@ -201,7 +201,7 @@ $action={
                 Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
                 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
                 $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-                $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
+                $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
                 $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
                 if ($?) {
                     $machineIsUp = $true
