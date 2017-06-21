@@ -59,11 +59,6 @@ $action={
 
         $machine.status = "Completed"
         $global:num_remaining--
-
-        if ($global:failed -eq $true) {
-            $global:completed = 1
-            Write-Host "This, or another, machine has failed to boot.  Machines will not progress to Azure" -ForegroundColor red
-        } 
     }
 
     $global:elapsed=$global:elapsed+$global:interval
@@ -155,6 +150,9 @@ Write-Host "Checking to see which VMs we need to bring up..." -ForegroundColor g
 Write-Host "Errors may appear here depending on the state of the system.  They're almost all OK.  If things go bad, we'll let you know." -ForegroundColor Green
 Write-Host "For now, though, please feel free to ignore the following errors..." -fore Green
 Write-Host " "
+
+get-job | Stop-Job
+get-job | remove-job
 
 Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {

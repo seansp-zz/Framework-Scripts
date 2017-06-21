@@ -82,7 +82,7 @@ $c=hostname
 
 phoneHome "Starting copy file scipt" 
 cd /root
-$kernFolder="./latest_kernel"
+$kernFolder="/root/latest_kernel"
 If (Test-Path $kernFolder) {
     Remove-Item -Recurse -Force $kernFolder
 }
@@ -108,11 +108,13 @@ if ($global:isHyperV -eq $true) {
     #
     phoneHome "Copying the kernel from the drop share" 
     cd /root/latest_kernel
-    copy-Item -Path "/mnt/ostcnix/latest/*" -Destination "./"
+    copy-Item -Path "/mnt/ostcnix/latest/*" -Destination $kernFolder
 } else {
 #
 #  If we can't mount the drop folder, maybe we can get the files from Azure
 #
+    cd $kernFolder
+
     phoneHome "Copying the kernel from Azure blob storage"
     wget -m https://azuresmokestoragesccount.blob.core.windows.net/latest-packages/file_list -O file_list
 
@@ -161,6 +163,7 @@ phoneVersionHome $kernelVersion
 #
 #  Do the right thing for the platform
 #
+cd $kernFolder
 If (Test-Path /bin/rpm) {
     #
     #  RPM-based system
