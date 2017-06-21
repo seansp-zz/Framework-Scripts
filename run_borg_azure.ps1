@@ -169,7 +169,8 @@ $action={
         $machineStatus=$machine.status
         $machineIP=$machine.ipAddress
 
-        if ($machineStatus -eq "Completed") {
+        if ($machineStatus -eq "Completed" -or $global:num_remaining -eq 0) {
+            Write-Host "Machine $machineName is in state $machineStatus"
             return
         }
 
@@ -243,10 +244,9 @@ $action={
         } else {
             Write-Host "Machine came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
         }
-     }
     }
 
-    Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
+    # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
     if ($elapsed -ge $global:boot_timeout_intervals) {
         Write-Host "Timer has timed out." -ForegroundColor red
         $global:completed=1
@@ -260,8 +260,10 @@ $action={
         $monitoredMachineName=$monitoredMachine.name
         $monitoredMachineStatus=$monitoredMachine.status
 
+        write-host "Looking at machine $monitoredMachineName, current status $monitoredMachineStatus"
+
         if ($monitoredMachineStatus -ne "Completed") {
-            Write-Host "Checking machine..." -ForegroundColor yellow
+            Write-Host "Checking machine $monitoredMachineName..." -ForegroundColor yellow
             checkMachine $monitoredMachine
         }
     }
@@ -285,18 +287,19 @@ $action={
                 Write-Host "--- Machine $monitoredMachineName has not completed yet" -ForegroundColor yellow
             }
                         
-
             if ($machine.session -ne $null) {
                 Write-Host "Last three lines of the log file..." -ForegroundColor Magenta                
                 $ipAddress=$monitoredMachine.ipAddress
-                $last_lines=invoke-command -session $machine.session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 | Write-Host  -ForegroundColor Green
-                $last_lines
+                $last_lines=invoke-command -session $machine.session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 | Write-Host  -ForegroundColor Green }
+                write-host$last_lines
             }
-         }
+        }
     }
 
     [Console]::Out.Flush() 
 }
+
+unregister-event AzureBootTimer -ErrorAction SilentlyContinue
 
 Write-Host "    " -ForegroundColor green
 Write-Host "                 **********************************************" -ForegroundColor yellow
@@ -319,8 +322,6 @@ Write-Host "                                BORG CUBE is initialized"           
 Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRONES)" -ForegroundColor yellow
 Write-Host "    "
 
-copy_azure_machines
-launch_azure_vms
 
 #
 #  Wait for the machines to report back
@@ -330,12 +331,15 @@ write-host "$global:num_left machines have been launched.  Waiting for completio
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 unregister-event AzureBootTimer
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
+
+copy_azure_machines
+launch_azure_vms
+
 $timer.Interval = 500
 $timer.Enabled = $true
 $timer.start()
 
-sleep 5
-
+Write-Host "Finished starting the VMs.  Completed is $global:completed"
 while ($global:completed -eq 0) {
     start-sleep -s 1
 }

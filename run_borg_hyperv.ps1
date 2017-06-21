@@ -5,7 +5,7 @@
 $global:completed=0
 $global:elapsed=0
 $global:interval=500
-$global:boot_timeout_minutes=20
+$global:boot_timeout_minutes=45
 $global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
 $global:num_expected=0
 $global:num_remaining=0
@@ -313,6 +313,7 @@ if ($global:num_remaining -eq 0) {
         write-host "             BORG has been passed successfully!" -ForegroundColor yellow
     }
 } else {
+        $global:failed = $true
         write-host "Not all machines booted in the allocated time!" -ForegroundColor red
         Write-Host " Machines states are:" -ForegroundColor red
         foreach ($localMachine in $global:monitoredMachines) {
