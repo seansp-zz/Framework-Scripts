@@ -141,7 +141,7 @@ function launch_azure_vms {
         Catch
         {
             Write-Host "Caught exception attempting to create the Azure VM.  Aborting..." -ForegroundColor Red
-            exit 1
+            return 1
         }
 
         try {
@@ -153,12 +153,17 @@ function launch_azure_vms {
                 $global:num_remaining--
             } else {
                 Write-Host "VM number $global:num_remaining started successfully..." -ForegroundColor Green
+
+                $machine = new-Object MonitoredMachine
+                $machine.name = $vmName
+                $machine.status = "Booting" # $status
+                $global:monitoredMachines.Add($machine)
             }
         }
         Catch
         {
             Write-Host "Caught exception attempting to start the new VM.  Aborting..." -ForegroundColor red
-            exit 1
+            return 1
         }
     }
 }
@@ -171,14 +176,14 @@ $action={
 
         if ($machineStatus -eq "Completed" -or $global:num_remaining -eq 0) {
             Write-Host "Machine $machineName is in state $machineStatus"
-            return
+            return 0
         }
 
         Write-Host "Checking boot results for machine $machineName" -ForegroundColor green
 
         if ($machineStatus -ne "Booting") {
             Write-Host "??? Machine was not in state Booting.  Cannot process" -ForegroundColor red
-            return
+            return 1
         }
 
         $expected_ver=Get-Content C:\temp\expected_version
@@ -193,36 +198,36 @@ $action={
         foreach ($localMachine in $global:monitoredMachines) {
             [MonitoredMachine]$monitoredMachine=$localMachine
 
-            if ($localMachine.Name -eq $vmName) {
-                Write-Host "Creating PowerShell Remoting session to machine at IP $pip"  -ForegroundColor green
+            if ($localMachine.Name -eq $machineName) {
                 $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
                 $ipAddress=$ip.IpAddress
+                $localMachine.ipAddress = $ipAddress
 
                 Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
                 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
                 $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
                 $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
-                $machine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+                $localMachine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
                 if ($?) {
                     $machineIsUp = $true
                 } else {
-                    return
+                    return 0
                 }
                 break
             }
         }
 
-        $machine.Status = "Completed"
-        $global:num_remaining--
+        
         try {            
-            $installed_vers=invoke-command -session $machine.session -ScriptBlock {/bin/uname -r}
-            Write-Host "$machineName installed version retrieved as $installed_vers"
+            $installed_vers=invoke-command -session $localMachine.session -ScriptBlock {/bin/uname -r}
+            Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
         }
         Catch
         {
             Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
         }
 
+        <#
         try {
             Write-Host "Stopping the Azure VM"  -ForegroundColor green
             Stop-AzureRmVm -force -ResourceGroupName $newRGName -name $machineName
@@ -234,15 +239,20 @@ $action={
         {
             Write-Host "Caught exception attempting to clean up Azure.  Aborting..." -ForegroundColor red
         }
+        #>
 
         #
         #  Now, check for success
         #
         if ($expected_ver.CompareTo($installed_vers) -ne 0) {
-            Write-Host "Machine came back up, but the new kernel version is $installed_vers when we expected $expected_ver" -ForegroundColor Red
-            $global:failed = 1
+            Write-Host "Machine is up, but the kernel version is $installed_vers when we expected $expected_ver.  Waiting to see if it reboots." -ForegroundColor Red
+            Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
+            invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
+
         } else {
             Write-Host "Machine came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
+            $localMachine.Status = "Completed"
+            $global:num_remaining--
         }
     }
 
@@ -270,7 +280,7 @@ $action={
 
     if ($global:num_remaining -eq 0) {
         Write-Host "***** All machines have reported in."  -ForegroundColor magenta
-        if ($global:failed) {
+        if ($global:failed -eq $true) {
             Write-Host "One or more machines have failed to boot.  This job has failed." -ForegroundColor Red
         }
         Write-Host "Stopping the timer" -ForegroundColor green
@@ -295,6 +305,7 @@ $action={
             }
         }
     }
+    Write-Host "Leaving timer.  Completed flag is $global:completed"
 
     [Console]::Out.Flush() 
 }

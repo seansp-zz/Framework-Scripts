@@ -97,7 +97,7 @@ $action={
         }
         write-host "Stopping the timer" -ForegroundColor green
         $global:completed=1
-        exit 1
+        return
     }
  
     if (($global:elapsed % 10000) -eq 0) {
@@ -289,8 +289,6 @@ Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier 
 $timer.Interval = 500
 $timer.Enabled = $true
 $timer.start()
-
-sleep 5
 
 while ($global:completed -eq 0) {
     start-sleep -s 1
