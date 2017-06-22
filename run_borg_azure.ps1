@@ -174,7 +174,7 @@ $action={
         
         try {            
             $installed_vers=invoke-command -session $localMachine.session -ScriptBlock {/bin/uname -r}
-            $ Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
+            # Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
         }
         Catch
         {
@@ -307,11 +307,11 @@ $action={
                 Write-Host "--- Machine $monitoredMachineName has not completed yet" -ForegroundColor yellow
             }
                         
-            if ($calledIt -eq $false -and $localMachine.session -ne $null) {
+            if ($calledIt -eq $false -and $monitoredMachine.session -ne $null) {
                 Write-Host "Last three lines of the log file..." -ForegroundColor Magenta                
                 $ipAddress=$monitoredMachine.ipAddress
-                $last_lines=invoke-command -session $localMachine.session -ScriptBlock {get-content /tmp/borg_progress.log | Select-Object -Last 3 }
-                write-host $last_lines -ForegroundColor Magenta
+                $last_lines=$last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content borg_progress.log  | Select-Object -last 3 }
+                $last_lines | write-host -ForegroundColor Magenta
             }
         }
     }
