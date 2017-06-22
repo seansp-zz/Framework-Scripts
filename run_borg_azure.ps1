@@ -2,7 +2,8 @@
 $global:elapsed=0
 $global:interval=500
 $global:boot_timeout_minutes=20
-$global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
+$global:boot_timeout_intervals_per_minute=(60*(1000/$global:interval))
+$global:boot_timeout_intervals=$boot_timeout_minutes*$global:boot_timeout_intervals_per_minute
 $global:num_expected=0
 $global:num_remaining=0
 $global:failed=0
@@ -199,7 +200,9 @@ $action={
         #  Now, check for success
         #
         if ($expected_ver.CompareTo($installed_vers) -ne 0) {
-            Write-Host "Machine is up, but the kernel version is $installed_vers when we expected $expected_ver.  Waiting to see if it reboots." -ForegroundColor Cyan
+            if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
+                Write-Host "Machine is up, but the kernel version is $installed_vers when we expected $expected_ver.  Waiting to see if it reboots." -ForegroundColor Cyan
+            }
             # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
             # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
 
@@ -212,6 +215,7 @@ $action={
 
     $global:elapsed=$global:elapsed+$global:interval
     # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
+
     if ($elapsed -ge $global:boot_timeout_intervals) {
         Write-Host "Timer has timed out." -ForegroundColor red
         $global:completed=1
