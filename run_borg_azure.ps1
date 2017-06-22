@@ -1,24 +1,48 @@
-﻿$global:completed=0
+﻿#
+#  Azure information
+param (
+    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="azuresmokestoragesccount",
+    [Parameter(Mandatory=$false)] [string[]] $sourceURI="Unset",
+    [Parameter(Mandatory=$false)] [string] $destinationStorageAccountName="azuresmokestoragesccount",
+    [Parameter(Mandatory=$false)] [string] $destinationContainerName="working-vhds",
+    [Parameter(Mandatory=$false)] [string] $resourceGroupName="azureSmokeResourceGroup",
+    [Parameter(Mandatory=$false)] [string] $location="westus"
+)
+
+$storageAccountName=$sourceStorageAccountName
+$destAccountName=$destinationStorageAccountName
+$destContainerName=$destinationContainerName
+$nm=$storageAccountName
+$rg=$resourceGroupName
+$URI=$sourceURI
+
+$useSourceURI=[string]::IsNullOrEmpty($URI)
+
+$neededVms_array=@()
+$neededVms = {$neededVms_array}.Invoke()
+$copyblobs_array=@()
+$copyblobs = {$copyblobs_array}.Invoke()
+
+
+$global:completed=0
 $global:elapsed=0
+#
+#  Interval in msec.
+#
 $global:interval=500
 $global:boot_timeout_minutes=20
 $global:boot_timeout_intervals_per_minute=(60*(1000/$global:interval))
-$global:boot_timeout_intervals=$boot_timeout_minutes*$global:boot_timeout_intervals_per_minute
+$global:boot_timeout_intervals= ($global:interval * $global:boot_timeout_intervals_per_minute) * $global:boot_timeout_minutes
+
+#
+#  Machine counts and status
+#
 $global:num_expected=0
 $global:num_remaining=0
 $global:failed=0
 $global:booted_version="Unknown"
 
-$location="westus"
-$destAccountName="azuresmokestoragesccount"
-$destContainerName="working-vhds"
-$neededVms_array=@()
-$neededVms = {$neededVms_array}.Invoke()
-$copyblobs_array=@()
-$copyblobs = {$copyblobs_array}.Invoke()
-$destContainerName = "working-vhds"
-$rg="azureSmokeResourceGroup"
-$nm="azuresmokestoragesccount" 
+
 
 class MonitoredMachine {
     [string] $name="unknown"
@@ -38,33 +62,40 @@ class MachineLogs {
 [System.Collections.ArrayList]$global:machineLogs = @()
 
 function copy_azure_machines {
-    Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
-    $smoke_machines=Get-AzureRmVm -ResourceGroupName $rg
-    $smoke_machines | Stop-AzureRmVM -Force
-    $smoke_disks=Get-AzureRmDisk -ResourceGroupName $rg
+    if ($useSourceURI -eq $false)
+    {
+        Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
+        $smoke_machines=Get-AzureRmVm -ResourceGroupName $rg
+        $smoke_machines | Stop-AzureRmVM -Force
+        $smoke_disks=Get-AzureRmDisk -ResourceGroupName $rg
 
-    Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
+        Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
 
-    foreach ($machine in $smoke_machines) {
-        $vhd_name = $machine.Name + ".vhd"
-        $vmName = $machine.Name
+        foreach ($machine in $smoke_machines) {
+            $vhd_name = $machine.Name + ".vhd"
+            $vmName = $machine.Name
 
-        $neededVMs.Add($vmName)
+            $neededVMs.Add($vmName)
 
-        $newRGName=$vmName + "-SmokeRG"
-        $groupExists=$false
-        $existingRG=Get-AzureRmResourceGroup -Name $newRGName -ErrorAction SilentlyContinue   
-        if ($? -eq $true) {
-            Write-Host "There is an existing resource group with the VM named $vmName.  This resource group must be deleted to free any locks on the VHD." -ForegroundColor Red
-            Remove-AzureRmResourceGroup -Name $newRGName -Force
-        }
+            $newRGName=$vmName + "-SmokeRG"
+            $groupExists=$false
+            $existingRG=Get-AzureRmResourceGroup -Name $newRGName -ErrorAction SilentlyContinue   
+            if ($? -eq $true) {
+                Write-Host "There is an existing resource group with the VM named $vmName.  This resource group must be deleted to free any locks on the VHD." -ForegroundColor Red
+                Remove-AzureRmResourceGroup -Name $newRGName -Force
+            }
 
-        $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
+            $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
     
-        Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-        $blob = Start-AzureStorageBlobCopy -AbsoluteUri $uri -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
+            Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
+            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $uri -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
 
-        $copyblobs.Add($vhd_name)
+            $copyblobs.Add($vhd_name)
+        }
+    } else {
+        foreach ($singleURI in $URI) {
+            Write-Host "Preparing to copy disk by URI.  Source URI is $singleURI"  -ForegroundColor green
+        }
     }
 
     Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
@@ -216,7 +247,9 @@ $action={
     $global:elapsed=$global:elapsed+$global:interval
     # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
 
-    if ($elapsed -ge $global:boot_timeout_intervals) {
+    if ($global:elapsed -ge $global:boot_timeout_intervals) {
+        Write-Host "Elapsed is $global:elapsed"
+        Write-Host "Intervals is $global:boot_timeout_intervals"
         Write-Host "Timer has timed out." -ForegroundColor red
         $global:completed=1
     }
@@ -366,7 +399,6 @@ $timer.Interval = 500
 $timer.Enabled = $true
 $timer.start()
 
-
 Write-Host "Finished launching the VMs.  Completed is $global:completed" -ForegroundColor Yellow
 while ($global:completed -eq 0) {
     start-sleep -s 1
@@ -376,7 +408,7 @@ Write-Host "                         Exiting Temporal Evaluation Loop (Unregiste
 $timer.stop()
 unregister-event AzureBootTimer
 
-Write-Host "Checking results" -ForegroundColor green
+Write-Host "     Checking results" -ForegroundColor green
 
 if ($global:num_remaining -eq 0) {
     Write-Host "All machines have come back up.  Checking results." -ForegroundColor green
@@ -395,7 +427,12 @@ if ($global:num_remaining -eq 0) {
             [MonitoredMachine]$monitoredMachine=$localMachine
             $monitoredMachineName=$monitoredMachine.name
             $monitoredMachineState=$monitoredMachine.status
-            Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor red
+            if ($monitoredMachineState -ne "Completed") {
+                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor red
+            } else {
+                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor green
+            }
+            $global:failed = 1
         }
     }
 

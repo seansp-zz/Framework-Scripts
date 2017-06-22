@@ -28,7 +28,7 @@ function phoneHome($m) {
             $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
         }
     } else {
-        $output_path="~/borg_progress.log"
+        $output_path="/root/borg_progress.log"
 
         $m | out-file -Append $output_path
     }
@@ -45,6 +45,16 @@ function callVersionIn($m) {
 function phoneVersionHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callVersionIn} -ArgumentList $m
 }
+
+if (Get-Item -Path /root/borg_progress.log) {
+    Remove-Item /root/borg_progress.log
+    $hostName=hostname
+    echo "******************************************************************" | Out-File -FilePath /root/borg_progress.log
+    echo "*        BORG DRONE $hostName starting conversion..." | Out-File -append -FilePath /root/borg_progress.log
+    echo "******************************************************************" | Out-File -Append -FilePath /root/borg_progress.log
+    chmod 777 /root/borg_progress.log
+}
+
 
 #
 #  Now see if we can mount the drop folder
