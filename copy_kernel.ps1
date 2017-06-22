@@ -28,7 +28,7 @@ function phoneHome($m) {
             $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
         }
     } else {
-        $output_path="/root/borg_progress.log"
+        $output_path="/opt/microsoft/borg_progress.log"
 
         $m | out-file -Append $output_path
     }

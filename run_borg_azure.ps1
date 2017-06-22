@@ -232,7 +232,7 @@ $action={
         #
         if ($expected_ver.CompareTo($installed_vers) -ne 0) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
-                Write-Host "Machine is up, but the kernel version is $installed_vers when we expected $expected_ver.  Waiting to see if it reboots." -ForegroundColor Cyan
+                Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected $expected_ver.  Waiting to see if it reboots." -ForegroundColor Cyan
             }
             # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
             # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
@@ -320,7 +320,7 @@ $action={
                            if ($monitoredMachineStatus -eq "Completed") {
                                 Write-Host "--- Machine $monitoredMachineName has completed..." -ForegroundColor green
                             } else {
-                                Write-Host "--- Testing of machine $monitoredMacnineName is in progress..." -ForegroundColor Yellow
+                                Write-Host "--- Testing of machine $monitoredMachineName is in progress..." -ForegroundColor Yellow
                             }                          
                         } elseif ($jobStatus -eq "Failed") {
                             Write-Host "--- Job $singleLogName failed to start." -ForegroundColor Red
@@ -347,7 +347,7 @@ $action={
             if ($calledIt -eq $false -and $monitoredMachine.session -ne $null) {
                 Write-Host "Last three lines of the log file..." -ForegroundColor Magenta                
                 $ipAddress=$monitoredMachine.ipAddress
-                $last_lines=$last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content borg_progress.log  | Select-Object -last 3 }
+                $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 }
                 $last_lines | write-host -ForegroundColor Magenta
             }
         }
@@ -428,7 +428,9 @@ if ($global:num_remaining -eq 0) {
             $monitoredMachineName=$monitoredMachine.name
             $monitoredMachineState=$monitoredMachine.status
             if ($monitoredMachineState -ne "Completed") {
-                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor red
+                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState.  This is the log, if any:" -ForegroundColor red
+                $log_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log }
+                $log_lines | write-host -ForegroundColor Magenta
             } else {
                 Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor green
             }
