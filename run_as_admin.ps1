@@ -8,7 +8,9 @@ $cred=new-object -typename system.management.automation.pscredential -argumentli
 
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
 
-invoke-command -session $s -ScriptBlock {  $script; $cmd_status=$? }
+$sciptblock="{ " + $script + '; $cmd_status=$?' + " }"
+
+invoke-command -session $s -ScriptBlock $scriptblock
 
 $remote_status = invoke-command -Session $s -ScriptBlock { $cmd_status }
 
