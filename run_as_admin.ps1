@@ -8,7 +8,7 @@ $cred=new-object -typename system.management.automation.pscredential -argumentli
 
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
 
-[string]$scripttext="{ " + $script + '; $cmd_status=$?' + " }"
+[string]$scripttext="{ ./run_as_admin.ps1 " + $script + '; $cmd_status=$?' + " }"
 [ScriptBlock]$scriptblock = [ScriptBlock]::Create($scripttext)
 
 invoke-command -session $s -ScriptBlock $scriptblock
