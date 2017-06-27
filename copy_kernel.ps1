@@ -1,7 +1,7 @@
 #!/usr/bin/powershell
 #
 #  Copy the latest kernel build from the secure share to the local directory,
-  then install it, set the default kernel, switch out this script for the
+#  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
