@@ -43,7 +43,13 @@ function callVersionIn($m) {
 
 
 function phoneVersionHome($m) {
-    invoke-command -session $s -ScriptBlock ${function:callVersionIn} -ArgumentList $m
+    if ($global:isHyperV -eq $true) {
+        invoke-command -session $s -ScriptBlock ${function:callVersionIn} -ArgumentList $m
+    } else {
+        $output_path="/opt/microsoft/installed_kernel_version.log"
+
+        $m | out-file -Append $output_path
+    }
 }
 
 if (Get-Item -Path /root/borg_progress.log) {
