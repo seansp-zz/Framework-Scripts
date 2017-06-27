@@ -7,4 +7,4 @@ $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
  
 $process = Start-Process -Wait -Credential $cred -FilePath powershell.exe -ArgumentList $scriptName -Verbose -NoNewWindow
-Wait-Process -Id $process
+Wait-Process -Id $process.Id
