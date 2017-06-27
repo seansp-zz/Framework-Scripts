@@ -5,5 +5,5 @@
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
-
-Start-Process -Wait -Credential $cred -FilePath powershell.exe -ArgumentList $scriptName -Verbose
+ 
+Start-Process -Wait -Credential $cred -FilePath powershell.exe -ArgumentList $scriptName -Verbose -NoNewWindow
