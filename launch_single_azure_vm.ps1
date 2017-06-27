@@ -5,8 +5,8 @@
 $newRGName=$vmName + "-SmokeRG"
 $groupExists=$false
  
-$rg="azureSmokeResourceGroup"
-$nm="azuresmokestoragesccount"  
+$rg="azuresmokeresourcegroup"
+$nm="azuresmokestorageaccount"  
 $destContainerName = "working-vhds"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'

@@ -126,12 +126,12 @@ if ($global:isHyperV -eq $true) {
     cd $kernFolder
 
     phoneHome "Copying the kernel from Azure blob storage"
-    wget -m https://azuresmokestoragesccount.blob.core.windows.net/latest-packages/file_list -O file_list
+    wget -m https://azuresmokestorageaccount.blob.core.windows.net/latest-packages/file_list -O file_list
 
     $files=Get-Content file_list
     
     foreach ($file in $files) {
-        $fileName="https://azuresmokestoragesccount.blob.core.windows.net/latest-packages/" + $file
+        $fileName="https://azuresmokestorageaccount.blob.core.windows.net/latest-packages/" + $file
         wget -m $fileName -O $file
     }
 }

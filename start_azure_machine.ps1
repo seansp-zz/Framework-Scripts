@@ -2,9 +2,9 @@
 #  THIS IS A WINDOWS POWERSHELL SCRIPT!!  IT ONLY WORKS ON WINDOWS!!
 #
 # Variables for common values
-$resourceGroup = "azureSmokeResourceGroup"
+$resourceGroup = "azuresmokeresourcegroup"
 $rg=$resourceGroup
-$nm="azuresmokestoragesccount"
+$nm="azuresmokestorageaccount"
 $location = "westus"
 $vmName = "azureSmokeVM-1"
 $cn="azuresmokestoragecontainer"
@@ -34,7 +34,7 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName 
 #
 # Get-ChildItem 'D:\azure_images' |
 # foreach-Object {
-    $sourceVHd=get-item -Path D:\azure_images\RHEL71-Smoke-1.vhd
+    $sourceVHd=$_
 
     $vhdFile=$sourceVHd
     $vhdFileName=$vhdFile.Name.Split('.')[0]
@@ -71,7 +71,7 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName 
 
     Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
-    Set-AzureRmVMOSDisk -VM $vm -Name $vhdFileName -VhdUri $blobuploadURIRaw -CreateOption "Attach" -linux
+    Set-AzureRmVMOSDisk -VM $vm -Name $vhdFileName -SourceImageUri $blobuploadURIRaw -CreateOption "Attach" -linux
 
     $NEWVM = New-AzureRmVM -ResourceGroupName $newRGName -Location westus -VM $vm
 # }

@@ -1,4 +1,12 @@
-﻿Write-Host "Copying Linux kernel build artifacts to the cloud..."
+﻿param (
+    [Parameter(Mandatory=$false)] [string] $nm="azuresmokestorageaccount",
+    [Parameter(Mandatory=$false)] [string] $rg="azuresmokeresourcegroup",
+    [Parameter(Mandatory=$false)] [string] $destAccountName="azuresmokestorageaccount",
+    [Parameter(Mandatory=$false)] [string] $destContainer="latest-packages",
+    [Parameter(Mandatory=$false)] [string] $location="westus"
+)
+
+Write-Host "Copying Linux kernel build artifacts to the cloud..."
 Write-Host "Importing the context...." -ForegroundColor green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
@@ -18,18 +26,18 @@ foreach ($package in $packages) {
     $package.name | out-file -Append C:\temp\file_list
 }
 
-Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container "latest-packages" -force
-Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container "latest-packages" -force
+Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
+Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container $destContainer -force
 
 #
 #  Clear the working container
 #
-Get-AzureStorageBlob -Container $destContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainerName}
+Get-AzureStorageBlob -Container $destContainer -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
 #
 #  Copy the kernel packages to Azure.
 #
 dir z: > c:\temp\file_list
-Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container "latest-packages" -force
+Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
 
 Write-Host "Copy complete."

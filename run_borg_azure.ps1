@@ -1,11 +1,11 @@
 ﻿#
 #  Azure information
 param (
-    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="azuresmokestoragesccount",
+    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="azuresmokestorageaccount",
     [Parameter(Mandatory=$false)] [string[]] $sourceURI="Unset",
-    [Parameter(Mandatory=$false)] [string] $destinationStorageAccountName="azuresmokestoragesccount",
+    [Parameter(Mandatory=$false)] [string] $destinationStorageAccountName="azuresmokestorageaccount",
     [Parameter(Mandatory=$false)] [string] $destinationContainerName="working-vhds",
-    [Parameter(Mandatory=$false)] [string] $resourceGroupName="azureSmokeResourceGroup",
+    [Parameter(Mandatory=$false)] [string] $resourceGroupName="azuresmokeresourcegroup",
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
@@ -86,6 +86,9 @@ function copy_azure_machines {
             }
 
             $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
+
+            $key=Get-AzureRmStorageAccountKey -ResourceGroupName $newRGName -Name $nm
+            $context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
     
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
             $blob = Start-AzureStorageBlobCopy -AbsoluteUri $uri -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
@@ -95,6 +98,27 @@ function copy_azure_machines {
     } else {
         foreach ($singleURI in $URI) {
             Write-Host "Preparing to copy disk by URI.  Source URI is $singleURI"  -ForegroundColor green
+
+            $splitUri=$singleURI.split("/")
+            $lastPart=$splitUri[$splitUri.Length - 1]
+
+            $vhd_name = $lastPart
+            $vmName = $lastPart.Replace(".vhd","")
+
+            $neededVMs.Add($vmName)
+
+            $newRGName=$vmName + "-SmokeRG"
+            $groupExists=$false
+            $existingRG=Get-AzureRmResourceGroup -Name $newRGName -ErrorAction SilentlyContinue   
+            if ($? -eq $true) {
+                Write-Host "There is an existing resource group with the VM named $vmName.  This resource group must be deleted to free any locks on the VHD." -ForegroundColor Red
+                Remove-AzureRmResourceGroup -Name $newRGName -Force
+            }
+
+            Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
+            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $singleURI -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
+
+            $copyblobs.Add($vhd_name)
         }
     }
 
@@ -213,20 +237,6 @@ $action={
             Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
         }
 
-        <#
-        try {
-            Write-Host "Stopping the Azure VM"  -ForegroundColor green
-            Stop-AzureRmVm -force -ResourceGroupName $newRGName -name $machineName
-
-            Write-Host "Removing resource group."  -ForegroundColor green
-            Remove-AzureRmResourceGroup -Name $newRGName -Force
-        }
-        Catch
-        {
-            Write-Host "Caught exception attempting to clean up Azure.  Aborting..." -ForegroundColor red
-        }
-        #>
-
         #
         #  Now, check for success
         #
@@ -238,7 +248,7 @@ $action={
             # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
 
         } else {
-            Write-Host "Machine came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
+            Write-Host "Machine $machineName came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
             $localMachine.Status = "Completed"
             $global:num_remaining--
         }
@@ -327,15 +337,14 @@ $action={
                             Write-Host "Log information, if any, follows:" -ForegroundColor Red
                             receive-job $singleLogJobName
                         }
-                        $calledIt = $true
-
+                        
                         #  Make sure we don't come back here again...
                         remove-job $singleLog.job_name
                     } elseif ($jobStatusObj -ne $null) {
-                        $calledIt = $true
                         $message="--- The job starting VM $monitoredMachineName has not completed yet.  The current state is " + $jobStatus
                         Write-Host $message -ForegroundColor Yellow
                     }
+                    $calledIt = $true
                     break
                 }
             }
@@ -345,10 +354,13 @@ $action={
             }
                         
             if ($calledIt -eq $false -and $monitoredMachine.session -ne $null) {
-                Write-Host "Last three lines of the log file..." -ForegroundColor Magenta                
-                $ipAddress=$monitoredMachine.ipAddress
+                Write-Host "Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta                
                 $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 }
-                $last_lines | write-host -ForegroundColor Magenta
+                if ($?) {
+                    $last_lines | write-host -ForegroundColor Magenta
+                } else {
+                    Write-Host "Error when attempting to retrieve the log file from the remote host.  It may be rebootind..."
+                }
             }
         }
     }
@@ -378,6 +390,12 @@ Write-Host "                                BORG CUBE is initialized"           
 Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRONES)" -ForegroundColor yellow
 Write-Host "    "
 
+Write-Host "Importing the context...." -ForegroundColor Green
+Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+
+Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
+Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
 #
 #  Copy the virtual machines to the staging container

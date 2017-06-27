@@ -15,8 +15,8 @@ param (
     [Parameter(Mandatory=$false)] [string[]] $requestedVMs
 )
 
-$rg="azureSmokeResourceGroup"
-$nm="azuresmokestoragesccount"
+$rg="azuresmokeresourcegroup"
+$nm="azuresmokestorageaccount"
 
 write-host "Importing the context...." -ForegroundColor green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
