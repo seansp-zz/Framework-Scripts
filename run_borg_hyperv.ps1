@@ -148,8 +148,10 @@ Write-Host "    "
 
 Write-Host "Checking to see which VMs we need to bring up..." -ForegroundColor green
 Write-Host "Errors may appear here depending on the state of the system.  They're almost all OK.  If things go bad, we'll let you know." -ForegroundColor Green
-Write-Host "For now, though, please feel free to ignore the following errors..." -fore Green
+Write-Host "For now, though, please feel free to ignore the following errors..." -ForegroundColor Green
 Write-Host " "
+Write-Host "*************************************************************************************************************************************"
+Write-Host "                      Stopping and cleaning any existing machines.  Any errors here may be ignored." -ForegroundColor green
 
 get-job | Stop-Job
 get-job | remove-job
@@ -169,7 +171,7 @@ foreach-Object {
     $machine.status = "Booting" # $status
     $global:monitoredMachines.Add($machine)
    
-    Write-Host "Stopping and cleaning any existing instances of machine $vhdFileName.  Any errors here may be ignored." -ForegroundColor green
+    Write-Host "Stopping and cleaning any existing instances of machine $vhdFileName." -ForegroundColor green
     stop-vm -Name $vhdFileName -Force
     remove-vm -Name $vhdFileName -Force
 
@@ -180,13 +182,13 @@ foreach-Object {
     if ($skipCopy -eq $false) {
     Remove-Item -Path $destFile -Force
     
-        Write-Host "Copying VHD $vhdFileName to working directory..." -ForegroundColor green
+        Write-Host "Starting job to copy VHD $vhdFileName to working directory..." -ForegroundColor green
         $jobName=$vhdFileName + "_copy_job"
 
         $existingJob = get-job  $jobName
         if ($? -eq $true) {
-            stop-job $jobName
-            remove-job $jobName
+            stop-job $jobName -ErrorAction SilentlyContinue
+            remove-job $jobName -ErrorAction SilentlyContinue
         }
 
         Start-Job -Name $jobName -ScriptBlock { robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $args[0] } -ArgumentList @($vhdFile)
@@ -195,8 +197,9 @@ foreach-Object {
     }
 }
 
+Write-Host "*************************************************************************************************************************************"
 Write-Host " "
-Write-Host "Start paying attention to errors again..." -ForegroundColor green
+Write-Host "                                        Start paying attention to errors again..." -ForegroundColor green
 Write-Host " "
 
 if ($skipCopy -eq $false) {
