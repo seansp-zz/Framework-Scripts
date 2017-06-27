@@ -107,4 +107,6 @@ foreach ($script in $scriptsArray) {
     phoneHome "RunOnce execution of script $script complete"
 }
 
-remove-pssession $s
+if ($global:isHyperV -eq $false) {
+    remove-pssession $s
+}
