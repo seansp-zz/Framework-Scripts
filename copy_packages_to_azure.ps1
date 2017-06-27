@@ -32,13 +32,10 @@ foreach ($package in $packages) {
 #
 Get-AzureStorageBlob -Container $destContainer -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
-Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
-Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container $destContainer -force
-
 #
 #  Copy the kernel packages to Azure.
 #
-dir z: > c:\temp\file_list
+Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container $destContainer -force
 Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
 
 Write-Host "Copy complete."
