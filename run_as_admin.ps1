@@ -9,7 +9,10 @@ $cred=new-object -typename system.management.automation.pscredential -argumentli
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
 
 invoke-command -session $s -FilePath $script
-$remote_status = invoke-command -Session $s -ScriptBlock { $? }
-$remote_status
+$remote_status = invoke-command -Session $s -ScriptBlock { $? } -ErrorAction SilentlyContinue
 
-exit $remote_status
+if ($? -eq $false -or $remote_status -ne 0) {
+    exit 1
+} else {
+    exit 0
+}
