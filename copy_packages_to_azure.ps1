@@ -21,18 +21,19 @@ $context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAc
 #  Copy the latest packages up to Azure
 #
 $packages=get-childitem -path z:
-Remove-Item -Path C:\temp\file_list
+Remove-Item -Path C:\temp\file_list -Force
+
 foreach ($package in $packages) {
     $package.name | out-file -Append C:\temp\file_list
 }
-
-Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
-Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container $destContainer -force
 
 #
 #  Clear the working container
 #
 Get-AzureStorageBlob -Container $destContainer -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
+
+Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
+Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container $destContainer -force
 
 #
 #  Copy the kernel packages to Azure.

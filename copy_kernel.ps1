@@ -52,14 +52,15 @@ function phoneVersionHome($m) {
     }
 }
 
-if (Get-Item -Path /root/borg_progress.log) {
-    Remove-Item /root/borg_progress.log
-    $hostName=hostname
-    echo "******************************************************************" | Out-File -FilePath /root/borg_progress.log
-    echo "*        BORG DRONE $hostName starting conversion..." | Out-File -append -FilePath /root/borg_progress.log
-    echo "******************************************************************" | Out-File -Append -FilePath /root/borg_progress.log
-    chmod 777 /root/borg_progress.log
+if (Get-Item -ErrorAction SilentlyContinue -Path /root/borg_progress.log  ) {
+    Remove-Item /root/borg_progress.log 
 }
+
+$hostName=hostname
+echo "******************************************************************" | Out-File -FilePath /root/borg_progress.log
+echo "*        BORG DRONE $hostName starting conversion..." | Out-File -append -FilePath /root/borg_progress.log
+echo "******************************************************************" | Out-File -Append -FilePath /root/borg_progress.log
+chmod 777 /root/borg_progress.log
 
 
 #
