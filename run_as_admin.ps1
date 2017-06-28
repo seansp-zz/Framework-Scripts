@@ -14,6 +14,9 @@ $scriptBlockString =
    param($args) 
    $pg = $args[0].ToString().Split(" ")[0]
    $sp = $args[0].ToString().Split(" ")[1]
+   write-host "------------->> Full args:  $args"
+   write-host "---------------------->> Prog is $pg"
+   Write-Host "---------------------->> Script is $sp"
    $code = Start-Process powershell.exe $pg $sp -NoNewWindow -Wait
    $code.ExitCode
 }
@@ -21,6 +24,8 @@ $scriptBlockString =
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
 $args= $launcher + " " + $script
+Write-Host "Calling with args $args"
+
 $result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $args
 
 if($result -ne 0) {
