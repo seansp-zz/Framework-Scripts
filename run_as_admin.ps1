@@ -10,7 +10,7 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 
 $scriptBlockString = 
 { 
-   $code = Start-Process -FilePath $script -NoNewWindow -ErrorAction SilentlyContinue -Wait -PassThru
+   $code = Start-Process -FilePath $script -NoNewWindow -Wait -PassThru
    $code.ExitCode
 }
 
