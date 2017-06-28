@@ -11,12 +11,10 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 $scriptBlockString = 
 { 
    param($args) 
-   $pg = $args[0].ToString().Split(" ")[0]
    $sp = $args[0].ToString().Split(" ")[1]
    write-host "------------->> Full args:  $args"
-   write-host "---------------------->> Prog is $pg"
    Write-Host "---------------------->> Script is $sp"
-   $code = Start-Process powershell.exe $pg $sp -NoNewWindow -Wait
+   $code = Start-Process powershell.exe $sp -NoNewWindow -Wait
    $code.ExitCode
 }
 
