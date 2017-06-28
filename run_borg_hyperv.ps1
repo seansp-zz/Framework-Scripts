@@ -11,6 +11,7 @@ $global:num_expected=0
 $global:num_remaining=0
 $global:failed=0
 $global:booted_version="Unknown"
+$global:timer_is_running = 0
 
 class MonitoredMachine {
     [string] $name="unknown"
@@ -61,6 +62,9 @@ $action={
         $global:num_remaining--
     }
 
+    if ($global:timer_is_running -eq 0) {
+        return
+    }
     $global:elapsed=$global:elapsed+$global:interval
 
     # write-host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals"    
@@ -294,6 +298,7 @@ foreach-Object {
 write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 unregister-event bootTimer
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
+$global:timer_is_running = 1
 $timer.Interval = 1000
 $timer.Enabled = $true
 $timer.start()
@@ -303,6 +308,7 @@ while ($global:completed -eq 0) {
 }
 
 write-host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
+$global:timer_is_running = 0
 $timer.stop()
 unregister-event bootTimer
 

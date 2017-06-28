@@ -41,6 +41,7 @@ $global:num_expected=0
 $global:num_remaining=0
 $global:failed=0
 $global:booted_version="Unknown"
+$global:timer_is_running = 0
 
 #
 #  Session stuff
@@ -264,6 +265,10 @@ $action={
         }
     }
 
+    if ($global:timer_is_running -eq 0) {
+        return
+    }
+
     $global:elapsed=$global:elapsed+$global:interval
     # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
 
@@ -440,6 +445,7 @@ write-host "$global:num_left machines have been launched.  Waiting for completio
 #               
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
+$global:timer_is_running=1
 $timer.Interval = 1000
 $timer.Enabled = $true
 $timer.start()
@@ -450,6 +456,7 @@ while ($global:completed -eq 0) {
 }
 
 Write-Host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
+$global:timer_is_running=0
 $timer.stop()
 unregister-event AzureBootTimer
 
