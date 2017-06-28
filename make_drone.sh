@@ -13,7 +13,7 @@ else
     export is_rpm=1
 fi
 
-if [ $is_rpm == 0 ]
+if [ is_rpm == 0 ]
   then
     user
     echo "DEB-based system"
@@ -28,16 +28,17 @@ if [ $is_rpm == 0 ]
     # apt-get install -y powershell
     wget http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
     dpkg -i libicu52_52.1-8_amd64.deb
-    apt-get install powershell
-    apt-get purge powershell
+    apt-get install -y powershell
+    apt-get purge -y powershell
     export download_1404="https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.14.04.1_amd64.deb"
     export download_1604="https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.16.04.1_amd64.deb"
     wget $download_1604
 
     export pkg_name=`echo $download_1604 | sed -e s/.*powershell/powershell/`
     dpkg -r powershell
-    dpkg -i pkg_name
+    dpkg -i $pkg_name
 
+    apt-get install -y omi
     apt-get install -y omi-psrp-server
 
     apt-get install -y git
@@ -61,7 +62,7 @@ if [ $is_rpm == 0 ]
     ufw allow 5986
 else
     echo "RPM-based system"
-    yum install yum-utils
+    yum install -y yum-utils
     package-cleanup --oldkernels --count=2
 
     useradd -d /home/mstest -s /bin/bash -G wheel -m mstest -p 'P@$$w0rd!'
@@ -77,7 +78,7 @@ else
     rpm -i $download_normal
 
     yum install -y omi
-    yum install -y psrp-omi-serverssh
+    yum install -y omi-psrp-server
     yum install -y git
     yum install -y nfs-utils
 
@@ -88,6 +89,7 @@ else
     sed -e s/"PasswordAuthentication no"/"PasswordAuthentication yes"/ < /etc/ssh/sshd_config > /tmp/x
     /bin/cp /tmp/x /etc/ssh/sshd_conf
     systemctl stop sshd
+    systemctl start sshd
     cd
     git clone https://github.com/FawcettJohnW/Framework-Scripts.git
     mkdir runonce.d runonce.d/ran

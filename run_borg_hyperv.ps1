@@ -50,10 +50,10 @@ $action={
 
         if ($resultsSplit[0] -ne "Success") {
             $resultExpected = $resultsSplit[2]
-            Write-Host "Machine $machineName rebooted, but wrong version detected.  Expected resultExpected but got $resustsgot" -ForegroundColor red
+            Write-Host "Machine $machineName rebooted, but wrong version detected.  Expected $resultExpected but got $resustsgot" -ForegroundColor red
             $global:failed=$true
         } else {
-            Write-Host "Machine rebooted successfully to kernel version " -ForegroundColor green
+            Write-Host "Machine rebooted successfully to kernel version $resultExpected" -ForegroundColor green
             $global:booted_version=$resustsgot
         }
 

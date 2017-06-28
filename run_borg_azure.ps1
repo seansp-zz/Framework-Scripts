@@ -42,7 +42,12 @@ $global:num_remaining=0
 $global:failed=0
 $global:booted_version="Unknown"
 
-
+#
+#  Session stuff
+#
+$global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
+$global:pw = convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+$global:cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
 
 class MonitoredMachine {
     [string] $name="unknown"
@@ -168,14 +173,17 @@ function launch_azure_vms {
             Write-Host "----> Azure boot Job $jobName failed to lanch.  Error information is $jobStatus.Error" -ForegroundColor yellow
             $global:failed = 1
             $global:num_remaining--
-            Write-Host "Any log information provided follows:"
-            receive-job $jobname
+            if ($global:num_remaining -eq 0) {
+                $global:completed = 1
+            }                        
         }
         elseif ($jobState -eq "Completed")
         {
             Write-Host "----> Azure boot job $jobName completed while we were waiting.  We will check results later." -ForegroundColor green
-            Write-Host "Any log information provided follows:"
-            receive-job $jobname
+            $global:num_remaining--
+            if ($global:num_remaining -eq 0) {
+                $global:completed = 1
+            }
         }
         else
         {
@@ -218,10 +226,7 @@ $action={
                 $localMachine.ipAddress = $ipAddress
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
-                $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-                $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-                $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
-                $localMachine.session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+                $localMachine.session=new-PSSession -computername $ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o
                 if ($?) {
                     $machineIsUp = $true
                 } else {
@@ -283,8 +288,12 @@ $action={
             #  Don't even try if the new-vm hasn't completed...
             #
             if ($singleLog.name -eq $monitoredMachineName) {
-                $jobStatus = get-job $singleLog.job_name
-                $jobStatus = $jobStatus.State
+                $jobStatus = get-job $singleLog.job_name -ErrorAction SilentlyContinue
+                if ($? -eq $true) {
+                    $jobStatus = $jobStatus.State
+                } else {
+                    $jobStatus = "Unknown"
+                }
                
                 if ($jobStatus -ne $null -and ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed")) {
                     if ($jobStatus -eq "Completed") {
@@ -292,6 +301,9 @@ $action={
                         if ($monitoredMachineStatus -ne "Completed") {
                             checkMachine $monitoredMachine
                         }
+                    } elseif ($jobStatus -eq "Failed") {
+                        Write-Host "Job to start VM $monitoredMachineName failed.  Any log information provided follows:"
+                        receive-job $jobname
                     }
                 } elseif ($jobStatus -eq $null -and $monitoredMachineStatus -ne "Completed") {
                     checkMachine $monitoredMachine
@@ -326,8 +338,13 @@ $action={
                 $singleLogJobName = $singleLog.job_name
 
                 if ($singleLogName -eq $monitoredMachineName) {
-                    $jobStatusObj = get-job $singleLogJobName
-                    $jobStatus = $jobStatusObj.State
+                    $jobStatusObj = get-job $singleLogJobName -ErrorAction SilentlyContinue
+                    if ($? -eq $true) {
+                        $jobStatus = $jobStatusObj.State
+                    } else {
+                        $jobStatus -eq "Completed"
+                        $jobStatusObj = $null
+                    }
                
                     if ($jobStatusObj -ne $null -and ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed")) {
                         if ($jobStatus -eq "Completed") {
