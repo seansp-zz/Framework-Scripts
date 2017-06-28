@@ -213,8 +213,12 @@ if ($skipCopy -eq $false) {
 
             $jobName=$vhdFileName + "_copy_job"
 
-            $jobStatus=get-job -Name $jobName
-            $jobState = $jobStatus.State
+            $jobStatus=get-job -Name $jobName -ErrorAction SilentlyContinue
+            if ($? -eq $true) {
+                $jobState = $jobStatus.State
+            } else {
+                $jobStatus = "Completed"
+            }
         
             if (($jobState -ne "Completed") -and 
                 ($jobState -ne "Failed")) {
@@ -230,7 +234,7 @@ if ($skipCopy -eq $false) {
             else
             {
                 Write-Host "      Copy job $jobName completed successfully." -ForegroundColor green
-                remove-job $jobName
+                remove-job $jobName -ErrorAction SilentlyContinue
             }    
         }
 
