@@ -172,8 +172,8 @@ foreach-Object {
     $global:monitoredMachines.Add($machine)
    
     Write-Host "Stopping and cleaning any existing instances of machine $vhdFileName." -ForegroundColor green
-    stop-vm -Name $vhdFileName -Force
-    remove-vm -Name $vhdFileName -Force
+    stop-vm -Name $vhdFileName -Force -ErrorAction SilentlyContinue
+    remove-vm -Name $vhdFileName -Force -ErrorAction SilentlyContinue
 
     $machine.status = "Allocating"
     # Copy-Item $sourceFile $destFile -Force
@@ -185,7 +185,7 @@ foreach-Object {
         Write-Host "Starting job to copy VHD $vhdFileName to working directory..." -ForegroundColor green
         $jobName=$vhdFileName + "_copy_job"
 
-        $existingJob = get-job  $jobName
+        $existingJob = get-job $jobName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             stop-job $jobName -ErrorAction SilentlyContinue
             remove-job $jobName -ErrorAction SilentlyContinue
