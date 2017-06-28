@@ -1,5 +1,4 @@
 ﻿param (
-    [Parameter(Mandatory=$true)] [string] $launcher,
     [Parameter(Mandatory=$true)] [string] $script
 )
 
@@ -23,10 +22,7 @@ $scriptBlockString =
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
-$args= $launcher + " " + $script
-Write-Host "Calling with args $args"
-
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $args
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $script
 
 if($result -ne 0) {
     exit 1
