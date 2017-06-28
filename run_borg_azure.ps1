@@ -338,15 +338,18 @@ $action={
                 $singleLogJobName = $singleLog.job_name
 
                 if ($singleLogName -eq $monitoredMachineName) {
-                    $jobStatusObj = get-job $singleLogJobName -ErrorAction SilentlyContinue
-                    if ($? -eq $true) {
-                        $jobStatus = $jobStatusObj.State
+                    if ($monitoredMachine.status -ne "Completed") {
+                        $jobStatusObj = get-job $singleLogJobName -ErrorAction SilentlyContinue
+                        if ($? -eq $true) {
+                            $jobStatus = $jobStatusObj.State
+                        } else {
+                            $jobStatus -eq "Completed"
+                        }
                     } else {
-                        $jobStatus -eq "Completed"
-                        $jobStatusObj = $null
+                        $jobStatus = "Completed"
                     }
                
-                    if ($jobStatusObj -ne $null -and ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed")) {
+                    if ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed") {
                         if ($jobStatus -eq "Completed") {
                            if ($monitoredMachineStatus -eq "Completed") {
                                 Write-Host "--- Machine $monitoredMachineName has completed..." -ForegroundColor green
@@ -357,11 +360,7 @@ $action={
                             Write-Host "--- Job $singleLogName failed to start." -ForegroundColor Red
                             Write-Host "Log information, if any, follows:" -ForegroundColor Red
                             receive-job $singleLogJobName
-                        }
-                        
-                        #  Make sure we don't come back here again...
-                        remove-job $singleLog.job_name
-                        $global:machineLogs.Remove($singleLog)
+                        }                      
                     } elseif ($jobStatusObj -ne $null) {
                         $message="--- The job starting VM $monitoredMachineName has not completed yet.  The current state is " + $jobStatus
                         Write-Host $message -ForegroundColor Yellow
@@ -377,11 +376,11 @@ $action={
                         
             if ($calledIt -eq $false -and $monitoredMachine.session -ne $null) {
                 Write-Host "Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta                
-                $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 }
+                $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 } -ErrorAction SilentlyContinue
                 if ($?) {
                     $last_lines | write-host -ForegroundColor Magenta
                 } else {
-                    Write-Host "Error when attempting to retrieve the log file from the remote host.  It may be rebootind..."
+                    Write-Host "Error when attempting to retrieve the log file from the remote host.  It may be rebooting..."
                 }
             }
         }
@@ -468,9 +467,11 @@ if ($global:num_remaining -eq 0) {
             $monitoredMachineName=$monitoredMachine.name
             $monitoredMachineState=$monitoredMachine.status
             if ($monitoredMachineState -ne "Completed") {
-                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState.  This is the log, if any:" -ForegroundColor red
-                $log_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log }
-                $log_lines | write-host -ForegroundColor Magenta
+                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState.  This is the log, if any:" -ForegroundColor red 
+                $log_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log } -ErrorAction SilentlyContinue
+                if ($? -eq $true) {
+                    $log_lines | write-host -ForegroundColor Magenta
+                }
             } else {
                 Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor green
             }
