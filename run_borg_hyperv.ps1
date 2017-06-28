@@ -225,10 +225,12 @@ if ($skipCopy -eq $false) {
             {
                 $global:failed = 1
                 Write-Host "----> Copy job $jobName exited with FAILED state!" -ForegroundColor red
+                Receive-Job -Name $jobName
             }
             else
             {
                 Write-Host "      Copy job $jobName completed successfully." -ForegroundColor green
+                remove-job $jobName
             }    
         }
 

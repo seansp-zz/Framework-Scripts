@@ -361,6 +361,7 @@ $action={
                         
                         #  Make sure we don't come back here again...
                         remove-job $singleLog.job_name
+                        $global:machineLogs.Remove($singleLog)
                     } elseif ($jobStatusObj -ne $null) {
                         $message="--- The job starting VM $monitoredMachineName has not completed yet.  The current state is " + $jobStatus
                         Write-Host $message -ForegroundColor Yellow
