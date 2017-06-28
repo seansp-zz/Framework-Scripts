@@ -1,4 +1,5 @@
 ﻿param (
+    [Parameter(Mandatory=$true)] [string] $launcher,
     [Parameter(Mandatory=$true)] [string] $script
 )
 
@@ -11,7 +12,7 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 $scriptBlockString = 
 { 
    param($pg,$sp) 
-   $code = Start-Process -FilePath powershell.exe -ArgumentList $pg $sp -NoNewWindow -Wait
+   $code = Start-Process -FilePath powershell.exe -ArgumentList $launcher $sp -NoNewWindow -Wait
    $code.ExitCode
 }
 
