@@ -327,6 +327,7 @@ $action={
             $global:completed=1
         }
 
+        Write-Host ""
         Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($localMachine in $global:monitoredMachines) {

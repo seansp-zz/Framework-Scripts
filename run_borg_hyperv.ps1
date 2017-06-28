@@ -96,6 +96,7 @@ $action={
     }
  
     if (($global:elapsed % 10000) -eq 0) {
+        Write-Host ""
         Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($localMachine in $global:monitoredMachines) {
