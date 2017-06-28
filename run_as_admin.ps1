@@ -8,9 +8,11 @@ $cred=new-object -typename system.management.automation.pscredential -argumentli
 
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
 
-$scriptBlockString = '{ $code = Start-Process -FilePath ' + $script + ' -NoNewWindow -ErrorAction SilentlyContinue -Wait -PassThru `
-	$code.ExitCode `
-}'
+$scriptBlockString = 
+{ 
+   $code = Start-Process -FilePath $script -NoNewWindow -ErrorAction SilentlyContinue -Wait -PassThru
+   $code.ExitCode
+}
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
