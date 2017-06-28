@@ -18,7 +18,7 @@ $scriptBlockString =
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$launcher $script"
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $launcher $script
 
 if($result -ne 0) {
     exit 1
