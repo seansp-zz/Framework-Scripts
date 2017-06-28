@@ -293,7 +293,7 @@ foreach-Object {
 write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 unregister-event bootTimer
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
-$timer.Interval = 500
+$timer.Interval = 1000
 $timer.Enabled = $true
 $timer.start()
 

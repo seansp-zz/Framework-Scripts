@@ -209,6 +209,7 @@ $action={
         }
 
         $expected_ver=Get-Content C:\temp\expected_version
+        $global:booted_version = $expected_ver
 
         $failed=0
         $newRGName=$machineName + "-SmokeRG"
@@ -313,15 +314,19 @@ $action={
     }
 
     if ($global:num_remaining -eq 0) {
-        Write-Host "***** All machines have reported in."  -ForegroundColor magenta
-        if ($global:failed -eq $true) {
-            Write-Host "One or more machines have failed to boot.  This job has failed." -ForegroundColor Red
-        }
-        Write-Host "Stopping the timer" -ForegroundColor green
         $global:completed=1
     }
 
     if (($global:elapsed % 10000) -eq 0) {
+        if ($global:num_remaining -eq 0) {
+            Write-Host "***** All machines have reported in."  -ForegroundColor magenta
+            if ($global:failed -eq $true) {
+                Write-Host "One or more machines have failed to boot.  This job has failed." -ForegroundColor Red
+            }
+            Write-Host "Stopping the timer" -ForegroundColor green
+            $global:completed=1
+        }
+
         Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
 
         foreach ($localMachine in $global:monitoredMachines) {
@@ -434,7 +439,7 @@ write-host "$global:num_left machines have been launched.  Waiting for completio
 #               
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
-$timer.Interval = 500
+$timer.Interval = 1000
 $timer.Enabled = $true
 $timer.start()
 
