@@ -11,14 +11,17 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 
 $scriptBlockString = 
 { 
-   param($pg,$sp) 
+   param($args) 
+   $pg = $args[0].ToString().Split(" ")[0]
+   $sp = $args[0].ToString().Split(" ")[1]
    $code = Start-Process powershell.exe $pg $sp -NoNewWindow -Wait
    $code.ExitCode
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $launcher $script
+$args= $launcher + " " + $script
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$launcher $script"
 
 if($result -ne 0) {
     exit 1
