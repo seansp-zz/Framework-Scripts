@@ -10,13 +10,14 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 
 $scriptBlockString = 
 { 
-   $code = Start-Process -FilePath $script -NoNewWindow -Wait -PassThru
+   param($sp) 
+   $code = Start-Process -FilePath $sp -NoNewWindow -Wait -PassThru
    $code.ExitCode
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $script
 
 if($result -ne 0) {
     exit 1
