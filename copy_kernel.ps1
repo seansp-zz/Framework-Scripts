@@ -248,6 +248,8 @@ copy-Item -Path "/root/Framework-Scripts/report_kernel_version.ps1" -Destination
 
 phoneHome "Rebooting now..."
 
-remove-pssession $s
+if ($global:isHyperV -eq $true) {
+    remove-pssession $s
+}
 
 shutdown -r
