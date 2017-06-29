@@ -257,11 +257,11 @@ $action={
         if ($expected_verDeb -eq "") {
             if ($expected_verCent -eq "") {
                 $global:booted_version = "Unknown"
+            } else {
+                $global:booted_version = $expected_verCent
             }
-        } elseif ($expected_verCent -eq "") {
-            $global:booted_version = "Unknown"
         } else {
-            $global:booted_version = $expected_verCent
+            $global:booted_version = $expected_verDeb
         }
 
         Write-Host "Looking for version $expected_verDeb or $expected_verCent"
