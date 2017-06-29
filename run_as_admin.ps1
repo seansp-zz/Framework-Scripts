@@ -21,9 +21,14 @@ $scriptBlockString =
     $psi.Arguments = @($sp) 
     $process = New-Object System.Diagnostics.Process 
     $process.StartInfo = $psi 
-    [void]$process.Start()
 
+    Write-Host "Starting the process..."
+    [void]$process.Start()
+    Write-Host "Process started..."
+
+    Write-Host "Getting the output..."
     $output = $process.StandardOutput.ReadToEnd() 
+    Write-Host "Waiting for exit..."
     $process.WaitForExit() 
     $output
 
