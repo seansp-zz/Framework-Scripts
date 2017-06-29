@@ -95,6 +95,7 @@ function copy_azure_machines {
                 Remove-AzureRmResourceGroup -Name $newRGName -Force
             }
 
+            New-AzureRmResourceGroup -Name $newRGName -Location westus
             $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
 
             $key=Get-AzureRmStorageAccountKey -ResourceGroupName $newRGName -Name $nm
@@ -124,6 +125,7 @@ function copy_azure_machines {
                 Write-Host "There is an existing resource group with the VM named $vmName.  This resource group must be deleted to free any locks on the VHD." -ForegroundColor Red
                 Remove-AzureRmResourceGroup -Name $newRGName -Force
             }
+            New-AzureRmResourceGroup -Name $newRGName -Location westus
 
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
             $blob = Start-AzureStorageBlobCopy -AbsoluteUri $singleURI -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
