@@ -100,6 +100,7 @@ function copy_azure_machines {
             }
 
             New-AzureRmResourceGroup -Name $newRGName -Location westus 
+            $existingRG=Get-AzureRmResourceGroup -Name $newRGName 
 
             $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
 
