@@ -56,6 +56,11 @@ if (Get-Item -ErrorAction SilentlyContinue -Path /root/borg_progress.log  ) {
     Remove-Item /root/borg_progress.log 
 }
 
+$ErrorActionPreference="SilentlyContinue"
+Stop-Transcript | out-null
+$ErrorActionPreference = "Continue"
+Start-Transcript -path /root/borg_install_log -append
+
 $hostName=hostname
 echo "******************************************************************" | Out-File -FilePath /root/borg_progress.log
 echo "*        BORG DRONE $hostName starting conversion..." | Out-File -append -FilePath /root/borg_progress.log
@@ -251,5 +256,7 @@ phoneHome "Rebooting now..."
 if ($global:isHyperV -eq $true) {
     remove-pssession $s
 }
+
+Stop-Transcript
 
 shutdown -r
