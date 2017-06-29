@@ -10,11 +10,24 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 
 $scriptBlockString = 
 {
-   param($sp)
-   Write-Host "---------------------->> Script is $sp"
-   Start-Process powershell.exe $sp -Wait -passthru
-   Write-Host "Process started..."
-   $code.ExitCode
+    param($sp)
+    Write-Host "---------------------->> Script is $sp"
+    $psi = New-object System.Diagnostics.ProcessStartInfo 
+    $psi.CreateNoWindow = $true 
+    $psi.UseShellExecute = $false 
+    $psi.RedirectStandardOutput = $true 
+    $psi.RedirectStandardError = $true 
+    $psi.FileName = 'powershell.exe' 
+    $psi.Arguments = @($sp) 
+    $process = New-Object System.Diagnostics.Process 
+    $process.StartInfo = $psi 
+    [void]$process.Start()
+
+    $output = $process.StandardOutput.ReadToEnd() 
+    $process.WaitForExit() 
+    $output
+
+    $process.ExitCode
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
