@@ -293,20 +293,20 @@ if (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current"
-    $foo=@(apt-get -y update)
+    @(apt-get -y update)
 
     phoneHome "Installing the DEB kernel devel package"
-    $foo=@(dpkg -i $kernDevName)
+    @(dpkg -i $kernDevName)
 
     phoneHome "Installing the DEB kernel package"
-    $foo=@(dpkg -i $debKernName)
+    @(dpkg -i $debKernName)
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    $foo=@(grub-mkconfig -o /boot/grub/grub.cfg)
-    $foo=@(grub-set-default 0)
+    @(grub-mkconfig -o /boot/grub/grub.cfg)
+    @(grub-set-default 0)
 }
 
 #
