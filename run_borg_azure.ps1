@@ -250,17 +250,28 @@ $action={
         #
         #  Now, check for success
         #
-        $expected_verDeb=Get-Content C:\temp\expected_version_deb
-        $expected_verCent=Get-Content C:\temp\expected_version_centos
+        $expected_verDeb=Get-Content C:\temp\expected_version_deb -ErrorAction SilentlyContinue
+        $expected_verCent=Get-Content C:\temp\expected_version_centos -ErrorAction SilentlyContinue
+
         $global:booted_version = $expected_verDeb
+        if ($expected_verDeb -eq "") {
+            if ($expected_verCent -eq "") {
+                $global:booted_version = "Unknown"
+            }
+        } elseif ($expected_verCent -eq "") {
+            $global:booted_version = "Unknown"
+        } else {
+            $global:booted_version = $expected_verCent
+        }
+
+        Write-Host "Looking for version $expected_verDeb or $expected_verCent"
 
         if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -or ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
-                Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected something like $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
+                Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected something like $expected_verCent or $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
             }
             # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
             # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
-
         } else {
             Write-Host "Machine $machineName came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
             $localMachine.Status = "Completed"

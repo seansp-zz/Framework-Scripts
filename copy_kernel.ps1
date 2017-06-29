@@ -49,11 +49,11 @@ function callVersionIn($f,$m) {
 
 
 function phoneVersionHome($m) {
+
+    $outFile = "c:\temp\expected_version_deb"
     if (Test-Path /bin/rpm) {
         $outFile = "c:\temp\expected_version_centos"
-    } else {
-        $outFile = "c:\temp\expected_version_deb"
-    }
+    } 
 
     if ($global:isHyperV -eq $true) {
         if ($global:session -eq $null) {
@@ -62,7 +62,7 @@ function phoneVersionHome($m) {
 
         invoke-command -session $global:session -ScriptBlock ${function:callVersionIn} -ArgumentList $outFile,$m
     } else {
-        $output_path=/root/expected_version
+        $output_path="/root/expected_version"
 
         $m | out-file -Append $output_path
     }
