@@ -12,7 +12,7 @@ $scriptBlockString =
 {
    param($sp)
    Write-Host "---------------------->> Script is $sp"
-   $code = Start-Process powershell.exe $sp -NoNewWindow -Wait -PassThru
+   $code = invoke-command $sp -NoNewWindow -Wait -PassThru
    Write-Host "Process started..."
    $code.ExitCode
 }
