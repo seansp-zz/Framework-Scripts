@@ -215,7 +215,7 @@ if (Test-Path /bin/rpm) {
     #
     #  Figure out the kernel version
     #
-    $kernelVersionCent=$kenelNameCent
+    $kernelVersionCent=$kernelNameCent
 
     #
     #  For some reason, the file is -, but the kernel is _
