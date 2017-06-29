@@ -79,7 +79,7 @@ if ($ENV:PATH -ne "") {
     $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 }
 phoneHome "Search path is $ENV:PATH"
-/bin/chmod 777 /opt/microsoft/borg_progress.log
+& "/bin/chmod 777 /opt/microsoft/borg_progress.log"
 
 #
 #  Now see if we can mount the drop folder
