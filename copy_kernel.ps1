@@ -1,4 +1,4 @@
-#!/usr/bin/powershell
+#!powershell
 #
 #  Copy the latest kernel build from the secure share to the local directory,
 #  then install it, set the default kernel, switch out this script for the
@@ -10,6 +10,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $pkg_container="",
     [Parameter(Mandatory=$false)] [string] $pkg_location=""
 )
+
+$ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
 
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
@@ -161,13 +163,13 @@ if ($global:isHyperV -eq $true) {
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
     $fileListURI = $fileListURIBase + "/file_list"
-    /usr/bin/wget -m $fileListURI -O file_list
+    wget -m $fileListURI -O file_list
 
     $files=Get-Content file_list
     
     foreach ($file in $files) {
         $fileName=$fileListURIBase + "/" + $pkg_container + "/" + $file
-        /usr/bin/wget -m $fileName -O $file
+        wget -m $fileName -O $file
     }
 }
 
@@ -188,8 +190,8 @@ Remove-Item -Force "/root/expected_version"
 #
 #  Figure out the kernel name
 #
-$rpmName=(get-childitem kernel-[0-9]*./bin/rpm).name
-$kernelName=($rpmName -split "./bin/rpm")[0]
+$rpmName=(get-childitem kernel-[0-9]*.rpm).name
+$kernelName=($rpmName -split ".rpm")[0]
 phoneHome "Kernel name is $kernelName" 
 
 #
@@ -209,33 +211,33 @@ phoneVersionHome $kernelVersion
 #  Do the right thing for the platform
 #
 cd $kernFolder
-If (Test-Path /bin/rpm) {
+If (Test-Path rpm) {
     #
-    #  /bin/rpm-based system
+    #  rpm-based system
     #
-    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+"./bin/rpm"
+    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+".rpm"
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
-    $kernelPackageName=$kernelName+"./bin/rpm"
+    $kernelPackageName=$kernelName+".rpm"
 
     phoneHome "Making sure the firewall is configured" 
-    /usr/bin/firewall-cmd --zone=public --add-port=443/tcp --permanent
-    /usr/bin/systemctl stop firewalld
-    /usr/bin/systemctl start firewalld
+    firewall-cmd --zone=public --add-port=443/tcp --permanent
+    systemctl stop firewalld
+    systemctl start firewalld
 
     #
     #  Install the new kernel
     #
-    phoneHome "Installing the /bin/rpm kernel devel package $kernelDevelName"
-    /bin/rpm -ivh $kernelDevelName
-    phoneHome "Installing the /bin/rpm kernel package $kernelPackageName"
-    /bin/rpm -ivh $kernelPackageName
+    phoneHome "Installing the rpm kernel devel package $kernelDevelName"
+    rpm -ivh $kernelDevelName
+    phoneHome "Installing the rpm kernel package $kernelPackageName"
+    rpm -ivh $kernelPackageName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
-    /usr/sbin/grub2-set-default 0
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+    grub2-set-default 0
 } else {
     #
     #  Figure out the kernel name
@@ -253,20 +255,20 @@ If (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current" 
-    /usr/bin/apt-get -y update
+    apt-get -y update
 
     phoneHome "Installing the DEB kernel devel package" 
-    /usr/bin/dpkg -i $kernDevName
+    dpkg -i $kernDevName
 
     phoneHome "Installing the DEB kernel package" 
-    /usr/bin/dpkg -i $debKernName
+    dpkg -i $debKernName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
-    /usr/sbin/grub-set-default 0
+    grub-mkconfig -o /boot/grub/grub.cfg
+    grub-set-default 0
 }
 
 #
