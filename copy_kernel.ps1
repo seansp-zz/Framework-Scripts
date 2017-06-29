@@ -11,7 +11,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $pkg_location=""
 )
 
-$ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+$ENV:PATH=$ENV:PATH + "/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+$ENV:PATH
 
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
@@ -211,7 +212,7 @@ phoneVersionHome $kernelVersion
 #  Do the right thing for the platform
 #
 cd $kernFolder
-If (Test-Path rpm) {
+If (Test-Path /bin/rpm) {
     #
     #  rpm-based system
     #
