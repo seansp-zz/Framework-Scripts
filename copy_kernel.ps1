@@ -298,35 +298,43 @@ if (Test-Path /bin/rpm) {
     #
     #  Make sure it's up to date
     #
+    @(apt-get install -f)
+    @(apt autoremove)
     phoneHome "Getting the system current"
     while ($true) {
+        phoneHome "Tyring apt-get now..."
         @(apt-get -y update)
         if ($? -ne $true) {
            phoneHome "Retyring getting the system current"
            sleep 1
         } else {
+            phoneHome "Command was successful?"
             break
         }
     }
 
     phoneHome "Installing the DEB kernel devel package"
     while ($true) {
+        phoneHome "Tyring dpkg(1) now..."
         @(dpkg -i $kernDevName)
         if ($? -ne $true) {
             phoneHome "Retyring installing the DEB devel package"
            sleep 1
         } else {
+            phoneHome "Command was successful?"
             break
         }
     }
 
     phoneHome "Installing the DEB kernel package"
     while ($true) {
+        phoneHome "Tyring dpkg(2) now..."
         @(dpkg -i $debKernName)
         if ($? -ne $true) {
             phoneHome "Retyring installing the DEB Kernel package"
            sleep 1
         } else {
+            phoneHome "Command was successful?"
             break
         }
     }
