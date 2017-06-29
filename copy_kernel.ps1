@@ -76,16 +76,10 @@ phoneHome "******************************************************************"
 
 if ($ENV:PATH -ne "") {
     $ENV:PATH=$ENV:PATH + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
-    $env:path=$env:path + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
-    $Env:Path=$Env:Path + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
 } else {
     $ENV:PATH="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
-    $env:path="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
-    $Env:Path="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
 }
-phoneHome "Environment is $ENV:PATH"
-phoneHome "Environment 2 is $env:path"
-phoneHome "Environment 3 is $Env:Path"
+phoneHome "Search path is $ENV:PATH"
 
 chmod 777 /opt/microsoft/borg_progress.log
 
