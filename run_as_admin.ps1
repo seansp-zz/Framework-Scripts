@@ -19,7 +19,7 @@ $scriptBlockString =
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
 write-host "Calling invoke-command with argument $script"
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script" -
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script"
 
 if($result -ne 0) {
     exit 1
