@@ -246,13 +246,13 @@ if (Test-Path /bin/rpm) {
     #
     #  Figure out the kernel name
     #
-    $debKernName=(get-childitem linux-image-*.deb -exclude )[0].Name
+    $debKernName=(get-childitem linux-image-*.deb -exclude "-dgb_")[0].Name
     phoneHome "Kernel Package name is $DebKernName" 
 
     #
     #  Debian
     #
-    $kernDevName=(get-childitem linux-image-*.deb)[1].Name
+    $kernDevName=(get-childitem linux-image-*.deb -Exclude ".src.")[1].Name
     phoneHome "Kernel Devel Package name is $kernDevName" 
 
     #
@@ -262,7 +262,7 @@ if (Test-Path /bin/rpm) {
     $foo=@(apt-get -y update)
 
     phoneHome "Installing the DEB kernel devel package" 
-    $foo=@(dpkg -i $kernDevNae)
+    $foo=@(dpkg -i $kernDevName)
 
     phoneHome "Installing the DEB kernel package" 
     $foo=@(dpkg -i $debKernName)
