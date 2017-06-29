@@ -75,7 +75,11 @@ phoneHome "******************************************************************"
 phoneHome "*        BORG DRONE $hostName starting conversion..." 
 phoneHome "******************************************************************"
 
-$ENV:PATH=$ENV:PATH + "/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+if ($ENV:PATH -ne "") {
+    $ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+} else {
+    $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+}
 phoneHome "Environment is" $ENV:PATH
 
 chmod 777 /root/borg_progress.log
