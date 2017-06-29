@@ -11,6 +11,7 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 $scriptBlockString = 
 {
     param($sp)
+    Write-Host "Setting up for $sp"
     $psi = New-object System.Diagnostics.ProcessStartInfo 
     $psi.CreateNoWindow = $true
     $psi.UseShellExecute = $false 
@@ -21,10 +22,12 @@ $scriptBlockString =
     $process = New-Object System.Diagnostics.Process 
     $process.StartInfo = $psi 
 
+    Write-Host "Starting..."
     [void]$process.Start()
+    Write-Host "Checking..."
     do
     {
-       $process.StandardOutput.ReadLine()
+       write-host $process.StandardOutput.ReadLine()
     }
     while (!$process.HasExited) 
 
