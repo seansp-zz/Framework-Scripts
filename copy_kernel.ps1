@@ -298,6 +298,8 @@ if (Test-Path /bin/rpm) {
     #
     #  Make sure it's up to date
     #
+    Remove-Item -Path /var/lib/dpkg/lock
+    
     @(apt-get install -f)
     @(apt autoremove)
     phoneHome "Getting the system current"
