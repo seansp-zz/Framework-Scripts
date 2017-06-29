@@ -16,10 +16,10 @@ $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $global:pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $global:cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
 $global:session=$null
-    
+
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
-    
+
     $m | out-file -Append $output_path
     return
 }
@@ -40,21 +40,27 @@ echo $m
     }
 }
 
-function callVersionIn($m) {
-    $output_path="c:\temp\expected_version"
-    
+function callVersionIn($f,$m) {
+    $output_path=$f
+
     $m | out-file -Force $output_path
     return
 }
 
 
 function phoneVersionHome($m) {
+    if (Test-Path /bin/rpm) {
+        $outFile = "c:\temp\expected_version_centos"
+    } else {
+        $outFile = "c:\temp\expected_version_deb"
+    }
+
     if ($global:isHyperV -eq $true) {
         if ($global:session -eq $null) {
             $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
         }
 
-        invoke-command -session $global:session -ScriptBlock ${function:callVersionIn} -ArgumentList $m
+        invoke-command -session $global:session -ScriptBlock ${function:callVersionIn} -ArgumentList $outFile,$m
     } else {
         $output_path="/opt/microsoft/installed_kernel_version.log"
 
@@ -88,8 +94,8 @@ if ($? -eq $false) {
     phoneHome "It looks like we're in Hyper-V"
 }
 
-phoneHome "******************************************************************" 
-phoneHome "*        BORG DRONE $hostName starting conversion..." 
+phoneHome "******************************************************************"
+phoneHome "*        BORG DRONE $hostName starting conversion..."
 phoneHome "******************************************************************"
 
 if ($ENV:PATH -ne "") {
@@ -106,7 +112,7 @@ echo $bar
 $zed=@(ls -laF /opt/microsoft/borg_progress.log)
 echo $zed
 
-phoneHome "Starting copy file scipt" 
+phoneHome "Starting copy file scipt"
 cd /root
 $kernFolder="/root/latest_kernel"
 If (Test-Path $kernFolder) {
@@ -143,7 +149,7 @@ if ($global:isHyperV -eq $true) {
 
     if ((Test-Path $pkg_mount_dir) -eq 0) {
         phoneHome "Latest directory $pkg_mount_dir was not on mount point $pkg_mount_point!  No kernel to install!"
-        phoneHome "Mount was from $pkg_mount_source" 
+        phoneHome "Mount was from $pkg_mount_source"
         $LASTEXITCODE = 1
         exit $LASTERRORCODE
     }
@@ -151,7 +157,7 @@ if ($global:isHyperV -eq $true) {
     #
     #  Copy the files
     #
-    phoneHome "Copying the kernel from the drop share" 
+    phoneHome "Copying the kernel from the drop share"
     cd /root/latest_kernel
 
     copy-Item -Path $pkg_mount_dir/* -Destination ./
@@ -161,15 +167,25 @@ if ($global:isHyperV -eq $true) {
     #
     cd $kernFolder
 
+    if ($pkg_storageaccount -eq "Undefined") {
+        $pkg_storageaccount = "azuresmokestorageaccount"
+    }
+
+    if ($pkg_container -eq "Undefined") {
+        $pkg_container = "latest-packages"
+    }
+
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
     $fileListURI = $fileListURIBase + "/file_list"
+echo "Downloading file list from URI $fileListURI"
     Invoke-WebRequest -Uri $fileListURI -OutFile file_list
 
     $files=Get-Content file_list
-    
+
     foreach ($file in $files) {
-        $fileName=$fileListURIBase + "/" + $pkg_container + "/" + $file
+        $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
+        $fileName=$fileListURIBase + "/" + $file
         Invoke-WebRequest -Uri $fileName -OutFile $file
     }
 }
@@ -191,23 +207,43 @@ Remove-Item -Force "/root/expected_version"
 #
 #  Figure out the kernel name
 #
-$kernel_name=Get-ChildItem -Path /root/latest_kernel/linux-image-[0-9].* -Exclude "*-dbg_*"
-$kernelName = $kernel_name.Name.split("image-")[1]
-phoneHome "Kernel name is $kernelName"
+if (Test-Path /bin/rpm) {
+    $kernel_name_cent=Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].* -Exclude "*-dbg_*"
+    $kernelNameCent = $kernel_name_cent.Name.split("image-")[1]
+    phoneHome "CentOS Kernel name is $kernelNameCent"
 
-$kernelPackageName = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm -Exclude "*.src*"
-#
-#  Figure out the kernel version
-#
-$kernelVersion=($kernelName -split "_")[0]
+    $kernelPackageNameCent = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm -Exclude "*.src*"
+    #
+    #  Figure out the kernel version
+    #
+    $kernelVersionCent=($kernelNameCent -split "_")[0]
 
-#
-#  For some reason, the file is -, but the kernel is _
-#
-$kernelVersion=($kernelVersion -replace "_","-")
-phoneHome "Expected Kernel version is $kernelVersion" 
-$kernelVersion | Out-File -Path "/root/expected_version"
-phoneVersionHome $kernelVersion
+    #
+    #  For some reason, the file is -, but the kernel is _
+    #
+    $kernelVersionCent=($kernelVersionCent -replace "_","-")
+    phoneHome "Expected Kernel version is $kernelVersionCent"
+    $kernelVersionCent | Out-File -Path "/root/expected_version"
+    phoneVersionHome $kernelVersionCent
+} else {
+    $kernel_name_deb=Get-ChildItem -Path /root/latest_kernel/linux-image-[0-9].* -Exclude "*-dbg_*"
+    $kernelNameDeb = $kernel_name_deb.Name.split("image-")[1]
+    phoneHome "Debian Kernel name is $kernelNameDeb"
+
+    $kernelPackageNameDeb = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm -Exclude "*.src*"
+    #
+    #  Figure out the kernel version
+    #
+    $kernelVersionDeb=($kernelName -split "_")[0]
+
+    #
+    #  For some reason, the file is -, but the kernel is _
+    #
+    $kernelVersionDeb=($kernelVersionDeb -replace "_","-")
+    phoneHome "Expected Kernel version is $kernelVersionDeb"
+    $kernelVersionDeb | Out-File -Path "/root/expected_version"
+    phoneVersionHome $kernelVersionDeb
+}
 
 #
 #  Do the right thing for the platform
@@ -218,11 +254,11 @@ if (Test-Path /bin/rpm) {
     #  rpm-based system
     #
     $kerneldevelName = Get-Childitem -Path /root/latest_kernel/kernel-devel-[0-9].*.rpm
-    phoneHome "Kernel Devel Package name is $kerneldevelName" 
+    phoneHome "Kernel Devel Package name is $kerneldevelName"
 
     $kernelPackageName = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm
 
-    phoneHome "Making sure the firewall is configured" 
+    phoneHome "Making sure the firewall is configured"
     $foo=@(firewall-cmd --zone=public --add-port=443/tcp --permanent)
     $foo=@(systemctl stop firewalld)
     $foo=@(systemctl start firewalld)
@@ -247,24 +283,24 @@ if (Test-Path /bin/rpm) {
     #  Figure out the kernel name
     #
     $debKernName=(get-childitem linux-image-*.deb -exclude "-dgb_")[0].Name
-    phoneHome "Kernel Package name is $DebKernName" 
+    phoneHome "Kernel Package name is $DebKernName"
 
     #
     #  Debian
     #
     $kernDevName=(get-childitem linux-image-*.deb -Exclude ".src.")[1].Name
-    phoneHome "Kernel Devel Package name is $kernDevName" 
+    phoneHome "Kernel Devel Package name is $kernDevName"
 
     #
     #  Make sure it's up to date
     #
-    phoneHome "Getting the system current"     
+    phoneHome "Getting the system current"
     $foo=@(apt-get -y update)
 
-    phoneHome "Installing the DEB kernel devel package" 
+    phoneHome "Installing the DEB kernel devel package"
     $foo=@(dpkg -i $kernDevName)
 
-    phoneHome "Installing the DEB kernel package" 
+    phoneHome "Installing the DEB kernel package"
     $foo=@(dpkg -i $debKernName)
 
     #

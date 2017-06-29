@@ -207,10 +207,7 @@ $action={
         if ($machineStatus -ne "Booting") {
             Write-Host "??? Machine $machineName was not in state Booting.  Cannot process" -ForegroundColor red
             return 1
-        }
-
-        $expected_ver=Get-Content C:\temp\expected_version
-        $global:booted_version = $expected_ver
+        }        
 
         $failed=0
         $newRGName=$machineName + "-SmokeRG"
@@ -251,9 +248,13 @@ $action={
         #
         #  Now, check for success
         #
-        if ($expected_ver.CompareTo($installed_vers) -ne 0) {
+        $expected_verDeb=Get-Content C:\temp\expected_version_deb
+        $expected_verCent=Get-Content C:\temp\expected_version_centos
+        $global:booted_version = $expected_verDeb
+
+        if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -or ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
-                Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected $expected_ver.  Waiting to see if it reboots." -ForegroundColor Cyan
+                Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected something like $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
             }
             # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
             # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
@@ -364,19 +365,33 @@ $action={
                         if ($jobStatus -eq "Completed") {
                            if ($monitoredMachineStatus -eq "Completed") {
                                 Write-Host "--- Machine $monitoredMachineName has completed..." -ForegroundColor green
+                                $calledIt = $true
                             } else {
                                 Write-Host "--- Testing of machine $monitoredMachineName is in progress..." -ForegroundColor Yellow
+
+                                if ($monitoredMachine.session -ne $null) {
+                                    Write-Host "          Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta                
+                                    $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 } -ErrorAction SilentlyContinue
+                                    if ($?) {
+                                        $last_lines | write-host -ForegroundColor Magenta
+                                    } else {
+                                        Write-Host "Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
+                                    }
+                                }
+                                $calledIt = $true
                             }                          
                         } elseif ($jobStatus -eq "Failed") {
                             Write-Host "--- Job $singleLogName failed to start." -ForegroundColor Red
                             Write-Host "Log information, if any, follows:" -ForegroundColor Red
                             receive-job $singleLogJobName
+                            $calledIt = $true
                         }                      
                     } elseif ($jobStatusObj -ne $null) {
                         $message="--- The job starting VM $monitoredMachineName has not completed yet.  The current state is " + $jobStatus
                         Write-Host $message -ForegroundColor Yellow
+                        $calledIt = $true
                     }
-                    $calledIt = $true
+                    
                     break
                 }
             }
@@ -385,15 +400,7 @@ $action={
                 Write-Host "--- Machine $monitoredMachineName has not completed yet" -ForegroundColor yellow
             }
                         
-            if ($calledIt -eq $false -and $monitoredMachine.session -ne $null) {
-                Write-Host "Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta                
-                $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 } -ErrorAction SilentlyContinue
-                if ($?) {
-                    $last_lines | write-host -ForegroundColor Magenta
-                } else {
-                    Write-Host "Error when attempting to retrieve the log file from the remote host.  It may be rebooting..."
-                }
-            }
+            
         }
     }
     [Console]::Out.Flush() 
@@ -469,7 +476,7 @@ if ($global:num_remaining -eq 0) {
         Write-Host "Failures were detected in reboot and/or reporting of kernel version.  See log above for details." -ForegroundColor red
         Write-Host "             BORG TESTS HAVE FAILED!!" -ForegroundColor red
     } else {
-        Write-Host "All machines rebooted successfully to kernel version $global:booted_version" -ForegroundColor green
+        Write-Host "All machines rebooted successfully to kernel some derivitive of version $global:booted_version" -ForegroundColor green
         Write-Host "             BORG has been passed successfully!" -ForegroundColor yellow
     }
 } else {
