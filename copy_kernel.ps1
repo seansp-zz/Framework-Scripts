@@ -79,7 +79,7 @@ if ($ENV:PATH -ne "") {
     $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 }
 phoneHome "Search path is $ENV:PATH"
-& "/bin/chmod 777 /opt/microsoft/borg_progress.log"
+& "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/chmod 777 /opt/microsoft/borg_progress.log')"
 
 #
 #  Now see if we can mount the drop folder
@@ -223,24 +223,26 @@ If (Test-Path /bin/rpm) {
     $kernelPackageName=$kernelName+".rpm"
 
     phoneHome "Making sure the firewall is configured" 
-    & "/bin/firewall-cmd --zone=public --add-port=443/tcp --permanent"
-    & "/bin/systemctl stop firewalld"
-    & "/bin/systemctl start firewalld"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/firewall-cmd --zone=public --add-port=443/tcp --permanent')"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/systemctl stop firewalld')"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/systemctl start firewalld')"
 
     #
     #  Install the new kernel
     #
     phoneHome "Installing the rpm kernel devel package $kernelDevelName"
-    & "/bin/rpm -ivh $kernelDevelName"
+    $cmd="(echo `'. ~/.bashrc; /bin/chmod 777 /bin/rpm -ivh $kernelDevelName`')"
+    & "/bin/bash --rcfile < $cmd"
     phoneHome "Installing the rpm kernel package $kernelPackageName"
-    & "/bin/rpm -ivh $kernelPackageName"
+    $cmd="(echo `'. ~/.bashrc; /bin/rpm -ivh $kernelPackageName `')"
+    & "/bin/bash --rcfile < $cmd"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    & "/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg"
-    & "/sbin/grub2-set-default 0"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /sbin/grub2-mkconfig -o /boot/grub2/grub.cfg')"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc;  /sbin/grub2-set-default 0')"
 } else {
     #
     #  Figure out the kernel name
@@ -257,21 +259,23 @@ If (Test-Path /bin/rpm) {
     #
     #  Make sure it's up to date
     #
-    phoneHome "Getting the system current" 
-    & "/usr/bin/apt-get -y update"
+    phoneHome "Getting the system current"     
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /usr/bin/apt-get -y update")
 
     phoneHome "Installing the DEB kernel devel package" 
-    & "/usr/bin/dpkg -i $kernDevName"
+    $cmd="(echo `'. ~/.bashrc; /usr/bin/dpkg -i $kernDevName`')"
+    & "/bin/bash --rcfile < $cmd"
 
     phoneHome "Installing the DEB kernel package" 
-    & "/usr/bin/dpkg -i $debKernName"
+    $cmd="(echo `'. ~/.bashrc; /usr/bin/dpkg -i $debKernName`')"
+    & "/bin/bash --rcfile < $cmd"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    & "/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg"
-    & "/usr/sbin/grub-set-default 0"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg`')"
+    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /usr/sbin/grub-set-default 0`')"
 }
 
 #
