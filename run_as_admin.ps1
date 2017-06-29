@@ -12,15 +12,14 @@ $scriptBlockString =
 {
    param($sp)
    Write-Host "---------------------->> Script is $sp"
-   $code = Start-Process powershell.exe $sp -NoNewWindow -Wait
+   $code = Start-Process powershell.exe $sp -NoNewWindow -Wait -PassThru
    $code.ExitCode
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
 write-host "Calling invoke-command with argument $script"
-invoke-command -FilePath 
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script"
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script" -
 
 if($result -ne 0) {
     exit 1
