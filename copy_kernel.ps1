@@ -17,6 +17,8 @@ $global:pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $global:cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
 $global:session=$null
 
+get-pssession | remove-pssession
+
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
 
@@ -29,6 +31,8 @@ echo $m
     if ($global:isHyperV -eq $true) {
 
         if ($global:session -eq $null) {
+            echo "*** Restarting the PowerShell session!" | out-file -Append /opt/microsoft/borg_progress.log
+            get-pssession | remove-pssession
             $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
         }
 
@@ -57,6 +61,8 @@ function phoneVersionHome($m) {
 
     if ($global:isHyperV -eq $true) {
         if ($global:session -eq $null) {
+             echo "*** Restarting (2) the PowerShell session!" | out-file -Append /opt/microsoft/borg_progress.log
+             get-pssession | remove-pssession
             $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
         }
 
@@ -293,14 +299,34 @@ if (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current"
-    @(apt-get -y update)
+    while ($true) {
+        @(apt-get -y update)
+        if ($? -ne $true) {
+           sleep 1
+        } else {
+            break
+        }
+    }
 
     phoneHome "Installing the DEB kernel devel package"
-    @(dpkg -i $kernDevName)
+    while ($true) {
+        @(dpkg -i $kernDevName)
+        if ($? -ne $true) {
+           sleep 1
+        } else {
+            break
+        }
+    }
 
     phoneHome "Installing the DEB kernel package"
-    @(dpkg -i $debKernName)
-
+    while ($true) {
+        @(dpkg -i $debKernName)
+        if ($? -ne $true) {
+           sleep 1
+        } else {
+            break
+        }
+    }
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
