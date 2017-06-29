@@ -27,10 +27,11 @@ $scriptBlockString =
     Write-Host "Process started..."
 
     Write-Host "Getting the output..."
-    $output = $process.StandardOutput.ReadToEnd() 
-    Write-Host "Waiting for exit..."
-    $process.WaitForExit() 
-    $output
+    do
+    {
+       $process.StandardOutput.ReadLine()
+    }
+    while (!$process.HasExited) 
 
     $process.ExitCode
 }
