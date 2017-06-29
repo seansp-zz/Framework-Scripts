@@ -60,31 +60,34 @@ function phoneVersionHome($m) {
     }
 }
 
-if (Get-Item -ErrorAction SilentlyContinue -Path /root/borg_progress.log  ) {
-    Remove-Item /root/borg_progress.log 
+if (Get-Item -ErrorAction SilentlyContinue -Path /opt/microsoft/borg_progress.log ) {
+    Remove-Item /opt/microsoft/borg_progress.log
 }
 
 $ErrorActionPreference="SilentlyContinue"
 Stop-Transcript | out-null
-$ErrorActionPreference = "Continue"
 Start-Transcript -path /root/borg_install_log -append
 
 $hostName=hostname  
-$hostName | Out-File -FilePath /root/borg_progress.log
+$hostName | Out-File -FilePath /opt/microsoft/borg_progress.log
 phoneHome "******************************************************************" 
 phoneHome "*        BORG DRONE $hostName starting conversion..." 
 phoneHome "******************************************************************"
 
 if ($ENV:PATH -ne "") {
-    $ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+    $ENV:PATH=$ENV:PATH + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local"
+    $env:path=$env:path + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local"
+    $Env:Path=$Env:Path + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local"
 } else {
-    $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+    $ENV:PATH="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local"
+    $env:path="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local"
+    $Env:Path="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local"
 }
-phoneHome "Environment is" $ENV:PATH
+phoneHome "Environment is $ENV:PATH"
+phoneHome "Environment 2 is $env:path"
+phoneHome "Environment 3 is $Env:Path"
 
-chmod 777 /root/borg_progress.log
-
-
+chmod 777 /opt/microsoft/borg_progress.log
 
 #
 #  Now see if we can mount the drop folder
