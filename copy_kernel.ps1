@@ -64,7 +64,6 @@ if (Get-Item -ErrorAction SilentlyContinue -Path /opt/microsoft/borg_progress.lo
     Remove-Item /opt/microsoft/borg_progress.log
 }
 
-$ErrorActionPreference="SilentlyContinue"
 Stop-Transcript | out-null
 Start-Transcript -path /root/borg_install_log -append
 
@@ -224,24 +223,24 @@ If (Test-Path /bin/rpm) {
     $kernelPackageName=$kernelName+".rpm"
 
     phoneHome "Making sure the firewall is configured" 
-    /bin/firewall-cmd --zone=public --add-port=443/tcp --permanent
-    /bin/systemctl stop firewalld
-    /bin/systemctl start firewalld
+    & "/bin/firewall-cmd --zone=public --add-port=443/tcp --permanent"
+    & "/bin/systemctl stop firewalld"
+    & "/bin/systemctl start firewalld"
 
     #
     #  Install the new kernel
     #
     phoneHome "Installing the rpm kernel devel package $kernelDevelName"
-    /bin/rpm -ivh $kernelDevelName
+    & "/bin/rpm -ivh $kernelDevelName"
     phoneHome "Installing the rpm kernel package $kernelPackageName"
-    /bin/rpm -ivh $kernelPackageName
+    & "/bin/rpm -ivh $kernelPackageName"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    /sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
-    /sbin/grub2-set-default 0
+    & "/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg"
+    & "/sbin/grub2-set-default 0"
 } else {
     #
     #  Figure out the kernel name
@@ -259,20 +258,20 @@ If (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current" 
-    /usr/bin/apt-get -y update
+    & "/usr/bin/apt-get -y update"
 
     phoneHome "Installing the DEB kernel devel package" 
-    /usr/bin/dpkg -i $kernDevName
+    & "/usr/bin/dpkg -i $kernDevName"
 
     phoneHome "Installing the DEB kernel package" 
-    /usr/bin/dpkg -i $debKernName
+    & "/usr/bin/dpkg -i $debKernName"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
-    /usr/sbin/grub-set-default 0
+    & "/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg"
+    & "/usr/sbin/grub-set-default 0"
 }
 
 #
