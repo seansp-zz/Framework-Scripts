@@ -123,13 +123,13 @@ if ($global:isHyperV -eq $true) {
         $pkg_mount_point="/mnt/ostcnix"
         $pkg_mount_dir="$pkg_mount_point" + "/latest"
     } else {
-        $pkg_mount_dir="$pkg_mount_point"
+        $pkg_mount_point="/mnt/ostcnix"
+        $pkg_mount_dir=$pkg_mount_point
     }
 
     if ((Test-Path $pkg_mount_dir) -eq 0) {
         New-Item -ItemType Directory -Path $pkg_mount_dir
     }
-
 
     if ((Test-Path "$pkg_mount_point") -eq 0) {
         if ($pkg_mount_source -eq "") {
@@ -188,8 +188,8 @@ Remove-Item -Force "/root/expected_version"
 #
 #  Figure out the kernel name
 #
-$/usr/bin/rpmName=(get-childitem kernel-[0-9]*./usr/bin/rpm).name
-$kernelName=($/usr/bin/rpmName -split "./usr/bin/rpm")[0]
+$rpmName=(get-childitem kernel-[0-9]*./bin/rpm).name
+$kernelName=($rpmName -split "./bin/rpm")[0]
 phoneHome "Kernel name is $kernelName" 
 
 #
@@ -209,13 +209,13 @@ phoneVersionHome $kernelVersion
 #  Do the right thing for the platform
 #
 cd $kernFolder
-If (Test-Path /bin//usr/bin/rpm) {
+If (Test-Path /bin/rpm) {
     #
-    #  /usr/bin/rpm-based system
+    #  /bin/rpm-based system
     #
-    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+"./usr/bin/rpm"
+    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+"./bin/rpm"
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
-    $kernelPackageName=$kernelName+"./usr/bin/rpm"
+    $kernelPackageName=$kernelName+"./bin/rpm"
 
     phoneHome "Making sure the firewall is configured" 
     /usr/bin/firewall-cmd --zone=public --add-port=443/tcp --permanent
@@ -225,10 +225,10 @@ If (Test-Path /bin//usr/bin/rpm) {
     #
     #  Install the new kernel
     #
-    phoneHome "Installing the /usr/bin/rpm kernel devel package $kernelDevelName"
-    /usr/bin/rpm -ivh $kernelDevelName
-    phoneHome "Installing the /usr/bin/rpm kernel package $kernelPackageName"
-    /usr/bin/rpm -ivh $kernelPackageName
+    phoneHome "Installing the /bin/rpm kernel devel package $kernelDevelName"
+    /bin/rpm -ivh $kernelDevelName
+    phoneHome "Installing the /bin/rpm kernel package $kernelPackageName"
+    /bin/rpm -ivh $kernelPackageName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
