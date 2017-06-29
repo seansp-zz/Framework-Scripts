@@ -11,9 +11,6 @@ param (
     [Parameter(Mandatory=$false)] [string] $pkg_location=""
 )
 
-$ENV:PATH=$ENV:PATH + "/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
-$ENV:PATH
-
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
     
@@ -38,6 +35,8 @@ function phoneHome($m) {
             $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
             $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
         }
+
+        $m | out-file -Append /opt/microsoft/borg_progress.log
     } else {
         $m | out-file -Append /opt/microsoft/borg_progress.log
     }
@@ -70,24 +69,30 @@ Stop-Transcript | out-null
 $ErrorActionPreference = "Continue"
 Start-Transcript -path /root/borg_install_log -append
 
-$hostName=hostname
-echo "******************************************************************" | Out-File -FilePath /root/borg_progress.log
-echo "*        BORG DRONE $hostName starting conversion..." | Out-File -append -FilePath /root/borg_progress.log
-echo "******************************************************************" | Out-File -Append -FilePath /root/borg_progress.log
+$hostName=hostname  
+$hostName | Out-File -FilePath /root/borg_progress.log
+phoneHome "******************************************************************" 
+phoneHome "*        BORG DRONE $hostName starting conversion..." 
+phoneHome "******************************************************************"
+
+$ENV:PATH=$ENV:PATH + "/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local"
+phoneHome "Environment is" $ENV:PATH
+
 chmod 777 /root/borg_progress.log
+
 
 
 #
 #  Now see if we can mount the drop folder
 #
-echo "Checking for platform..."
+phoneHome "Checking for platform..."
 $global:isHyperV=$true
 $lookup=nslookup cdmbuildsna01.redmond.corp.microsoft.com
 if ($? -eq $false) {
     $global:isHyperV = $false
-    echo "It looks like we're in Azure"
+    phoneHome "It looks like we're in Azure"
 } else {
-    echo "It looks like we're in Hyper-V"
+    phoneHome "It looks like we're in Hyper-V"
 }
 
 #
@@ -152,7 +157,7 @@ if ($global:isHyperV -eq $true) {
     #
     phoneHome "Copying the kernel from the drop share" 
     cd /root/latest_kernel
-    copy-Item -Path "$pkg_mount_dir/*" -Destination $kernFolder
+    copy-Item -Path $pkg_mount_dir/* -Destination ./
 } else {
 #
 #  If we can't mount the drop folder, maybe we can get the files from Azure
