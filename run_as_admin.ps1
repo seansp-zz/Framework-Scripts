@@ -11,22 +11,17 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 $scriptBlockString = 
 {
     param($sp)
-    Write-Host "---------------------->> Script is $sp"
     $psi = New-object System.Diagnostics.ProcessStartInfo 
-    $psi.CreateNoWindow = $true 
+    $psi.CreateNoWindow = $true
     $psi.UseShellExecute = $false 
     $psi.RedirectStandardOutput = $true 
     $psi.RedirectStandardError = $true 
-    $psi.FileName = 'powershell.exe' 
-    $psi.Arguments = @("get-date") 
+    $psi.FileName = "powershell.exe"
+    $psi.Arguments = @("c:\framework-scripts\jwf.ps1") 
     $process = New-Object System.Diagnostics.Process 
     $process.StartInfo = $psi 
 
-    Write-Host "Starting the process..."
     [void]$process.Start()
-    Write-Host "Process started..."
-
-    Write-Host "Getting the output..."
     do
     {
        $process.StandardOutput.ReadLine()
