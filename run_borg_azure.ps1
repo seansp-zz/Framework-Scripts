@@ -426,6 +426,28 @@ $action={
 
 unregister-event AzureBootTimer -ErrorAction SilentlyContinue
 
+if ($nm -eq "") {
+        $nm = "azuresmokestorageaccount"
+}
+if ($sourceStorageAccountName -eq "") {
+        $sourceStorageAccountName = "azuresmokestorageaccount"
+}
+if ($sourceURI -eq "") {
+        $sourceURI = "Unset"
+}
+if ($destinationStorageAccountName -eq "") {
+        $destinationStorageAccountName = "azuresmokestorageaccount"
+}
+if ($destinationContainerName -eq "") {
+        $destinationContainerName = "working-vhds"
+}
+if ($resourceGroupName -eq "") {
+        $resourceGroupName = "azuresmokeresourcegroup"
+}
+if ($location -eq "") {
+        $location = "westus"
+}
+
 Write-Host "    " -ForegroundColor green
 Write-Host "                 **********************************************" -ForegroundColor yellow
 Write-Host "                 *                                            *" -ForegroundColor yellow
