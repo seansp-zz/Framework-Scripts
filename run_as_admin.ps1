@@ -11,7 +11,6 @@ $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential 
 $scriptBlockString = 
 {
     param($sp)
-    Write-Host "Setting up for $sp"
     $psi = New-object System.Diagnostics.ProcessStartInfo 
     $psi.CreateNoWindow = $true
     $psi.UseShellExecute = $false 
@@ -22,9 +21,7 @@ $scriptBlockString =
     $process = New-Object System.Diagnostics.Process 
     $process.StartInfo = $psi 
 
-    Write-Host "Starting..."
     [void]$process.Start()
-    Write-Host "Checking..."
     do
     {
        write-host $process.StandardOutput.ReadLine()
@@ -36,7 +33,6 @@ $scriptBlockString =
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
-write-host "Calling invoke-command with argument list $script"
 $result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script"
 
 if($result -ne 0) {

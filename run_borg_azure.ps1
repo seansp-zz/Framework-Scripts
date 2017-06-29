@@ -228,7 +228,7 @@ $action={
                 $localMachine.ipAddress = $ipAddress
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
-                $localMachine.session=new-PSSession -computername $ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o
+                $localMachine.session=new-PSSession -computername $ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
                 if ($?) {
                     $machineIsUp = $true
                 } else {
