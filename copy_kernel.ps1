@@ -3,6 +3,14 @@
 #  Copy the latest kernel build from the secure share to the local directory,
 #  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
+param (
+    [Parameter(Mandatory=$false)] [string] $pkg_mount_point="",
+    [Parameter(Mandatory=$false)] [string] $pkg_mount_source="",
+    [Parameter(Mandatory=$false)] [string] $pkg_storageaccount="",
+    [Parameter(Mandatory=$false)] [string] $pkg_container="",
+    [Parameter(Mandatory=$false)] [string] $pkg_location=""
+)
+
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
     
@@ -111,16 +119,29 @@ If (Test-Path $kernFolder) {
 new-item $kernFolder -type directory
 
 if ($global:isHyperV -eq $true) {
-    if ((Test-Path "/mnt/ostcnix") -eq 0) {
-        New-Item -ItemType Directory -Path /mnt/ostcnix
+    if ($pkg_mount_dir -eq "") {
+        $pkg_mount_point="/mnt/ostcnix"
+        $pkg_mount_dir="$pkg_mount_point" + "/latest"
+    } else {
+        $pkg_mount_dir="$pkg_mount_point"
     }
 
-    if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
-        mount cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops /mnt/ostcnix
+    if ((Test-Path $pkg_mount_dir) -eq 0) {
+        New-Item -ItemType Directory -Path $pkg_mount_dir
     }
 
-    if ((Test-Path "/mnt/ostcnix/latest") -eq 0) {
-        phoneHome "Latest directory was not on mount point!  No kernel to install!" 
+
+    if ((Test-Path "$pkg_mount_point") -eq 0) {
+        if ($pkg_mount_source -eq "") {
+            $pkg_mount_source = "cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops"
+        }
+
+        mount $pkg_mount_source $pkg_mount_point
+    }
+
+    if ((Test-Path $pkg_mount_dir) -eq 0) {
+        phoneHome "Latest directory $pkg_mount_dir was not on mount point $pkg_mount_point!  No kernel to install!"
+        phoneHome "Mount was from $pkg_mount_source" 
         $LASTEXITCODE = 1
         exit $LASTERRORCODE
     }
@@ -130,7 +151,7 @@ if ($global:isHyperV -eq $true) {
     #
     phoneHome "Copying the kernel from the drop share" 
     cd /root/latest_kernel
-    copy-Item -Path "/mnt/ostcnix/latest/*" -Destination $kernFolder
+    copy-Item -Path "$pkg_mount_dir/*" -Destination $kernFolder
 } else {
 #
 #  If we can't mount the drop folder, maybe we can get the files from Azure
@@ -138,13 +159,15 @@ if ($global:isHyperV -eq $true) {
     cd $kernFolder
 
     phoneHome "Copying the kernel from Azure blob storage"
-    wget -m https://azuresmokestorageaccount.blob.core.windows.net/latest-packages/file_list -O file_list
+    $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
+    $fileListURI = $fileListURIBase + "/file_list"
+    /usr/bin/wget -m $fileListURI -O file_list
 
     $files=Get-Content file_list
     
     foreach ($file in $files) {
-        $fileName="https://azuresmokestorageaccount.blob.core.windows.net/latest-packages/" + $file
-        wget -m $fileName -O $file
+        $fileName=$fileListURIBase + "/" + $pkg_container + "/" + $file
+        /usr/bin/wget -m $fileName -O $file
     }
 }
 
@@ -165,8 +188,8 @@ Remove-Item -Force "/root/expected_version"
 #
 #  Figure out the kernel name
 #
-$rpmName=(get-childitem kernel-[0-9]*.rpm).name
-$kernelName=($rpmName -split ".rpm")[0]
+$/usr/bin/rpmName=(get-childitem kernel-[0-9]*./usr/bin/rpm).name
+$kernelName=($/usr/bin/rpmName -split "./usr/bin/rpm")[0]
 phoneHome "Kernel name is $kernelName" 
 
 #
@@ -186,33 +209,33 @@ phoneVersionHome $kernelVersion
 #  Do the right thing for the platform
 #
 cd $kernFolder
-If (Test-Path /bin/rpm) {
+If (Test-Path /bin//usr/bin/rpm) {
     #
-    #  RPM-based system
+    #  /usr/bin/rpm-based system
     #
-    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+".rpm"
+    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+"./usr/bin/rpm"
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
-    $kernelPackageName=$kernelName+".rpm"
+    $kernelPackageName=$kernelName+"./usr/bin/rpm"
 
     phoneHome "Making sure the firewall is configured" 
-    firewall-cmd --zone=public --add-port=443/tcp --permanent
-    systemctl stop firewalld
-    systemctl start firewalld
+    /usr/bin/firewall-cmd --zone=public --add-port=443/tcp --permanent
+    /usr/bin/systemctl stop firewalld
+    /usr/bin/systemctl start firewalld
 
     #
     #  Install the new kernel
     #
-    phoneHome "Installing the RPM kernel devel package $kernelDevelName"
-    rpm -ivh $kernelDevelName
-    phoneHome "Installing the RPM kernel package $kernelPackageName"
-    rpm -ivh $kernelPackageName
+    phoneHome "Installing the /usr/bin/rpm kernel devel package $kernelDevelName"
+    /usr/bin/rpm -ivh $kernelDevelName
+    phoneHome "Installing the /usr/bin/rpm kernel package $kernelPackageName"
+    /usr/bin/rpm -ivh $kernelPackageName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    grub2-mkconfig -o /boot/grub2/grub.cfg
-    grub2-set-default 0
+    /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+    /usr/sbin/grub2-set-default 0
 } else {
     #
     #  Figure out the kernel name
@@ -230,20 +253,20 @@ If (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current" 
-    apt-get -y update
+    /usr/bin/apt-get -y update
 
     phoneHome "Installing the DEB kernel devel package" 
-    dpkg -i $kernDevName
+    /usr/bin/dpkg -i $kernDevName
 
     phoneHome "Installing the DEB kernel package" 
-    dpkg -i $debKernName
+    /usr/bin/dpkg -i $debKernName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    grub-mkconfig -o /boot/grub/grub.cfg
-    grub-set-default 0
+    /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
+    /usr/sbin/grub-set-default 0
 }
 
 #
