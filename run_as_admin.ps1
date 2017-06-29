@@ -18,7 +18,7 @@ $scriptBlockString =
     $psi.RedirectStandardOutput = $true 
     $psi.RedirectStandardError = $true 
     $psi.FileName = "powershell.exe"
-    $psi.Arguments = @("c:\framework-scripts\jwf.ps1") 
+    $psi.Arguments = @($sp) 
     $process = New-Object System.Diagnostics.Process 
     $process.StartInfo = $psi 
 
