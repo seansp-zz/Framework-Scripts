@@ -80,8 +80,7 @@ if ($ENV:PATH -ne "") {
     $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 }
 phoneHome "Search path is $ENV:PATH"
-
-iex "chmod 777 /opt/microsoft/borg_progress.log"
+/bin/chmod 777 /opt/microsoft/borg_progress.log
 
 #
 #  Now see if we can mount the drop folder
@@ -168,13 +167,13 @@ if ($global:isHyperV -eq $true) {
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
     $fileListURI = $fileListURIBase + "/file_list"
-    iex "wget -m $fileListURI -O file_list"
+    Invoke-WebRequest -Uri $fileListURI -OutFile file_list
 
     $files=Get-Content file_list
     
     foreach ($file in $files) {
         $fileName=$fileListURIBase + "/" + $pkg_container + "/" + $file
-        iex "wget -m $fileName -O $file"
+        Invoke-WebRequest -Uri $fileName -OutFile $file
     }
 }
 
@@ -225,24 +224,24 @@ If (Test-Path /bin/rpm) {
     $kernelPackageName=$kernelName+".rpm"
 
     phoneHome "Making sure the firewall is configured" 
-    iex "firewall-cmd --zone=public --add-port=443/tcp --permanent"
-    iex "systemctl stop firewalld"
-    iex "systemctl start firewalld"
+    /bin/firewall-cmd --zone=public --add-port=443/tcp --permanent
+    /bin/systemctl stop firewalld
+    /bin/systemctl start firewalld
 
     #
     #  Install the new kernel
     #
     phoneHome "Installing the rpm kernel devel package $kernelDevelName"
-    iex "rpm -ivh $kernelDevelName"
+    /bin/rpm -ivh $kernelDevelName
     phoneHome "Installing the rpm kernel package $kernelPackageName"
-    iex "rpm -ivh $kernelPackageName"
+    /bin/rpm -ivh $kernelPackageName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    iex "grub2-mkconfig -o /boot/grub2/grub.cfg"
-    iex "grub2-set-default 0"
+    /sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+    /sbin/grub2-set-default 0
 } else {
     #
     #  Figure out the kernel name
@@ -260,20 +259,20 @@ If (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current" 
-    iex "apt-get -y update"
+    /usr/bin/apt-get -y update
 
     phoneHome "Installing the DEB kernel devel package" 
-    iex "dpkg -i $kernDevName"
+    /usr/bin/dpkg -i $kernDevName
 
     phoneHome "Installing the DEB kernel package" 
-    iex "dpkg -i $debKernName"
+    /usr/bin/dpkg -i $debKernName
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    iex "grub-mkconfig -o /boot/grub/grub.cfg"
-    iex "grub-set-default 0"
+    /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
+    /usr/sbin/grub-set-default 0
 }
 
 #
