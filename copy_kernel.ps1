@@ -18,6 +18,11 @@ $global:cred=new-object -typename system.management.automation.pscredential -arg
 $global:session=$null
 
 get-pssession | remove-pssession
+$agents = pidof omiagent
+foreach ($agent in $agents) {
+    @(kill -9 $agent)
+}
+
 @("kill -9 ``pidof omiagent``")
 
 function callItIn($c, $m) {
