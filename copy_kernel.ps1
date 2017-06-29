@@ -81,7 +81,7 @@ if ($ENV:PATH -ne "") {
 }
 phoneHome "Search path is $ENV:PATH"
 
-chmod 777 /opt/microsoft/borg_progress.log
+iex "chmod 777 /opt/microsoft/borg_progress.log"
 
 #
 #  Now see if we can mount the drop folder
@@ -168,13 +168,13 @@ if ($global:isHyperV -eq $true) {
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
     $fileListURI = $fileListURIBase + "/file_list"
-    wget -m $fileListURI -O file_list
+    iex "wget -m $fileListURI -O file_list"
 
     $files=Get-Content file_list
     
     foreach ($file in $files) {
         $fileName=$fileListURIBase + "/" + $pkg_container + "/" + $file
-        wget -m $fileName -O $file
+        iex "wget -m $fileName -O $file"
     }
 }
 
@@ -225,24 +225,24 @@ If (Test-Path /bin/rpm) {
     $kernelPackageName=$kernelName+".rpm"
 
     phoneHome "Making sure the firewall is configured" 
-    firewall-cmd --zone=public --add-port=443/tcp --permanent
-    systemctl stop firewalld
-    systemctl start firewalld
+    iex "firewall-cmd --zone=public --add-port=443/tcp --permanent"
+    iex "systemctl stop firewalld"
+    iex "systemctl start firewalld"
 
     #
     #  Install the new kernel
     #
     phoneHome "Installing the rpm kernel devel package $kernelDevelName"
-    rpm -ivh $kernelDevelName
+    iex "rpm -ivh $kernelDevelName"
     phoneHome "Installing the rpm kernel package $kernelPackageName"
-    rpm -ivh $kernelPackageName
+    iex "rpm -ivh $kernelPackageName"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    grub2-mkconfig -o /boot/grub2/grub.cfg
-    grub2-set-default 0
+    iex "grub2-mkconfig -o /boot/grub2/grub.cfg"
+    iex "grub2-set-default 0"
 } else {
     #
     #  Figure out the kernel name
@@ -260,20 +260,20 @@ If (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current" 
-    apt-get -y update
+    iex "apt-get -y update"
 
     phoneHome "Installing the DEB kernel devel package" 
-    dpkg -i $kernDevName
+    iex "dpkg -i $kernDevName"
 
     phoneHome "Installing the DEB kernel package" 
-    dpkg -i $debKernName
+    iex "dpkg -i $debKernName"
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    grub-mkconfig -o /boot/grub/grub.cfg
-    grub-set-default 0
+    iex "grub-mkconfig -o /boot/grub/grub.cfg"
+    iex "grub-set-default 0"
 }
 
 #
