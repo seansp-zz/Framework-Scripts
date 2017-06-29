@@ -75,9 +75,9 @@ phoneHome "*        BORG DRONE $hostName starting conversion..."
 phoneHome "******************************************************************"
 
 if ($ENV:PATH -ne "") {
-    $ENV:PATH=$ENV:PATH + ";/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
+    $ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 } else {
-    $ENV:PATH="/sbin;/bin;/usr/sbin;/usr/bin;/opt/omi/bin;/usr/local;/usr/sbin;/bin"
+    $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 }
 phoneHome "Search path is $ENV:PATH"
 
