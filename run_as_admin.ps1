@@ -12,7 +12,7 @@ $scriptBlockString =
 {
    param($sp)
    Write-Host "---------------------->> Script is $sp"
-   $code = Start-Process powershell.exe $sp
+   Start-Process powershell.exe $sp
    Write-Host "Process started..."
    $code.ExitCode
 }
