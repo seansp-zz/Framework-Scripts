@@ -1,16 +1,22 @@
-#!powershell
+#!/usr/bin/powershell
 #
 #  Copy the latest kernel build from the secure share to the local directory,
 #  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
 param (
-    [Parameter(Mandatory=$false)] [string] $pkg_mount_point="",
-    [Parameter(Mandatory=$false)] [string] $pkg_mount_source="",
-    [Parameter(Mandatory=$false)] [string] $pkg_storageaccount="",
-    [Parameter(Mandatory=$false)] [string] $pkg_container="",
-    [Parameter(Mandatory=$false)] [string] $pkg_location=""
+    [Parameter(Mandatory=$false)] [string] $pkg_mount_point="Undefined",
+    [Parameter(Mandatory=$false)] [string] $pkg_mount_source="Undefined",
+    [Parameter(Mandatory=$false)] [string] $pkg_storageaccount="Undefined",
+    [Parameter(Mandatory=$false)] [string] $pkg_container="Undefined",
+    [Parameter(Mandatory=$false)] [string] $pkg_location="Undefined"
 )
 
+$global:isHyperV = $false
+$global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
+$global:pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+$global:cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
+$global:session=$null
+    
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
     
@@ -18,23 +24,15 @@ function callItIn($c, $m) {
     return
 }
 
-$global:isHyperV = $false
-
 function phoneHome($m) {
+echo $m
     if ($global:isHyperV -eq $true) {
-        invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 
-        if ($? -eq $false)
-        {
-            #
-            #  Error on ps.  Try reconnecting.
-            #
-            Exit-PSSession $s
-            $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-            $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-            $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
-            $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
+        if ($global:session -eq $null) {
+            $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
         }
+
+        invoke-command -session $global:session -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 
         $m | out-file -Append /opt/microsoft/borg_progress.log
     } else {
@@ -52,7 +50,11 @@ function callVersionIn($m) {
 
 function phoneVersionHome($m) {
     if ($global:isHyperV -eq $true) {
-        invoke-command -session $s -ScriptBlock ${function:callVersionIn} -ArgumentList $m
+        if ($global:session -eq $null) {
+            $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
+        }
+
+        invoke-command -session $global:session -ScriptBlock ${function:callVersionIn} -ArgumentList $m
     } else {
         $output_path="/opt/microsoft/installed_kernel_version.log"
 
@@ -67,24 +69,16 @@ if (Get-Item -ErrorAction SilentlyContinue -Path /opt/microsoft/borg_progress.lo
 Stop-Transcript | out-null
 Start-Transcript -path /root/borg_install_log -append
 
-$hostName=hostname  
-$hostName | Out-File -FilePath /opt/microsoft/borg_progress.log
-phoneHome "******************************************************************" 
-phoneHome "*        BORG DRONE $hostName starting conversion..." 
-phoneHome "******************************************************************"
-
-if ($ENV:PATH -ne "") {
-    $ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
-} else {
-    $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
-}
-phoneHome "Search path is $ENV:PATH"
-& "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/chmod 777 /opt/microsoft/borg_progress.log')"
-
 #
-#  Now see if we can mount the drop folder
+#  What OS are we on?
 #
-phoneHome "Checking for platform..."
+$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
+$c=hostname
+
+$c | Out-File -FilePath /opt/microsoft/borg_progress.log
+#
+#  Start by cleaning out any existing downloads
+#
 $global:isHyperV=$true
 $lookup=nslookup cdmbuildsna01.redmond.corp.microsoft.com
 if ($? -eq $false) {
@@ -94,26 +88,23 @@ if ($? -eq $false) {
     phoneHome "It looks like we're in Hyper-V"
 }
 
-#
-#  Start by cleaning out any existing downloads
-#
-$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-$cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
-if ($global:isHyperV -eq $true) {
-    $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
+phoneHome "******************************************************************" 
+phoneHome "*        BORG DRONE $hostName starting conversion..." 
+phoneHome "******************************************************************"
+
+if ($ENV:PATH -ne "") {
+    $ENV:PATH=$ENV:PATH + ":/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
+} else {
+    $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 }
 
-#
-#  What OS are we on?
-#
-$linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
-# $c = $linuxInfo.ID
-# $c = $c + $linuxInfo.VERSION_ID
-# $c=$c -replace '"',""
-# $c=$c -replace '\.',""
-# $c="progress_logs/$c"
-$c=hostname
+echo "Search path is $ENV:PATH"
+$foo=@(which chmod)
+echo "Found it at $foo"
+$bar=@(chmod 777 /opt/microsoft/borg_progress.log)
+echo $bar
+$zed=@(ls -laF /opt/microsoft/borg_progress.log)
+echo $zed
 
 phoneHome "Starting copy file scipt" 
 cd /root
@@ -124,24 +115,30 @@ If (Test-Path $kernFolder) {
 new-item $kernFolder -type directory
 
 if ($global:isHyperV -eq $true) {
-    if ($pkg_mount_dir -eq "") {
+
+    if ($pkg_mount_point -eq "Undefined") {
         $pkg_mount_point="/mnt/ostcnix"
-        $pkg_mount_dir="$pkg_mount_point" + "/latest"
+        $pkg_mount_dir= $pkg_mount_point + "/latest"
     } else {
-        $pkg_mount_point="/mnt/ostcnix"
         $pkg_mount_dir=$pkg_mount_point
     }
 
-    if ((Test-Path $pkg_mount_dir) -eq 0) {
-        New-Item -ItemType Directory -Path $pkg_mount_dir
+    if ($pkg_mount_source -eq "Undefined") {
+        $pkg_mount_source = "cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops"
     }
 
-    if ((Test-Path "$pkg_mount_point") -eq 0) {
-        if ($pkg_mount_source -eq "") {
-            $pkg_mount_source = "cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops"
-        }
+    echo "Package mount point is $pkg_mount_point and Package mount dir is $pkg_mount_dir"
+    echo "Package source is $pkg_mount_source"
 
-        mount $pkg_mount_source $pkg_mount_point
+    if ((Test-Path $pkg_mount_point) -eq $false) {
+        echo "Creating the mount point"
+        New-Item -ItemType Directory -Path $pkg_mount_point
+    }
+
+    echo "Checking for the mount directory..."
+    if ((Test-Path $pkg_mount_dir) -eq $false) {
+        echo "Target directory was not there.  Mounting"
+        $mntRes = @(mount $pkg_mount_source $pkg_mount_point)
     }
 
     if ((Test-Path $pkg_mount_dir) -eq 0) {
@@ -156,11 +153,12 @@ if ($global:isHyperV -eq $true) {
     #
     phoneHome "Copying the kernel from the drop share" 
     cd /root/latest_kernel
+
     copy-Item -Path $pkg_mount_dir/* -Destination ./
 } else {
-#
-#  If we can't mount the drop folder, maybe we can get the files from Azure
-#
+    #
+    #  If we can't mount the drop folder, maybe we can get the files from Azure
+    #
     cd $kernFolder
 
     phoneHome "Copying the kernel from Azure blob storage"
@@ -193,14 +191,15 @@ Remove-Item -Force "/root/expected_version"
 #
 #  Figure out the kernel name
 #
-$rpmName=(get-childitem kernel-[0-9]*.rpm).name
-$kernelName=($rpmName -split ".rpm")[0]
-phoneHome "Kernel name is $kernelName" 
+$kernel_name=Get-ChildItem -Path /root/latest_kernel/linux-image-[0-9].* -Exclude "*-dbg_*"
+$kernelName = $kernel_name.Name.split("image-")[1]
+phoneHome "Kernel name is $kernelName"
 
+$kernelPackageName = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm -Exclude "*.src*"
 #
 #  Figure out the kernel version
 #
-$kernelVersion=($kernelName -split "-")[1]
+$kernelVersion=($kernelName -split "_")[0]
 
 #
 #  For some reason, the file is -, but the kernel is _
@@ -214,40 +213,40 @@ phoneVersionHome $kernelVersion
 #  Do the right thing for the platform
 #
 cd $kernFolder
-If (Test-Path /bin/rpm) {
+if (Test-Path /bin/rpm) {
     #
     #  rpm-based system
     #
-    $kernelDevelName=("kernel-devel-"+(($kernelName -split "-")[1]+"-")+($kernelName -split "-")[2])+".rpm"
+    $kerneldevelName = Get-Childitem -Path /root/latest_kernel/kernel-devel-[0-9].*.rpm
     phoneHome "Kernel Devel Package name is $kerneldevelName" 
-    $kernelPackageName=$kernelName+".rpm"
+
+    $kernelPackageName = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm
 
     phoneHome "Making sure the firewall is configured" 
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/firewall-cmd --zone=public --add-port=443/tcp --permanent')"
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/systemctl stop firewalld')"
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /bin/systemctl start firewalld')"
+    $foo=@(firewall-cmd --zone=public --add-port=443/tcp --permanent)
+    $foo=@(systemctl stop firewalld)
+    $foo=@(systemctl start firewalld)
 
     #
     #  Install the new kernel
     #
     phoneHome "Installing the rpm kernel devel package $kernelDevelName"
-    $cmd="(echo `'. ~/.bashrc; /bin/chmod 777 /bin/rpm -ivh $kernelDevelName`')"
-    & "/bin/bash --rcfile < $cmd"
+    @(rpm -ivh $kernelDevelName)
+
     phoneHome "Installing the rpm kernel package $kernelPackageName"
-    $cmd="(echo `'. ~/.bashrc; /bin/rpm -ivh $kernelPackageName `')"
-    & "/bin/bash --rcfile < $cmd"
+    @(rpm -ivh $kernelPackageName)
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /sbin/grub2-mkconfig -o /boot/grub2/grub.cfg')"
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc;  /sbin/grub2-set-default 0')"
+    $foo = @(/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg)
+    $foo = @(/sbin/grub2-set-default 0)
 } else {
     #
     #  Figure out the kernel name
     #
-    $debKernName=(get-childitem linux-image-*.deb)[0].Name
+    $debKernName=(get-childitem linux-image-*.deb -exclude )[0].Name
     phoneHome "Kernel Package name is $DebKernName" 
 
     #
@@ -260,22 +259,20 @@ If (Test-Path /bin/rpm) {
     #  Make sure it's up to date
     #
     phoneHome "Getting the system current"     
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /usr/bin/apt-get -y update")
+    $foo=@(apt-get -y update)
 
     phoneHome "Installing the DEB kernel devel package" 
-    $cmd="(echo `'. ~/.bashrc; /usr/bin/dpkg -i $kernDevName`')"
-    & "/bin/bash --rcfile < $cmd"
+    $foo=@(dpkg -i $kernDevNae)
 
     phoneHome "Installing the DEB kernel package" 
-    $cmd="(echo `'. ~/.bashrc; /usr/bin/dpkg -i $debKernName`')"
-    & "/bin/bash --rcfile < $cmd"
+    $foo=@(dpkg -i $debKernName)
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg`')"
-    & "/bin/bash --rcfile < (echo '. ~/.bashrc; /usr/sbin/grub-set-default 0`')"
+    $foo=@(grub-mkconfig -o /boot/grub/grub.cfg)
+    $foo=@(grub-set-default 0)
 }
 
 #
@@ -286,7 +283,7 @@ copy-Item -Path "/root/Framework-Scripts/report_kernel_version.ps1" -Destination
 phoneHome "Rebooting now..."
 
 if ($global:isHyperV -eq $true) {
-    remove-pssession $s
+    remove-pssession $global:session
 }
 
 Stop-Transcript
