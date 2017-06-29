@@ -18,7 +18,7 @@ $scriptBlockString =
     $psi.RedirectStandardOutput = $true 
     $psi.RedirectStandardError = $true 
     $psi.FileName = 'powershell.exe' 
-    $psi.Arguments = @("$sp") 
+    $psi.Arguments = @("get-date") 
     $process = New-Object System.Diagnostics.Process 
     $process.StartInfo = $psi 
 
