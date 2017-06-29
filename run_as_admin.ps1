@@ -9,10 +9,8 @@ $cred=new-object -typename system.management.automation.pscredential -argumentli
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
 
 $scriptBlockString = 
-{ 
-   param($args) 
-   $sp = $args[0].ToString()
-   write-host "------------->> Full args:  $args[0].ToString()"
+{
+   param($sp)
    Write-Host "---------------------->> Script is $sp"
    $code = Start-Process powershell.exe $sp -NoNewWindow -Wait
    $code.ExitCode
@@ -21,7 +19,8 @@ $scriptBlockString =
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
 write-host "Calling invoke-command with argument $script"
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList $script
+invoke-command -FilePath 
+$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script"
 
 if($result -ne 0) {
     exit 1
