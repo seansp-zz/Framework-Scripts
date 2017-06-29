@@ -302,6 +302,7 @@ if (Test-Path /bin/rpm) {
     while ($true) {
         @(apt-get -y update)
         if ($? -ne $true) {
+           phoneHome "Retyring getting the system current"
            sleep 1
         } else {
             break
@@ -312,6 +313,7 @@ if (Test-Path /bin/rpm) {
     while ($true) {
         @(dpkg -i $kernDevName)
         if ($? -ne $true) {
+            phoneHome "Retyring installing the DEB devel package"
            sleep 1
         } else {
             break
@@ -322,6 +324,7 @@ if (Test-Path /bin/rpm) {
     while ($true) {
         @(dpkg -i $debKernName)
         if ($? -ne $true) {
+            phoneHome "Retyring installing the DEB Kernel package"
            sleep 1
         } else {
             break
