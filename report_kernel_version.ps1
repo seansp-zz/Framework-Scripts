@@ -35,11 +35,9 @@ phoneHome "Preparing VMs for Azure insertion..."
 
 $kernel_name=uname -r
  
-if (Get-Item -ErrorAction SilentlyContinue -Path /root/expected_version_deb ) {
-    $expected=Get-Content /root/expected_version_deb
-} elseif (Get-Item -ErrorAction SilentlyContinue -Path /root/expected_version_centos ) {
-    $expected=Get-Content /root/expected_version_centos
-}
+if (Get-Item -ErrorAction SilentlyContinue -Path /root/expected_version ) {
+    $expected=Get-Content /root/expected_version
+} 
 
 if (($kernel_name.CompareTo($expected)) -ne 0) {
     phoneHome "Azure insertion cancelled because OS version did not match expected..."

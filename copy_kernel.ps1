@@ -62,7 +62,7 @@ function phoneVersionHome($m) {
 
         invoke-command -session $global:session -ScriptBlock ${function:callVersionIn} -ArgumentList $outFile,$m
     } else {
-        $output_path="/opt/microsoft/installed_kernel_version.log"
+        $output_path=/root/expected_version
 
         $m | out-file -Append $output_path
     }
@@ -208,15 +208,14 @@ Remove-Item -Force "/root/expected_version"
 #  Figure out the kernel name
 #
 if (Test-Path /bin/rpm) {
-    $kernel_name_cent=Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].* -Exclude "*-dbg_*"
-    $kernelNameCent = $kernel_name_cent.Name.split("image-")[1]
+    $kernel_name_cent=Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].* -Exclude "*.src*"
+    $kernelNameCent = $kernel_name_cent.Name.split("-")[1]
     phoneHome "CentOS Kernel name is $kernelNameCent"
 
-    $kernelPackageNameCent = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm -Exclude "*.src*"
     #
     #  Figure out the kernel version
     #
-    $kernelVersionCent=($kernelNameCent -split "_")[0]
+    $kernelVersionCent=$kenelNameCent
 
     #
     #  For some reason, the file is -, but the kernel is _
@@ -230,11 +229,10 @@ if (Test-Path /bin/rpm) {
     $kernelNameDeb = $kernel_name_deb.Name.split("image-")[1]
     phoneHome "Debian Kernel name is $kernelNameDeb"
 
-    $kernelPackageNameDeb = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm -Exclude "*.src*"
     #
     #  Figure out the kernel version
     #
-    $kernelVersionDeb=($kernelName -split "_")[0]
+    $kernelVersionDeb=($kernelNameDeb -split "_")[0]
 
     #
     #  For some reason, the file is -, but the kernel is _
