@@ -271,7 +271,7 @@ $action={
 
         Write-Host "Looking for version $expected_verDeb or $expected_verCent"
 
-        if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -or ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
+        if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -and ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
                 Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected something like $expected_verCent or $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
             }
