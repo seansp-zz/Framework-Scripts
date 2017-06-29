@@ -12,7 +12,7 @@ param (
 $storageAccountName=$sourceStorageAccountName
 $destAccountName=$destinationStorageAccountName
 $destContainerName=$destinationContainerName
-$nm=$storageAccountName
+$nm=$sourceStorageAccountName
 $rg=$resourceGroupName
 $URI=$sourceURI
 
@@ -68,6 +68,10 @@ class MachineLogs {
 [System.Collections.ArrayList]$global:machineLogs = @()
 
 function copy_azure_machines {
+    if ($nm -eq "") {
+        $nm = "azuresmokestorageaccount"
+    }
+
     if ($useSourceURI -eq $false)
     {
         Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
@@ -95,7 +99,8 @@ function copy_azure_machines {
                 Remove-AzureRmResourceGroup -Name $newRGName -Force
             }
 
-            New-AzureRmResourceGroup -Name $newRGName -Location westus
+            New-AzureRmResourceGroup -Name $newRGName -Location westus 
+
             $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
 
             $key=Get-AzureRmStorageAccountKey -ResourceGroupName $newRGName -Name $nm
