@@ -17,45 +17,45 @@ $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
 
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
-
-$scriptBlockString = 
-{
-    param($sp)
-    $psi = New-object System.Diagnostics.ProcessStartInfo 
-    $psi.CreateNoWindow = $true
-    $psi.UseShellExecute = $false 
-    $psi.RedirectStandardOutput = $true 
-    $psi.RedirectStandardError = $true 
-    $psi.FileName = "powershell.exe"
-    $psi.Arguments = @($sp) 
-    $process = New-Object System.Diagnostics.Process 
-    $process.StartInfo = $psi 
-
-    [void]$process.Start()
-    do
+if ($? -eq $true) {
+    $scriptBlockString = 
     {
-       write-host $process.StandardOutput.ReadLine()
+        param($sp)
+        $psi = New-object System.Diagnostics.ProcessStartInfo 
+        $psi.CreateNoWindow = $true
+        $psi.UseShellExecute = $false 
+        $psi.RedirectStandardOutput = $true 
+        $psi.RedirectStandardError = $true 
+        $psi.FileName = "powershell.exe"
+        $psi.Arguments = @($sp) 
+        $process = New-Object System.Diagnostics.Process 
+        $process.StartInfo = $psi 
+
+        [void]$process.Start()
+        if ($? -eq $true) {
+            do
+            {
+               write-host $process.StandardOutput.ReadLine()
+            }
+            while (!$process.HasExited) 
+
+            $process.ExitCode
+        } else {
+            write-host "Error starting process.  Cannot continue..."
+            exit 1
+        }
     }
-    while (!$process.HasExited) 
 
-    $process.ExitCode
-}
+    $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
-$scriptBlock = [scriptblock]::Create($scriptBlockString)
+    $result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script"
 
-$result = Invoke-Command -Session $s -ScriptBlock $scriptBlock -ArgumentList "$script"
-
-if($result -ne 0) {
-    exit 1
+    if($result -ne 0) {
+        exit 1
+    } else {
+        exit 0
+    }
 } else {
-    exit 0
+    Write-Host "Error creating PSRP session.  Cannot continue.."
+    exit 1
 }
-
-# invoke-command -session $s -FilePath $script
-# $remote_status = invoke-command -Session $s -ScriptBlock { $? } -ErrorAction SilentlyContinue
-
-# if ($? -eq $false -or $remote_status -ne 0) {
-    # exit 1
-# } else {
-    # exit 0
-# }

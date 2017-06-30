@@ -14,8 +14,18 @@ Write-Host "Selecting the Azure subscription..." -ForegroundColor green
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
+$failure_point = "No failure"
 $key=Get-AzureRmStorageAccountKey -ResourceGroupName $rg -Name $nm
+if ($? -eq $false) {
+    $failure_point="GetKey"
+    goto ErrOut:
+}
+
 $context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
+if ($? -eq $false) {
+    $failure_point="NewContext"
+    goto ErrOut:
+}
 
 #
 #  Copy the latest packages up to Azure
@@ -31,10 +41,26 @@ foreach ($package in $packages) {
 #  Clear the working container
 #
 Get-AzureStorageBlob -Container $destContainer -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
+if ($? -eq $false) {
+    $failure_point="ClearingContainers"
+    goto ErrOut:
+}
 
 #
 #  Copy the kernel packages to Azure.
 #
 Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
+if ($? -eq $false) {
+    $failure_point="CopyPackages"
+    goto ErrOut:
+}
 
 Write-Host "Copy complete."
+exit 0
+
+:ErrOut
+#
+#  Not really sure what happened.  Better let a human have a look...
+#
+write-host "Copying packages to Azure has failed in operation $failure_point."
+exit 1

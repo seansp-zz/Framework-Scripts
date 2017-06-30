@@ -90,9 +90,6 @@ function copy_azure_machines {
         Write-Host "Stopping any running machines..."  -ForegroundColor green
         $smoke_machines | Stop-AzureRmVM -Force
 
-        Write-Host "Getting the disks for the machines..."  -ForegroundColor green
-        $smoke_disks=Get-AzureRmDisk -ResourceGroupName $rg
-
         Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
 
         foreach ($machine in $smoke_machines) {
