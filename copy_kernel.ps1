@@ -26,8 +26,7 @@ foreach ($agent in $agents) {
     @(kill -9 $agent)
 }
 
-@("kill -9 ``pidof omiagent``")
-apt autoremove
+apt autoremove -y
 
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
