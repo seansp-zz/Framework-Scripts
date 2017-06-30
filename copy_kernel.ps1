@@ -3,6 +3,9 @@
 #  Copy the latest kernel build from the secure share to the local directory,
 #  then install it, set the default kernel, switch out this script for the
 #  secondary boot replacement, and reboot the machine.
+#
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
 param (
     [Parameter(Mandatory=$false)] [string] $pkg_mount_point="Undefined",
     [Parameter(Mandatory=$false)] [string] $pkg_mount_source="Undefined",
@@ -24,6 +27,7 @@ foreach ($agent in $agents) {
 }
 
 @("kill -9 ``pidof omiagent``")
+apt autoremove
 
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
@@ -86,6 +90,12 @@ if (Get-Item -ErrorAction SilentlyContinue -Path /opt/microsoft/borg_progress.lo
 
 Stop-Transcript | out-null
 Start-Transcript -path /root/borg_install_log -append
+#
+#  Remove the old sentinel file and reset
+#
+Remove-Item -Force "/root/expected_version"
+echo "System Initialization" | Out-File -Path "/root/expected_version"
+$failure_point="Setup"
 
 #
 #  What OS are we on?
@@ -116,14 +126,11 @@ if ($ENV:PATH -ne "") {
     $ENV:PATH="/sbin:/bin:/usr/sbin:/usr/bin:/opt/omi/bin:/usr/local:/usr/sbin:/bin"
 }
 
-echo "Search path is $ENV:PATH"
-$foo=@(which chmod)
-echo "Found it at $foo"
-$bar=@(chmod 777 /opt/microsoft/borg_progress.log)
-echo $bar
-$zed=@(ls -laF /opt/microsoft/borg_progress.log)
-echo $zed
+$failure_point="chmod"
+@(chmod 777 /opt/microsoft/borg_progress.log)
+@(ls -laF /opt/microsoft/borg_progress.log)
 
+$failure_point="cleaning old"
 phoneHome "Starting copy file scipt"
 cd /root
 $kernFolder="/root/latest_kernel"
@@ -132,38 +139,47 @@ If (Test-Path $kernFolder) {
 }
 new-item $kernFolder -type directory
 
+$failure_point="Mounting"
 if ($global:isHyperV -eq $true) {
 
     if ($pkg_mount_point -eq "Undefined") {
         $pkg_mount_point="/mnt/ostcnix"
-        $pkg_mount_dir= $pkg_mount_point + "/latest"
+        $pkg_mount_dir= $pkg_mount_point
     } else {
         $pkg_mount_dir=$pkg_mount_point
     }
 
     if ($pkg_mount_source -eq "Undefined") {
-        $pkg_mount_source = "cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops"
+        $pkg_mount_source = "cdmbuildsna01.redmond.corp.microsoft.com:/OSTCNix/OSTCNix/Build_Drops/kernel_drops/latest"
     }
 
-    echo "Package mount point is $pkg_mount_point and Package mount dir is $pkg_mount_dir"
-    echo "Package source is $pkg_mount_source"
+    phoneHome "Package mount point is $pkg_mount_point and Package mount dir is $pkg_mount_dir"
+    phoneHome "Package source is $pkg_mount_source"
 
     if ((Test-Path $pkg_mount_point) -eq $false) {
-        echo "Creating the mount point"
+        phoneHome "Creating the mount point"
         New-Item -ItemType Directory -Path $pkg_mount_point
+        if ($? -eq $false) {
+            $failure_point="CreateMount"
+            goto :ErrOut
+        }
     }
 
     echo "Checking for the mount directory..."
     if ((Test-Path $pkg_mount_dir) -eq $false) {
-        echo "Target directory was not there.  Mounting"
-        $mntRes = @(mount $pkg_mount_source $pkg_mount_point)
+        phoneHome "Target directory was not there.  Mounting"
+        @(mount $pkg_mount_source $pkg_mount_point)
+        if ($? -eq $false) {
+            $failure_point="Mount"
+            goto :ErrOut
+        }
     }
 
     if ((Test-Path $pkg_mount_dir) -eq 0) {
         phoneHome "Latest directory $pkg_mount_dir was not on mount point $pkg_mount_point!  No kernel to install!"
         phoneHome "Mount was from $pkg_mount_source"
-        $LASTEXITCODE = 1
-        exit $LASTERRORCODE
+        $failure_point-"NoSource"
+        goto :ErrOut
     }
 
     #
@@ -173,6 +189,10 @@ if ($global:isHyperV -eq $true) {
     cd /root/latest_kernel
 
     copy-Item -Path $pkg_mount_dir/* -Destination ./
+    if ($? -eq $false) {
+        $failure_point="CopyKernelArtifacts"
+        goto :ErrOut
+    }
 } else {
     #
     #  If we can't mount the drop folder, maybe we can get the files from Azure
@@ -190,8 +210,12 @@ if ($global:isHyperV -eq $true) {
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
     $fileListURI = $fileListURIBase + "/file_list"
-echo "Downloading file list from URI $fileListURI"
+    phoneHome "Downloading file list from URI $fileListURI"
     Invoke-WebRequest -Uri $fileListURI -OutFile file_list
+    if ($? -eq $false) {
+        $failure_point="GetFileListFromAzure"
+        goto :ErrOut
+    }
 
     $files=Get-Content file_list
 
@@ -199,6 +223,10 @@ echo "Downloading file list from URI $fileListURI"
         $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
         $fileName=$fileListURIBase + "/" + $file
         Invoke-WebRequest -Uri $fileName -OutFile $file
+        if ($? -eq $false) {
+            $failure_point="WebDownloadFromAzure"
+            goto :ErrOut
+        }
     }
 }
 
@@ -212,13 +240,9 @@ $linuxVers = $linuxInfo.VERSION_ID
 phoneHome "Operating system version is $linuxVersion"
 
 #
-#  Remove the old sentinel file
-#
-Remove-Item -Force "/root/expected_version"
-
-#
 #  Figure out the kernel name
 #
+$failure_point="PrepareForInstall"
 if (Test-Path /bin/rpm) {
     $kernel_name_cent=Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].* -Exclude "*.src*"
     $kernelNameCent = $kernel_name_cent.Name.split("-")[1]
@@ -259,6 +283,7 @@ if (Test-Path /bin/rpm) {
 #  Do the right thing for the platform
 #
 cd $kernFolder
+$failure_point="Installing"
 if (Test-Path /bin/rpm) {
     #
     #  rpm-based system
@@ -269,31 +294,60 @@ if (Test-Path /bin/rpm) {
     $kernelPackageName = Get-ChildItem -Path /root/latest_kernel/kernel-[0-9].*.rpm
 
     phoneHome "Making sure the firewall is configured"
-    $foo=@(firewall-cmd --zone=public --add-port=443/tcp --permanent)
-    $foo=@(systemctl stop firewalld)
-    $foo=@(systemctl start firewalld)
+    @(firewall-cmd --zone=public --add-port=443/tcp --permanent)
+    if ($? -eq $false) {
+        $failure_point="FirewallSetPort"
+        goto :ErrOut
+    }
+
+    #
+    #  Don't care if we fail to stop it
+    #
+    @(systemctl stop firewalld)
+    @(systemctl start firewalld)
+    if ($? -eq $false) {
+        $failure_point="FirewallStart"
+        goto :ErrOut
+    }
 
     #
     #  Install the new kernel
     #
     phoneHome "Installing the rpm kernel devel package $kernelDevelName"
     @(rpm -ivh $kernelDevelName)
+    if ($? -eq $false) {
+        $failure_point="RPMInstallDevel"
+        goto ErrOut:
+    }
 
     phoneHome "Installing the rpm kernel package $kernelPackageName"
     @(rpm -ivh $kernelPackageName)
+    if ($? -eq $false) {
+        $failure_point="RPMInstall"
+        goto ErrOut:
+    }
 
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
     $foo = @(/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg)
+    if ($? -eq $false) {
+        $failure_point="GrubSetBootSelection"
+        goto ErrOut:
+    }
+
     $foo = @(/sbin/grub2-set-default 0)
+    if ($? -eq $false) {
+        $failure_point="GrubSetBootDefault"
+        goto ErrOut:
+    }
 } else {
     #
     #  Figure out the kernel name
     #
     $debKernName=(get-childitem linux-image-*.deb -exclude "-dgb_")[0].Name
-    phoneHome "Kernel Package name is $DebKernName"
+    phoneHome "Kernel Package name is $debKernName"
 
     #
     #  Debian
@@ -302,56 +356,69 @@ if (Test-Path /bin/rpm) {
     phoneHome "Kernel Devel Package name is $kernDevName"
 
     #
-    #  Make sure it's up to date
+    #  In an ideal world, neither of these would be necessary. However,
+    #  experience has shown that there are many more broken images that
+    #  good, so let's at least try and get the system consistent before
+    #  installing the kernel.
     #
+    phoneHome "Trying to make sure the dpkg repository is in a conistent state"
     Remove-Item -Path /var/lib/dpkg/lock
-    
+    dpkg --configure -a
+    if ($? -eq $false) {
+        $failure_point="DpkgConfigure"
+        goto ErrOut:
+    }
+
     @(apt-get install -f)
+    if ($? -eq $false) {
+        $failure_point="Install_F"
+        goto ErrOut:
+    }
+
     @(apt autoremove)
+    if ($? -eq $false) {
+        $failure_point="SetAutoRemove"
+        goto ErrOut:
+    }
+    
+    #
+    #  Now make sure the system is current
+    #
     phoneHome "Getting the system current"
-    while ($true) {
-        phoneHome "Tyring apt-get now..."
-        @(apt-get -y update)
-        if ($? -ne $true) {
-           phoneHome "Retyring getting the system current"
-           sleep 1
-        } else {
-            phoneHome "Command was successful?"
-            break
-        }
+    @(apt-get -y update)
+    if ($? -eq $false) {
+        $failure_point="AptGetUpdate"
+        goto ErrOut:
     }
 
     phoneHome "Installing the DEB kernel devel package"
-    while ($true) {
-        phoneHome "Tyring dpkg(1) now..."
-        @(dpkg -i $kernDevName)
-        if ($? -ne $true) {
-            phoneHome "Retyring installing the DEB devel package"
-           sleep 1
-        } else {
-            phoneHome "Command was successful?"
-            break
-        }
+    @(dpkg -i $kernDevName)
+    if ($? -eq $false) {
+        $failure_point="DpkgInstallDevel"
+        goto ErrOut:
     }
 
     phoneHome "Installing the DEB kernel package"
-    while ($true) {
-        phoneHome "Tyring dpkg(2) now..."
-        @(dpkg -i $debKernName)
-        if ($? -ne $true) {
-            phoneHome "Retyring installing the DEB Kernel package"
-           sleep 1
-        } else {
-            phoneHome "Command was successful?"
-            break
-        }
+    @(dpkg -i $debKernName)
+    if ($? -eq $false) {
+        $failure_point="DpkgInstall"
+        goto ErrOut:
     }
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
     #
     phoneHome "Setting the reboot for selection 0"
     @(grub-mkconfig -o /boot/grub/grub.cfg)
+    if ($? -eq $false) {
+        $failure_point="GrubMkConfig"
+        goto ErrOut:
+    }
+
     @(grub-set-default 0)
+    if ($? -eq $false) {
+        $failure_point="GrubSetDefault"
+        goto ErrOut:
+    }
 }
 
 #
@@ -367,4 +434,21 @@ if ($global:isHyperV -eq $true) {
 
 Stop-Transcript
 
+# 
+#  This will reboot the system
+#
 shutdown -r
+
+:ErrOut
+#
+#  Not really sure what happened.  Better let a human have a look...
+#
+phoneHome("FAILURE in copy_kernel.ps1!!  Kernel was not installed and the system may be in an inconsistent state.")
+phoneHome("Shutting down the system for examination")
+
+#
+#  Call the reporting script directly, passing in the failure point.  This will cause the install to fail above
+#
+./report_kernel_version $failure_point
+
+shutdown

@@ -1,4 +1,14 @@
-﻿param (
+﻿#
+#  When running through Jenkins on Windows, we don't have permissions to manage the hypervisor.
+#  We do, however, have access to the network, including the external interface of this machine.
+#  Use PSRP to loop back through the eternal interface, where we log in with full privelages, and
+#  can manage the hypervisor.
+#
+#  Jeffrey said this isn't a security hole, and it's the way it's supposed to be done.
+#
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
+param (
     [Parameter(Mandatory=$true)] [string] $script
 )
 

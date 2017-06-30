@@ -1,4 +1,10 @@
-﻿param (
+﻿#
+#  Copies user VHDs it finds for VMs in the reference resource group into the 'clean-vhds' 
+#  storage container.  The target blobs will have the name of the VM, as a .vhd
+#
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
+param (
     [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="azuresmokestorageaccount",
     [Parameter(Mandatory=$false)] [string] $sourceRG="azuresmokeresourcegroup",
     [Parameter(Mandatory=$false)] [string] $destRG="azuresmokeresourcegroup",
@@ -19,9 +25,9 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountN
 Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
 $smoke_machines=Get-AzureRmVm -ResourceGroupName $sourceRG
 $smoke_machines | Stop-AzureRmVM -Force
-Get-AzureRmDisk -ResourceGroupName $sourceRG 
+# Get-AzureRmDisk -ResourceGroupName $sourceRG 
 
-Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
+Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
 
 foreach ($machine in $smoke_machines) {
     $vhd_name = $machine.Name + ".vhd"

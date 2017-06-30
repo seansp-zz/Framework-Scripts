@@ -8,6 +8,8 @@
 #
 #  When there's a script you want to run at the next boot, put it in /root/runonce.d.
 #
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
 

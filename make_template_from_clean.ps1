@@ -1,4 +1,13 @@
-﻿param (
+﻿#
+#  Copy a VHD from the clean-vhds storage container to the safe-templates container, where
+#  they have a VM created for them.  The VM should then be booted and make_drone.sh used
+#  to turn the thing into a machine we can use.  Make_drone.sh will set up the runonce, with
+#  update_and_copy.sh set to be executed as soon as the system boots and cron executes
+#  the runonce reboot task.
+#
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
+param (
     [Parameter(Mandatory=$true)] [string] $name
 )
 $rg="azuresmokeresourcegroup"

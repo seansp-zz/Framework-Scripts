@@ -1,4 +1,13 @@
 ﻿#
+#  Run the Basic Operations and Readiness Gateway on Azure.  This script will:
+#      - Copy a VHD from the templates container to a working one
+#      - Create a VM around the VHD and launch it.  It is assumed that the VHD has a
+#        properly configured RunOnce set up
+#      - Periodically poll the VM and check for status.  Report same to console unitl
+#        either SUCCESS or FAILURE is perceived.
+#
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
 #  Azure information
 param (
     [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="azuresmokestorageaccount",
@@ -18,6 +27,8 @@ $URI=$sourceURI
 
 $useSourceURI=[string]::IsNullOrEmpty($URI)
 
+#
+#  The machines we're working with
 $neededVms_array=@()
 $neededVms = {$neededVms_array}.Invoke()
 $copyblobs_array=@()
@@ -27,8 +38,7 @@ $copyblobs = {$copyblobs_array}.Invoke()
 $global:completed=0
 $global:elapsed=0
 #
-#  Interval in msec.
-#
+#  Timer interval in msec.
 $global:interval=500
 $global:boot_timeout_minutes=20
 $global:boot_timeout_intervals_per_minute=(60*(1000/$global:interval))
@@ -36,7 +46,6 @@ $global:boot_timeout_intervals= ($global:interval * $global:boot_timeout_interva
 
 #
 #  Machine counts and status
-#
 $global:num_expected=0
 $global:num_remaining=0
 $global:failed=0
@@ -49,6 +58,7 @@ $global:timer_is_running = 0
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $global:pw = convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $global:cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
+
 
 class MonitoredMachine {
     [string] $name="unknown"
@@ -104,7 +114,7 @@ function copy_azure_machines {
 
             $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
 
-            $key=Get-AzureRmStorageAccountKey -ResourceGroupName $newRGName -Name $nm
+            $key=Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -Name $nm
             $context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
     
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow

@@ -1,4 +1,15 @@
-﻿param (
+﻿#
+#  Run the Basic Operations and Readiness Gateway in Hyper-V.  This script will:
+#      - Copy a VHD from the safe-templates folder to working-vhds
+#      - Create a VM around the VHD and launch it.  It is assumed that the VHD has a
+#        properly configured RunOnce set up
+#      - Wait for the VM to tell us it's done.  The VM will use PSRP to do a live
+#        update of a log file on this machine, and will write a sentinel file
+#        when the install succeeds or fails.
+#
+#  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
+#
+param (
     [Parameter(Mandatory=$false)] [switch] $skipCopy
 )
 
@@ -38,7 +49,6 @@ $action={
         $resultsFile="c:\temp\boot_results\" + $machineName
         $progressFile="c:\temp\progress_logs\" + $machineName
         
-
         if ((test-path $resultsFile) -eq $false) {
             Write-Host "Unable to locate results file $resultsFile.  Cannot process"
             return
@@ -99,6 +109,9 @@ $action={
         return
     }
  
+    #
+    #  Update the UI
+    #
     if (($global:elapsed % 10000) -eq 0) {
         Write-Host ""
         Write-Host "Waiting for remote machines to complete all testing.  There are $global:num_remaining machines left.." -ForegroundColor green
@@ -161,6 +174,9 @@ Write-Host "                      Stopping and cleaning any existing machines.  
 get-job | Stop-Job
 get-job | remove-job
 
+#
+#  Copy the template VHDs from the safe folder to a working one
+#
 Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     
@@ -207,6 +223,9 @@ Write-Host " "
 Write-Host "                                        Start paying attention to errors again..." -ForegroundColor green
 Write-Host " "
 
+#
+#  Wait for the background copy jobs to complete before trying to start them up
+#
 if ($skipCopy -eq $false) {
     while ($true) {
         Write-Host "Waiting for copying to complete..." -ForegroundColor green
@@ -258,6 +277,9 @@ if ($skipCopy -eq $false) {
 
 Write-Host "All machines template images have been copied.  Starting the VMs in Hyper-V" -ForegroundColor green
 
+#
+#  Fire them up!  When they boot, the runonce should take over and install the new kernel.
+#
 Get-ChildItem 'D:\working_images\*.vhd' |
 foreach-Object {   
     $vhdFile=$_.Name
@@ -293,8 +315,7 @@ foreach-Object {
 
 #
 #  Wait for the machines to report back
-#       
-              
+#                     
 write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 unregister-event bootTimer
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
@@ -312,8 +333,10 @@ $global:timer_is_running = 0
 $timer.stop()
 unregister-event bootTimer
 
+#
+#  We either had success or timed out.  Figure out which
+#
 write-host "Checking results" -ForegroundColor green
-
 if ($global:num_remaining -eq 0) {
     Write-Host "All machines have come back up.  Checking results." -ForegroundColor green
     
@@ -336,6 +359,9 @@ if ($global:num_remaining -eq 0) {
         }
     }
 
+#
+#  Thanks for playing!
+#
 if ($global:failed -eq 0) {    
     Write-Host "     BORG is   Exiting with success.  Thanks for Playing" -ForegroundColor green
     exit 0
