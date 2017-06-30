@@ -438,6 +438,8 @@ Stop-Transcript
 #
 shutdown -r
 
+exit 0
+
 :ErrOut
 #
 #  Not really sure what happened.  Better let a human have a look...

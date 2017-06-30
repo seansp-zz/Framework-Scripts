@@ -78,6 +78,24 @@ class MachineLogs {
 [System.Collections.ArrayList]$global:machineLogs = @()
 
 function copy_azure_machines {
+    if ($sourceStorageAccountName -eq "") {
+        $sourceStorageAccountName="azuresmokestorageaccount"
+    }
+    if ($sourceURI -eq "") {
+        $sourceURI="Unset"
+    }
+    if ($destinationStorageAccountName -eq "") {
+        $destinationStorageAccountName="azuresmokestorageaccount"
+    }
+    if ($destinationContainerName -eq "") {
+        $destinationContainerName="working-vhds"
+    }
+    if ($resourceGroupName -eq "") {
+        $resourceGroupName="azuresmokeresourcegroup"
+    }
+    if ($location -eq "") {
+        $location="westus"
+    }
     if ($nm -eq "") {
         $nm = "azuresmokestorageaccount"
     }
