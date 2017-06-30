@@ -35,7 +35,6 @@ Get-AzureStorageBlob -Container $destContainer -blob * | ForEach-Object {Remove-
 #
 #  Copy the kernel packages to Azure.
 #
-Get-ChildItem C:\temp\file_list | Set-AzureStorageBlobContent -Container $destContainer -force
 Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
 
 Write-Host "Copy complete."

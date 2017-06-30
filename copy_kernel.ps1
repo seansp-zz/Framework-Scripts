@@ -163,8 +163,10 @@ if ($global:isHyperV -eq $true) {
     }
 
     echo "Checking for the mount directory..."
-    if ((Test-Path $pkg_mount_dir) -eq $false) {
+    if ((Test-Path $pkg_mount_dir/file_list) -eq $false) {
+        echo "mounting..."
         phoneHome "Target directory was not there.  Mounting"
+        echo "Command is mount $pkg_mount_source $pkg_mount_point
         @(mount $pkg_mount_source $pkg_mount_point)
         if ($? -eq $false) {
             $failure_point="Mount"
