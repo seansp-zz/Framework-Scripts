@@ -26,8 +26,6 @@ foreach ($agent in $agents) {
     @(kill -9 $agent)
 }
 
-apt autoremove -y
-
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
 
@@ -236,7 +234,7 @@ $linuxInfo = Get-Content /etc/os-release -Raw | ConvertFrom-StringData
 $linuxOs = $linuxInfo.ID
 phoneHome "Operating system is $linuxOs"
 $linuxVers = $linuxInfo.VERSION_ID
-phoneHome "Operating system version is $linuxVersion"
+phoneHome "Operating system version is $linuxVers"
 
 #
 #  Figure out the kernel name
@@ -374,7 +372,7 @@ if (Test-Path /bin/rpm) {
         goto ErrOut:
     }
 
-    @(apt autoremove)
+    @(apt autoremove -y)
     if ($? -eq $false) {
         $failure_point="SetAutoRemove"
         goto ErrOut:
