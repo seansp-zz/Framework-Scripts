@@ -20,6 +20,21 @@ $global:pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
 $global:cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
 $global:session=$null
 
+function ErrOut([string] $failPoint) {
+    #
+    #  Not really sure what happened.  Better let a human have a look...
+    #
+    phoneHome("FAILURE in copy_kernel.ps1!!  Kernel was not installed and the system may be in an inconsistent state.")
+    phoneHome("Shutting down the system for examination")
+
+    #
+    #  Call the reporting script directly, passing in the failure point.  This will cause the install to fail above
+    #
+    ./report_kernel_version $failure_point
+
+    shutdown
+}
+
 get-pssession | remove-pssession
 $agents = pidof omiagent
 foreach ($agent in $agents) {
@@ -316,14 +331,14 @@ if (Test-Path /bin/rpm) {
     @(rpm -ivh $kernelDevelName)
     if ($? -eq $false) {
         $failure_point="RPMInstallDevel"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     phoneHome "Installing the rpm kernel package $kernelPackageName"
     @(rpm -ivh $kernelPackageName)
     if ($? -eq $false) {
         $failure_point="RPMInstall"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     #
@@ -333,13 +348,13 @@ if (Test-Path /bin/rpm) {
     $foo = @(/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg)
     if ($? -eq $false) {
         $failure_point="GrubSetBootSelection"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     $foo = @(/sbin/grub2-set-default 0)
     if ($? -eq $false) {
         $failure_point="GrubSetBootDefault"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 } else {
     #
@@ -362,22 +377,22 @@ if (Test-Path /bin/rpm) {
     #
     phoneHome "Trying to make sure the dpkg repository is in a conistent state"
     Remove-Item -Path /var/lib/dpkg/lock
-    dpkg --configure -a
+    @(dpkg --configure -a)
     if ($? -eq $false) {
-        $failure_point="DpkgConfigure"
-        goto ErrOut:
+        ErrOut($failure_point)
+        fail
     }
 
     @(apt-get install -f)
     if ($? -eq $false) {
         $failure_point="Install_F"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     @(apt autoremove -y)
     if ($? -eq $false) {
         $failure_point="SetAutoRemove"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
     
     #
@@ -387,21 +402,21 @@ if (Test-Path /bin/rpm) {
     @(apt-get -y update)
     if ($? -eq $false) {
         $failure_point="AptGetUpdate"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     phoneHome "Installing the DEB kernel devel package"
     @(dpkg -i $kernDevName)
     if ($? -eq $false) {
         $failure_point="DpkgInstallDevel"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     phoneHome "Installing the DEB kernel package"
     @(dpkg -i $debKernName)
     if ($? -eq $false) {
         $failure_point="DpkgInstall"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
     #
     #  Now set the boot order to the first selection, so the new kernel comes up
@@ -410,13 +425,13 @@ if (Test-Path /bin/rpm) {
     @(grub-mkconfig -o /boot/grub/grub.cfg)
     if ($? -eq $false) {
         $failure_point="GrubMkConfig"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 
     @(grub-set-default 0)
     if ($? -eq $false) {
         $failure_point="GrubSetDefault"
-        goto ErrOut:
+        ErrOut($failure_point)
     }
 }
 
@@ -439,17 +454,3 @@ Stop-Transcript
 shutdown -r
 
 exit 0
-
-:ErrOut
-#
-#  Not really sure what happened.  Better let a human have a look...
-#
-phoneHome("FAILURE in copy_kernel.ps1!!  Kernel was not installed and the system may be in an inconsistent state.")
-phoneHome("Shutting down the system for examination")
-
-#
-#  Call the reporting script directly, passing in the failure point.  This will cause the install to fail above
-#
-./report_kernel_version $failure_point
-
-shutdown

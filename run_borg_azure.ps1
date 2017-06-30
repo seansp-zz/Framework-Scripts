@@ -288,7 +288,7 @@ $action={
             $global:booted_version = $expected_verDeb
         }
 
-        Write-Host "Looking for version $expected_verDeb or $expected_verCent"
+        # Write-Host "Looking for version $expected_verDeb or $expected_verCent"
 
         if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -and ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
@@ -342,7 +342,6 @@ $action={
                
                 if ($jobStatus -ne $null -and ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed")) {
                     if ($jobStatus -eq "Completed") {
-                        write-host "Checking machine $monitoredMachineMane in status $jobStatus"
                         if ($monitoredMachineStatus -ne "Completed") {
                             checkMachine $monitoredMachine
                         }
