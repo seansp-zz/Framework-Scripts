@@ -18,21 +18,29 @@ param (
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
-$storageAccountName=$sourceStorageAccountName
-$destAccountName=$destinationStorageAccountName
-$destContainerName=$destinationContainerName
-$nm=$sourceStorageAccountName
-$rg=$resourceGroupName
-$URI=$sourceURI
 
-$useSourceURI=[string]::IsNullOrEmpty($URI)
+$global:sourceStorageAccountName=$sourceStorageAccountName
+$global:destinationStorageAccountName=$destinationStorageAccountName
+$global:destinationContainerName=$destinationContainerName
+$global:sourceStorageAccountName=$sourceStorageAccountName
+$global:resourceGroupName=$resourceGroupName
+$global:sourceURI=$sourceURI
+
+$global:storageAccountName=$sourceStorageAccountName
+$global:destAccountName=$destinationStorageAccountName
+$global:destContainerName=$destinationContainerName
+$global:nm=$sourceStorageAccountName
+$global:rg=$resourceGroupName
+$global:URI=$sourceURI
+
+$global:useSourceURI=[string]::IsNullOrEmpty($URI)
 
 #
 #  The machines we're working with
-$neededVms_array=@()
-$neededVms = {$neededVms_array}.Invoke()
-$copyblobs_array=@()
-$copyblobs = {$copyblobs_array}.Invoke()
+$global:neededVms_array=@()
+$global:neededVms = {$neededVms_array}.Invoke()
+$global:copyblobs_array=@()
+$global:copyblobs = {$copyblobs_array}.Invoke()
 
 
 $global:completed=0
@@ -78,43 +86,26 @@ class MachineLogs {
 [System.Collections.ArrayList]$global:machineLogs = @()
 
 function copy_azure_machines {
-    if ($sourceStorageAccountName -eq "") {
-        $sourceStorageAccountName="azuresmokestorageaccount"
-    }
-    if ($sourceURI -eq "") {
-        $sourceURI="Unset"
-    }
-    if ($destinationStorageAccountName -eq "") {
-        $destinationStorageAccountName="azuresmokestorageaccount"
-    }
-    if ($destinationContainerName -eq "") {
-        $destinationContainerName="working-vhds"
-    }
-    if ($resourceGroupName -eq "") {
-        $resourceGroupName="azuresmokeresourcegroup"
-    }
-    if ($location -eq "") {
-        $location="westus"
-    }
-    if ($nm -eq "") {
-        $nm = "azuresmokestorageaccount"
-    }
-
-    if ($useSourceURI -eq $false)
+    if ($global:useSourceURI -eq $false)
     {
         Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
-        $smoke_machines=Get-AzureRmVm -ResourceGroupName $rg
+        $smoke_machines=Get-AzureRmVm -ResourceGroupName $global:rg
 
         Write-Host "Stopping any running machines..."  -ForegroundColor green
         $smoke_machines | Stop-AzureRmVM -Force
 
-        Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
+        Write-Host "Clearing existing resource groups with VHDs in the working container $global:destinationContainerName..."  -ForegroundColor green
+        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureRmResourceGroup -name $($_.Name + "-SmokeRG") -Container $global:destinationContainerName -ErrorAction SilentlyContinue}
 
+        Write-Host "Clearing existing resource groups $global:destinationContainerName..."  -ForegroundColor green
+        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:destinationContainerName }
+
+        Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
         foreach ($machine in $smoke_machines) {
             $vhd_name = $machine.Name + ".vhd"
             $vmName = $machine.Name
 
-            $neededVMs.Add($vmName)
+            $global:neededVMs.Add($vmName)
 
             $newRGName=$vmName + "-SmokeRG"
             $groupExists=$false
@@ -129,16 +120,19 @@ function copy_azure_machines {
 
             $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
 
-            $key=Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -Name $nm
-            $context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
+            $key=Get-AzureRmStorageAccountKey -ResourceGroupName $global:resourceGroupName -Name $global:nm
+            $context=New-AzureStorageContext -StorageAccountName $global:destinationStorageAccountName -StorageAccountKey $key[0].Value
     
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $uri -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
+            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $uri -destblob $vhd_name -DestContainer $global:destinationContainerName -DestContext $context -Force
 
-            $copyblobs.Add($vhd_name)
+            $global:copyblobs.Add($vhd_name)
         }
     } else {
-        foreach ($singleURI in $URI) {
+        Write-Host "Clearing the destination container..."  -ForegroundColor green
+        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destinationContainerName}
+
+        foreach ($singleURI in $global:URI) {
             Write-Host "Preparing to copy disk by URI.  Source URI is $singleURI"  -ForegroundColor green
 
             $splitUri=$singleURI.split("/")
@@ -147,7 +141,7 @@ function copy_azure_machines {
             $vhd_name = $lastPart
             $vmName = $lastPart.Replace(".vhd","")
 
-            $neededVMs.Add($vmName)
+            $global:neededVMs.Add($vmName)
 
             $newRGName=$vmName + "-SmokeRG"
             $groupExists=$false
@@ -159,16 +153,15 @@ function copy_azure_machines {
             New-AzureRmResourceGroup -Name $newRGName -Location westus
 
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $singleURI -destblob $vhd_name -DestContainer $destContainerName -DestContext $context -Force
+            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $singleURI -destblob $vhd_name -DestContainer $global:destinationContainerName -DestContext $context -Force
 
-            $copyblobs.Add($vhd_name)
+            $global:copyblobs.Add($vhd_name)
         }
     }
 
     Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
-    $allDone = $true
-    foreach ($blob in $copyblobs) {
-        $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $destContainerName -WaitForComplete
+    foreach ($blob in $global:copyblobs) {
+        $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $global:destinationContainerName -WaitForComplete
 
         $status
     }
@@ -178,7 +171,7 @@ function copy_azure_machines {
 function launch_azure_vms {
     get-job | Stop-Job
     get-job | remove-job
-    foreach ($vmName in $neededVms) {
+    foreach ($vmName in $global:neededVms) {
         $machine = new-Object MonitoredMachine
         $machine.name = $vmName
         $machine.status = "Booting" # $status
@@ -338,8 +331,9 @@ $action={
             #
             #  Don't even try if the new-vm hasn't completed...
             #
+            $jobStatus=$null
             if ($singleLog.name -eq $monitoredMachineName) {
-                $jobStatus = get-job $singleLog.job_name -ErrorAction SilentlyContinue
+                $jobStatus = get-job $singleLog.job_name
                 if ($? -eq $true) {
                     $jobStatus = $jobStatus.State
                 } else {
@@ -348,7 +342,7 @@ $action={
                
                 if ($jobStatus -ne $null -and ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed")) {
                     if ($jobStatus -eq "Completed") {
-                        # write-host "Checking machine $monitoredMachineMane in status $jobStatus"
+                        write-host "Checking machine $monitoredMachineMane in status $jobStatus"
                         if ($monitoredMachineStatus -ne "Completed") {
                             checkMachine $monitoredMachine
                         }
@@ -451,28 +445,6 @@ $action={
 }
 
 unregister-event AzureBootTimer -ErrorAction SilentlyContinue
-
-if ($nm -eq "") {
-        $nm = "azuresmokestorageaccount"
-}
-if ($sourceStorageAccountName -eq "") {
-        $sourceStorageAccountName = "azuresmokestorageaccount"
-}
-if ($sourceURI -eq "") {
-        $sourceURI = "Unset"
-}
-if ($destinationStorageAccountName -eq "") {
-        $destinationStorageAccountName = "azuresmokestorageaccount"
-}
-if ($destinationContainerName -eq "") {
-        $destinationContainerName = "working-vhds"
-}
-if ($resourceGroupName -eq "") {
-        $resourceGroupName = "azuresmokeresourcegroup"
-}
-if ($location -eq "") {
-        $location = "westus"
-}
 
 Write-Host "    " -ForegroundColor green
 Write-Host "                 **********************************************" -ForegroundColor yellow

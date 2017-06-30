@@ -20,7 +20,7 @@ $global:boot_timeout_minutes=45
 $global:boot_timeout_intervals=$interval*($boot_timeout_minutes*60*(1000/$interval))
 $global:num_expected=0
 $global:num_remaining=0
-$global:failed=0
+$global:failed=$false
 $global:booted_version="Unknown"
 $global:timer_is_running = 0
 
@@ -101,7 +101,7 @@ $action={
 
     if ($global:num_remaining -eq 0) {
         write-host "***** All machines have reported in."  -ForegroundColor magenta
-        if ($global:failed) {
+        if ($global:failed -eq $true) {
             Write-Host "One or more machines have failed to boot.  This job has failed." -ForegroundColor Red
         }
         write-host "Stopping the timer" -ForegroundColor green
@@ -251,7 +251,7 @@ if ($skipCopy -eq $false) {
             }
             elseif ($jobState -eq "Failed")
             {
-                $global:failed = 1
+                $global:failed = $true
                 Write-Host "----> Copy job $jobName exited with FAILED state!" -ForegroundColor red
                 Receive-Job -Name $jobName
             }
@@ -269,7 +269,7 @@ if ($skipCopy -eq $false) {
         }
     }
 
-    if ($global:failed -eq 1) {
+    if ($global:failed -eq $true) {
         write-host "Copy failed.  Cannot continue..."
         exit 1
     }
@@ -317,7 +317,7 @@ foreach-Object {
 #  Wait for the machines to report back
 #                     
 write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-unregister-event bootTimer
+unregister-event bootTimer -ErrorAction SilentlyContinue
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
 $global:timer_is_running = 1
 $timer.Interval = 1000
@@ -362,7 +362,7 @@ if ($global:num_remaining -eq 0) {
 #
 #  Thanks for playing!
 #
-if ($global:failed -eq 0) {    
+if ($global:failed -eq $false) {    
     Write-Host "     BORG is   Exiting with success.  Thanks for Playing" -ForegroundColor green
     exit 0
 } else {
