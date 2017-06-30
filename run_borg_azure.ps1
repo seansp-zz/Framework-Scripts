@@ -95,7 +95,7 @@ function copy_azure_machines {
         $smoke_machines | Stop-AzureRmVM -Force
 
         Write-Host "Clearing existing resource groups with VHDs in the working container $global:destinationContainerName..."  -ForegroundColor green
-        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureRmResourceGroup -name $($_.Name + "-SmokeRG") -Force -ErrorAction SilentlyContinue}
+        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureRmResourceGroup -name $(($_.Name).Replace(".vhd","")+"-SmokeRG") -Force -ErrorAction SilentlyContinue}
 
         Write-Host "Clearing VHDs in the working storage container $global:destinationContainerName..."  -ForegroundColor green
         Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:destinationContainerName }
