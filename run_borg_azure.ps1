@@ -524,7 +524,7 @@ copy_azure_machines
 #  Launch the virtual machines
 #                
 launch_azure_vms
-write-host "$global:num_left machines have been launched.  Waiting for completion..."
+write-host "$global:num_remaining machines have been launched.  Waiting for completion..."
 
 #
 #  Wait for the machines to report back

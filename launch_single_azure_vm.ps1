@@ -25,11 +25,17 @@ try {
     $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name SmokeSubnet-1 -VirtualNetwork $VMVNETObject
 
     echo "Creating the public IP address"  
-    $pip = New-AzureRmPublicIpAddress -ResourceGroupName $rg -Location westus `
+    $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -ErrorAction SilentlyContinue
+    if ($? -eq $false) {
+        $pip = New-AzureRmPublicIpAddress -ResourceGroupName $rg -Location westus `
             -Name $vmName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
+    }
 
     echo "Creating the network interface"  
-    $VNIC = New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+    $VNIC = Get-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg
+    if ($? -eq $false) {
+        $VNIC = New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+    }
 
     echo "Adding the network interface"  
     Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
