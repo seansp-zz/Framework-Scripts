@@ -33,7 +33,7 @@ function ErrOut([string] $failPoint) {
     #
     #  Call the reporting script directly, passing in the failure point.  This will cause the install to fail above
     #
-    ./report_kernel_version $failure_point
+    ./report_kernel_version.ps1 $failure_point
 
     sync
     sync
