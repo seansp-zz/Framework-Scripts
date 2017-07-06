@@ -2,33 +2,20 @@
     [Parameter(Mandatory=$true)] [string] $vmName
 )
 
-$newRGName=$vmName + "-SmokeRG"
-$groupExists=$false
- 
-$rg="azuresmokeresourcegroup"
-$nm="azuresmokestorageaccount"  
+$rg="smoke_working_resource_group"
+$nm="smokeworkingstorageacct"  
 $destContainerName = "working-vhds"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
-$existingRG=Get-AzureRmResourceGroup -Name $newRGName -ErrorAction SilentlyContinue   
-if ($? -eq $true) {
-    $groupExists=$true
-}
-
 try {
-    if ($groupExists -eq $true)
-    {
-        echo "Removing previous resource group for machine $vmName" 
-        Remove-AzureRmResourceGroup -Name $newRGName -Force
-    }
-    echo "Creating new resource group for VM $vmName" 
-    New-AzureRmResourceGroup -Name $newRGName -Location westus
-
     echo "Making sure the VM is stopped..."  
     stop-vm $vmName -TurnOff -Force
+
+    echo "Deleting any existing VM"
+    Remove-VM -Name $vmName -Force -ErrorAction SilentlyContinue
 
     echo "Creating a new VM config..."   
     $vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2'

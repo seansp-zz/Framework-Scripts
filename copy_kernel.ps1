@@ -9,14 +9,15 @@
 param (
     [Parameter(Mandatory=$false)] [string] $pkg_mount_point="Undefined",
     [Parameter(Mandatory=$false)] [string] $pkg_mount_source="Undefined",
-    [Parameter(Mandatory=$false)] [string] $pkg_storageaccount="Undefined",
-    [Parameter(Mandatory=$false)] [string] $pkg_container="Undefined",
-    [Parameter(Mandatory=$false)] [string] $pkg_location="Undefined"
+    [Parameter(Mandatory=$false)] [string] $pkg_resourceGroup="smoke_output_resource_group",
+    [Parameter(Mandatory=$false)] [string] $pkg_storageaccount="smoketestoutstorageacct",
+    [Parameter(Mandatory=$false)] [string] $pkg_container="last-known-good-packages",
+    [Parameter(Mandatory=$false)] [string] $pkg_location="westus"
 )
 
 $global:isHyperV = $false
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$global:pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+$global:pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
 $global:cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
 $global:session=$null
 
@@ -37,8 +38,11 @@ function ErrOut([string] $failPoint) {
 
 get-pssession | remove-pssession
 $agents = pidof omiagent
+#
+#  Have to specify full path here to avoid
 foreach ($agent in $agents) {
-    @(kill -9 $agent)
+Stop-Process -id 
+    @(/bin/kill -9 $agent)
 }
 
 function callItIn($c, $m) {
@@ -173,7 +177,7 @@ if ($global:isHyperV -eq $true) {
         New-Item -ItemType Directory -Path $pkg_mount_point
         if ($? -eq $false) {
             $failure_point="CreateMount"
-            goto :ErrOut
+            ErrOut($failure_point)
         }
     }
 
@@ -185,7 +189,7 @@ if ($global:isHyperV -eq $true) {
         @(mount $pkg_mount_source $pkg_mount_point)
         if ($? -eq $false) {
             $failure_point="Mount"
-            goto :ErrOut
+            ErrOut($failure_point)
         }
     }
 
@@ -193,7 +197,7 @@ if ($global:isHyperV -eq $true) {
         phoneHome "Latest directory $pkg_mount_dir was not on mount point $pkg_mount_point!  No kernel to install!"
         phoneHome "Mount was from $pkg_mount_source"
         $failure_point-"NoSource"
-        goto :ErrOut
+        ErrOut($failure_point)
     }
 
     #
@@ -205,21 +209,13 @@ if ($global:isHyperV -eq $true) {
     copy-Item -Path $pkg_mount_dir/* -Destination ./
     if ($? -eq $false) {
         $failure_point="CopyKernelArtifacts"
-        goto :ErrOut
+        ErrOut($failure_point)
     }
 } else {
     #
     #  If we can't mount the drop folder, maybe we can get the files from Azure
     #
     cd $kernFolder
-
-    if ($pkg_storageaccount -eq "Undefined") {
-        $pkg_storageaccount = "azuresmokestorageaccount"
-    }
-
-    if ($pkg_container -eq "Undefined") {
-        $pkg_container = "latest-packages"
-    }
 
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
@@ -228,7 +224,7 @@ if ($global:isHyperV -eq $true) {
     Invoke-WebRequest -Uri $fileListURI -OutFile file_list
     if ($? -eq $false) {
         $failure_point="GetFileListFromAzure"
-        goto :ErrOut
+        ErrOut($failure_point)
     }
 
     $files=Get-Content file_list
@@ -239,7 +235,7 @@ if ($global:isHyperV -eq $true) {
         Invoke-WebRequest -Uri $fileName -OutFile $file
         if ($? -eq $false) {
             $failure_point="WebDownloadFromAzure"
-            goto :ErrOut
+            ErrOut($failure_point)
         }
     }
 }
@@ -311,7 +307,7 @@ if (Test-Path /bin/rpm) {
     @(firewall-cmd --zone=public --add-port=443/tcp --permanent)
     if ($? -eq $false) {
         $failure_point="FirewallSetPort"
-        goto :ErrOut
+        ErrOut($failure_point)
     }
 
     #
@@ -321,7 +317,7 @@ if (Test-Path /bin/rpm) {
     @(systemctl start firewalld)
     if ($? -eq $false) {
         $failure_point="FirewallStart"
-        goto :ErrOut
+        ErrOut($failure_point)
     }
 
     #

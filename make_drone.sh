@@ -18,20 +18,42 @@ fi
 #
 #  Do the setup for that system
 #
-if [ is_rpm == 0 ]
+if [ $is_rpm == 0 ]
   then
-    user
     echo "DEB-based system"
     #
     #  Add the mstest user
     #
-    useradd -d /home/mstest -s /bin/bash -G admin -m mstest -p 'P@$$w0rd!'
+    useradd -d /home/mstest -s /bin/bash -G sudo -m mstest -p 'P@ssW0rd-'
+    passwd mstest << PASSWD_END
+P@ssW0rd-
+P@ssW0rd-
+PASSWD_END
+
+cp /etc/apt/sources.list /etc/apt/sources.list.orig
+cat << NEW_SOURCES > /etc/apt/sources.list.orig
+deb  http://deb.debian.org/debian stretch main
+deb-src  http://deb.debian.org/debian stretch main
+
+deb  http://deb.debian.org/debian stretch-updates main
+deb-src  http://deb.debian.org/debian stretch-updates main
+
+deb http://security.debian.org/ stretch/updates main
+deb-src http://security.debian.org/ stretch/updates main
+NEW_SOURCES
+    #
+    #  Make sure things are consistent
+    dpkg --configure -a
+    apt --fix-broken -y install
+    apt-get -y update
+    apt-get install -y curl
+    apt-get install -y apt-transport-https
 
     #
     #  Set up the repos to look at and update
     dpkg -l linux-{image,headers}-* | awk '/^ii/{print $2}' | egrep '[0-9]+\.[0-9]+\.[0-9]+' | grep -v $(uname -r | cut -d- -f-2) | xargs sudo apt-get -y purge
-    curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-    curl https://packages.microsoft.com/config/ubuntu/14.04/prod.list | sudo tee /etc/apt/sources.list.d/microsoft.list
+    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+    curl https://packages.microsoft.com/config/ubuntu/14.04/prod.list | tee /etc/apt/sources.list.d/microsoft.list
     apt-get -y update
 
     #
@@ -42,20 +64,23 @@ if [ is_rpm == 0 ]
     #  This package is in a torn state
     wget http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
     dpkg -i libicu52_52.1-8_amd64.deb
+    wget http://ftp.us.debian.org/debian/pool/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+    dpkg -i libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
 
     #
     #  Install and remove PS
     apt-get install -y powershell
-    apt-get purge -y powershell
 
     #
     #  Download and install the beta 2 version
-    export download_1404="https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.14.04.1_amd64.deb"
+    export download_1404="https://github.com/PowerSahell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.14.04.1_amd64.deb"
     export download_1604="https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-beta.2/powershell_6.0.0-beta.2-1ubuntu1.16.04.1_amd64.deb"
     wget $download_1604
 
     export pkg_name=`echo $download_1604 | sed -e s/.*powershell/powershell/`
     dpkg -r powershell
+    wget http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7_amd64.deb
+    dpkg -i libicu55_55.1-7_amd64.deb
     dpkg -i $pkg_name
 
     #
@@ -94,6 +119,7 @@ if [ is_rpm == 0 ]
     #
     #  Tell cron to run the runonce at reboot
     echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+    apt-get install -y ufw
     ufw allow 443
     ufw allow 5986
 else
@@ -109,7 +135,11 @@ else
 
     #
     #  Add the mstest user
-    useradd -d /home/mstest -s /bin/bash -G wheel -m mstest -p 'P@$$w0rd!'
+    useradd -d /home/mstest -s /bin/bash -G wheel -m mstest -p 'P@ssW0rd-'
+        passwd mstest << PASSWD_END
+P@ssW0rd-
+P@ssW0rd-
+PASSWD_END
 
     #
     #  Set up our repo and update
@@ -170,3 +200,29 @@ else
     systemctl stop firewalld
     systemctl start firewalld
 fi
+
+if [ -f /etc/motd ] 
+    mv /etc/motd /etc/motd_before_ms_kernel
+fi
+
+cat << "MOTD_EOF" > /etc/motd
+*************************************************************************************
+
+    WARNING   WARNING   WARNING   WARNING   WARNING   WARNING   WARNING   WARNING
+    apt
+      THIS IS AN EXPERIMENTAL COMPUTER.  IT IS NOT INTENDED FOR PRODUCTION USE
+
+
+                 Microsoft Authorized Employees and Partners ONLY!
+
+
+     If you are authorized to use this machine, we welcome you and invite your
+   feedback through the established channels.  If you're not authorized, please
+   don't tell anybody about this.  It really annoys the bosses when things like
+   that happen.
+
+
+   Welcome to the Twilight Zone.                                      Let's Rock.
+
+*************************************************************************************
+MOTD_EOF

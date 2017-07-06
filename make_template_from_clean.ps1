@@ -10,38 +10,51 @@
 param (
     [Parameter(Mandatory=$true)] [string] $name
 )
-$rg="azuresmokeresourcegroup"
-$nm="azuresmokestorageaccount"  
+
+$vmName = $name + "-RunOnce-Primed"
+$rg="smoke_source_resource_group"
+
+$nm="smokesourcestorageacct"  
+
 $destContainerName = "safe-templates"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
+Write-Host "Attempting to create templeate from $vmName.  Stopping any running machines..."
+$existingVM=Get-AzureRmVM -name $vmName -ResourceGroupName $rg -ErrorAction SilentlyContinue
+if ($?) {
+    Write-Host "There was already a VM present and running with the name $vmName.  Stopping and deleting so it can be replaced..."
+    Stop-AzureRmVM -Name $vmName -ResourceGroupName $rg -force
+    Remove-AzureRmVM -Name $vmName -Force
+}
+
 ## Global
-$rgName = "azuresmokeresourcegroup"
 $location = "westus"
 
 ## Storage
-$storageName = "azuresmokestorageaccount"
 $storageType = "Standard_D2"
 
 ## Network
-$nicname = $name + "-Smoke-1NIC"
+$nicname = $name + "-NIC"
 $subnet1Name = "SmokeSubnet-1"
 $vnetName = "SmokeVNet"
 $vnetAddressPrefix = "10.0.0.0/16"
 $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
 ## Compute
-$vmName = $name + "-Smoke-1"
+
 $vmSize = "Standard_A2"
+
 $osDiskName = $vmName + "-osDisk"
-$blobURIRaw="https://azuresmokestorageaccount.blob.core.windows.net/clean-vhds/" + $name + "-Smoke-1.vhd"
+$blobURIRaw="https://smokesourcestorageacct.blob.core.windows.net/clean-vhds/" + $name + "-Smoke-1.vhd"
 Get-AzureStorageBlob -Container $destContainerName -Prefix $name | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainerName}
 $destUri = $blobURIRaw.Replace("clean-vhds","safe-templates")
 
+Write-Host "Attempting to create virtual machine $vmName.  This may take some time."
+
 ## Setup local VM object
 # $cred = Get-Credential
-az vm create -n $vmName -g $rgName -l $location --os-type linux --image $blobURIRaw --storage-container-name "safe-templates" --use-unmanaged-disk --nsg SmokeNSG `
-    --subnet SmokeSubnet-1 --vnet-name SmokeVNet --storage-account azuresmokestorageaccount --os-disk-name $vmName
+az vm create -n $vmName -g $rg -l $location --os-type linux --image $blobURIRaw --storage-container-name "safe-templates" --use-unmanaged-disk --nsg SmokeNSG `
+   --subnet SmokeSubnet-1 --vnet-name SmokeVNet --storage-account $nm --os-disk-name $vmName

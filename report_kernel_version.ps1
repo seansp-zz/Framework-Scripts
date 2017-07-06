@@ -26,7 +26,7 @@ function phoneHome($m) {
 #  Set up the PSRP session
 #
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+$pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
 $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
 $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
 

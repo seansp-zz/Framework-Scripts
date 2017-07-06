@@ -1,8 +1,7 @@
 ﻿param (
-    [Parameter(Mandatory=$false)] [string] $nm="azuresmokestorageaccount",
-    [Parameter(Mandatory=$false)] [string] $rg="azuresmokeresourcegroup",
-    [Parameter(Mandatory=$false)] [string] $destAccountName="azuresmokestorageaccount",
-    [Parameter(Mandatory=$false)] [string] $destContainer="latest-packages",
+    [Parameter(Mandatory=$false)] [string] $destResourceGroup="smoke_output_resource_group",
+    [Parameter(Mandatory=$false)] [string] $destAccountName="smoketestoutstorageacct",
+    [Parameter(Mandatory=$false)] [string] $destContainer="last-known-good-packages",
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
@@ -12,19 +11,19 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
 Write-Host "Selecting the Azure subscription..." -ForegroundColor green
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $destResourceGroup –StorageAccountName $destAccountName
 
 $failure_point = "No failure"
-$key=Get-AzureRmStorageAccountKey -ResourceGroupName $rg -Name $nm
+$key=Get-AzureRmStorageAccountKey -ResourceGroupName $destResourceGroup -Name $destAccountName
 if ($? -eq $false) {
     $failure_point="GetKey"
-    goto ErrOut:
+    ErrOut($failure_point)
 }
 
 $context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
 if ($? -eq $false) {
     $failure_point="NewContext"
-    goto ErrOut:
+    ErrOut($failure_point)
 }
 
 #
@@ -43,7 +42,7 @@ foreach ($package in $packages) {
 Get-AzureStorageBlob -Container $destContainer -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 if ($? -eq $false) {
     $failure_point="ClearingContainers"
-    goto ErrOut:
+    ErrOut($failure_point)
 }
 
 #
@@ -52,15 +51,17 @@ if ($? -eq $false) {
 Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
 if ($? -eq $false) {
     $failure_point="CopyPackages"
-    goto ErrOut:
+    ErrOut($failure_point)
 }
 
 Write-Host "Copy complete."
 exit 0
 
-:ErrOut
-#
-#  Not really sure what happened.  Better let a human have a look...
-#
-write-host "Copying packages to Azure has failed in operation $failure_point."
-exit 1
+
+unction ErrOut([string] $failPoint) {
+    #
+    #  Not really sure what happened.  Better let a human have a look...
+    #
+    write-host "Copying packages to Azure has failed in operation $failure_point."
+    exit 1
+}

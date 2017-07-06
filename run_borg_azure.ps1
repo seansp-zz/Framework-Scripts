@@ -9,31 +9,48 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 #  Azure information
+
 param (
-    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="azuresmokestorageaccount",
-    [Parameter(Mandatory=$false)] [string[]] $sourceURI="Unset",
-    [Parameter(Mandatory=$false)] [string] $destinationStorageAccountName="azuresmokestorageaccount",
-    [Parameter(Mandatory=$false)] [string] $destinationContainerName="working-vhds",
-    [Parameter(Mandatory=$false)] [string] $resourceGroupName="azuresmokeresourcegroup",
+    #
+    #  Azure RG for all accounts and containers
+    [Parameter(Mandatory=$false)] [string] $sourceResourceGroupName="smoke_source_resource_group",
+    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $sourceContainerName="safe-templates",
+
+    [Parameter(Mandatory=$false)] [string] $workingResourceGroupName="smoke_working_resource_group",
+    [Parameter(Mandatory=$false)] [string] $workingStorageAccountName="smokeworkingstorageacct",
+    [Parameter(Mandatory=$false)] [string] $workingContainerName="vhds-under-test",
+
+    [Parameter(Mandatory=$false)] [string] $sourceURI="Unset",
+
+    # 
+    #  A place with the contents of Last Known Good.  This is similar to Latest for packagee
+    [Parameter(Mandatory=$false)] [string] $testOutputResourceGroup="smoke_output_resoruce_group",
+    [Parameter(Mandatory=$false)] [string] $testOutputStorageAccountName="smoketestoutstorageacct",    
+    [Parameter(Mandatory=$false)] [string] $testOutputContainerName="last-known-good-vhds",
+
+    #
+    #  Our location
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
+Set-StrictMode -Version 2.0
 
 
+$global:sourceResourceGroupName=$sourceResourceGroupName
 $global:sourceStorageAccountName=$sourceStorageAccountName
-$global:destinationStorageAccountName=$destinationStorageAccountName
-$global:destinationContainerName=$destinationContainerName
-$global:sourceStorageAccountName=$sourceStorageAccountName
-$global:resourceGroupName=$resourceGroupName
+$global:sourceContainerName=$sourceContainerName
+
+$global:workingResourceGroupName=$workingResourceGroupName
+$global:workingStorageAccountName=$workingStorageAccountName
+$global:workingContainerName=$workingContainerName
+
 $global:sourceURI=$sourceURI
 
-$global:storageAccountName=$sourceStorageAccountName
-$global:destAccountName=$destinationStorageAccountName
-$global:destContainerName=$destinationContainerName
-$global:nm=$sourceStorageAccountName
-$global:rg=$resourceGroupName
-$global:URI=$sourceURI
+$global:testOutputResourceGroup=$testOutputResourceGroup
+$global:testOutputContainerName=$testOutputContainerName
+$global:workingContainerName=$workingContainerName
 
-$global:useSourceURI=[string]::IsNullOrEmpty($URI)
+$global:useSourceURI=[string]::IsNullOrEmpty($global:sourceURI)
 
 #
 #  The machines we're working with
@@ -64,7 +81,7 @@ $global:timer_is_running = 0
 #  Session stuff
 #
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$global:pw = convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+$global:pw = convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
 $global:cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
 
 
@@ -72,7 +89,7 @@ class MonitoredMachine {
     [string] $name="unknown"
     [string] $status="Unitialized"
     [string] $ipAddress="Unitialized"
-    $session
+    $session=$null
 }
 [System.Collections.ArrayList]$global:monitoredMachines = @()
 
@@ -88,49 +105,48 @@ class MachineLogs {
 function copy_azure_machines {
     if ($global:useSourceURI -eq $false)
     {
-        Write-Host "Getting the list of machines and disks..."  -ForegroundColor green
-        $smoke_machines=Get-AzureRmVm -ResourceGroupName $global:rg
+        #
+        #  In the source group, stop any machines, then get the keys.
+        Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName
 
-        Write-Host "Stopping any running machines..."  -ForegroundColor green
-        $smoke_machines | Stop-AzureRmVM -Force
+        Write-Host "Stopping any currently running machines in the source resource group..."  -ForegroundColor green
+        Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName | Stop-AzureRmVM -Force
 
-        Write-Host "Clearing existing resource groups with VHDs in the working container $global:destinationContainerName..."  -ForegroundColor green
-        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureRmResourceGroup -name $(($_.Name).Replace(".vhd","")+"-SmokeRG") -Force -ErrorAction SilentlyContinue}
+        $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:sourceResourceGroupName -Name $global:sourceStorageAccountName
+        $sourceContext=New-AzureStorageContext -StorageAccountName $global:sourceStorageAccountName -StorageAccountKey $sourceKey[0].Value
 
-        Write-Host "Clearing VHDs in the working storage container $global:destinationContainerName..."  -ForegroundColor green
-        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:destinationContainerName }
+        $blobs = Get-AzureStorageBlob -Container $global:sourceContainerName
 
-        Write-Host "Launching jobs for validation of individual machines..." -ForegroundColor Yellow
-        foreach ($machine in $smoke_machines) {
-            $vhd_name = $machine.Name + ".vhd"
-            $vmName = $machine.Name
+        #
+        #  Switch to the target resource group
+        Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName –StorageAccountName $global:workingStorageAccountName
 
+        Write-Host "Stopping and deleting any currently running machines in the target resource group..."  -ForegroundColor green
+        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Stop-AzureRmVM -Force
+        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Remove-AzureRmVM -Force
+
+        Write-Host "Clearing VHDs in the working storage container $global:workingContainerName..."  -ForegroundColor green
+        Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName }
+
+        $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:workingResourceGroupName -Name $global:workingStorageAccountName
+        $destContext=New-AzureStorageContext -StorageAccountName $global:workingStorageAccountName -StorageAccountKey $destKey[0].Value
+
+        Write-Host "Preparing the individual machines..." -ForegroundColor Yellow
+        foreach ($oneblob in $blobs) {
+            $sourceName=$oneblob.Name
+            $targetName = $sourceName | % { $_ -replace "RunOnce-Primed.vhd", "BORG.vhd" }
+
+            $vmName = $targetName.Replace(".vhd","")
             $global:neededVMs.Add($vmName)
-
-            $newRGName=$vmName + "-SmokeRG"
-            $groupExists=$false
-            $existingRG=Get-AzureRmResourceGroup -Name $newRGName -ErrorAction SilentlyContinue   
-            if ($? -eq $true) {
-                Write-Host "There is an existing resource group with the VM named $vmName.  This resource group must be deleted to free any locks on the VHD." -ForegroundColor Red
-                Remove-AzureRmResourceGroup -Name $newRGName -Force
-            }
-
-            New-AzureRmResourceGroup -Name $newRGName -Location westus 
-            $existingRG=Get-AzureRmResourceGroup -Name $newRGName 
-
-            $uri=$machine.StorageProfile.OsDisk.Vhd.Uri
-
-            $key=Get-AzureRmStorageAccountKey -ResourceGroupName $global:resourceGroupName -Name $global:nm
-            $context=New-AzureStorageContext -StorageAccountName $global:destinationStorageAccountName -StorageAccountKey $key[0].Value
-    
+   
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $uri -destblob $vhd_name -DestContainer $global:destinationContainerName -DestContext $context -Force
+            $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
             $global:copyblobs.Add($vhd_name)
         }
     } else {
         Write-Host "Clearing the destination container..."  -ForegroundColor green
-        Get-AzureStorageBlob -Container $global:destinationContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destinationContainerName}
+        Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName}
 
         foreach ($singleURI in $global:URI) {
             Write-Host "Preparing to copy disk by URI.  Source URI is $singleURI"  -ForegroundColor green
@@ -138,32 +154,56 @@ function copy_azure_machines {
             $splitUri=$singleURI.split("/")
             $lastPart=$splitUri[$splitUri.Length - 1]
 
-            $vhd_name = $lastPart
-            $vmName = $lastPart.Replace(".vhd","")
+            $sourceName = $lastPart
+            $targetName = $sourceName | % { $_ -replace ".vhd", "-BORG.vhd" }
+
+            $vmName = $targetName.Replace(".vhd","")
 
             $global:neededVMs.Add($vmName)
 
-            $newRGName=$vmName + "-SmokeRG"
-            $groupExists=$false
-            $existingRG=Get-AzureRmResourceGroup -Name $newRGName -ErrorAction SilentlyContinue   
-            if ($? -eq $true) {
-                Write-Host "There is an existing resource group with the VM named $vmName.  This resource group must be deleted to free any locks on the VHD." -ForegroundColor Red
-                Remove-AzureRmResourceGroup -Name $newRGName -Force
-            }
-            New-AzureRmResourceGroup -Name $newRGName -Location westus
-
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-            $blob = Start-AzureStorageBlobCopy -AbsoluteUri $singleURI -destblob $vhd_name -DestContainer $global:destinationContainerName -DestContext $context -Force
+            $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
             $global:copyblobs.Add($vhd_name)
         }
     }
 
-    Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
-    foreach ($blob in $global:copyblobs) {
-        $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $global:destinationContainerName -WaitForComplete
+    Write-Host "All copy jobs have been launched.  Initial check is:" -ForegroundColor Yellow
+    $stillCopying = $true
+    while ($stillCopying -eq $true) {
+        $stillCopying = $false
+        $reset_copyblobs = $true
 
-        $status
+        while ($reset_copyblobs -eq $true) {
+            $reset_copyblobs = $false
+            foreach ($blob in $global:copyblobs) {
+                $status = Get-AzureStorageBlobCopyState -Blob $blob.Name -Container $global:workingContainerName -ErrorAction SilentlyContinue
+                if ($? -eq $false) {
+                    Write-Host "Could not get copy state for job $blob.  Job may not have started."
+                    $copyblobs.Remove($blob)
+                    $reset_copyblobs = $true
+                    break
+                } elseif ($status.Status -eq "Pending") {
+                    $bytesCopied = $status.BytesCopied
+                    $bytesTotal = $status.TotalBytes
+                    $pctComplete = ($bytesCopied / $bytesTotal) * 100
+                    Write-Host "Job $blob has copied $bytesCopied of $bytesTotal bytes (%$pctComplete)."
+                    $stillCopying = $true
+                } else {
+                    $exitStatus = $status.Status
+                    Write-Host "Job $blob has failed with state $exitStatus."
+                    $copyblobs.Remove($blob)
+                    $reset_copyblobs = $true
+                    break
+                }
+            }
+        }
+
+        if ($stillCopying -eq $true) {
+            sleep(10)
+        } else {
+            Write-Host "All copy jobs have completed.  Rock on."
+        }
     }
 }
 
@@ -236,7 +276,6 @@ $action={
         }        
 
         $failed=0
-        $newRGName=$machineName + "-SmokeRG"
 
         #
         #  Attempt to create the PowerShell PSRP session
@@ -246,16 +285,19 @@ $action={
             [MonitoredMachine]$monitoredMachine=$localMachine
 
             if ($localMachine.Name -eq $machineName) {
-                $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $newRGName
+                $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $global:workingResourceGroupName -Name $localMachine.Name
                 $ipAddress=$ip.IpAddress
                 $localMachine.ipAddress = $ipAddress
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
-                $localMachine.session=new-PSSession -computername $ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
-                if ($?) {
-                    $machineIsUp = $true
-                } else {
-                    return 0
+                if ($localMachine.session -eq $null) {
+                    $localMachine.session=new-PSSession -computername $ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
+                
+                    if ($?) {
+                        $machineIsUp = $true
+                    } else {
+                        return 0
+                    }
                 }
                 break
             }
@@ -471,7 +513,7 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
 Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName
 
 #
 #  Copy the virtual machines to the staging container
