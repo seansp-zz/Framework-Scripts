@@ -36,7 +36,8 @@ function ErrOut([string] $failPoint) {
     sync
     sync
     sync
-    halt
+    # halt
+    exit 1
 }
 
 get-pssession | remove-pssession

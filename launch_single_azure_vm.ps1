@@ -4,7 +4,7 @@
 
 $rg="smoke_working_resource_group"
 $nm="smokeworkingstorageacct"  
-$destContainerName = "working-vhds"
+$destContainerName = "vhds-under-test"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
@@ -25,11 +25,11 @@ try {
     $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name SmokeSubnet-1 -VirtualNetwork $VMVNETObject
 
     echo "Creating the public IP address"  
-    $pip = New-AzureRmPublicIpAddress -ResourceGroupName $newRGName -Location westus `
+    $pip = New-AzureRmPublicIpAddress -ResourceGroupName $rg -Location westus `
             -Name $vmName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
 
     echo "Creating the network interface"  
-    $VNIC = New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $newRGName -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+    $VNIC = New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
 
     echo "Adding the network interface"  
     Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
@@ -50,7 +50,7 @@ Catch
 
 try {
     echo "Starting the VM"  
-    $NEWVM = New-AzureRmVM -ResourceGroupName $newRGName -Location westus -VM $vm
+    $NEWVM = New-AzureRmVM -ResourceGroupName $rg -Location westus -VM $vm
     if ($NEWVM -eq $null) {
         echo "FAILED TO CREATE VM!!" 
     } else {

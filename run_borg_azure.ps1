@@ -139,10 +139,10 @@ function copy_azure_machines {
             $vmName = $targetName.Replace(".vhd","")
             $global:neededVMs.Add($vmName)
    
-            Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-            $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
+            Write-Host "Initiating job to copy VHD $vmName from cache to working directory..." -ForegroundColor Yellow
+            $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $global:workingContainerName -SrcContainer $global:sourceContainerName -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
-            $global:copyblobs.Add($vhd_name)
+            $global:copyblobs.Add($vmName)
         }
     } else {
         Write-Host "Clearing the destination container..."  -ForegroundColor green
@@ -162,9 +162,9 @@ function copy_azure_machines {
             $global:neededVMs.Add($vmName)
 
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
-            $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
+            $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $global:workingContainerName -SrcContainer $global:sourceContainerName -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
-            $global:copyblobs.Add($vhd_name)
+            $global:copyblobs.Add($vmName)
         }
     }
 
@@ -177,7 +177,7 @@ function copy_azure_machines {
         while ($reset_copyblobs -eq $true) {
             $reset_copyblobs = $false
             foreach ($blob in $global:copyblobs) {
-                $status = Get-AzureStorageBlobCopyState -Blob $blob.Name -Container $global:workingContainerName -ErrorAction SilentlyContinue
+                $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $global:workingContainerName -ErrorAction SilentlyContinue
                 if ($? -eq $false) {
                     Write-Host "Could not get copy state for job $blob.  Job may not have started."
                     $copyblobs.Remove($blob)
