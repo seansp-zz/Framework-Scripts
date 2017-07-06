@@ -33,7 +33,10 @@ function ErrOut([string] $failPoint) {
     #
     ./report_kernel_version $failure_point
 
-    shutdown
+    sync
+    sync
+    sync
+    halt
 }
 
 get-pssession | remove-pssession
