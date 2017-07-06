@@ -47,7 +47,11 @@ NEW_SOURCES
     apt --fix-broken -y install
     apt-get -y update
     apt-get install -y curl
+    apt-get install -y dnsutils
     apt-get install -y apt-transport-https
+
+    wget http://ftp.us.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2l-2_amd64.deb
+dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
 
     #
     #  Set up the repos to look at and update
@@ -202,6 +206,7 @@ PASSWD_END
 fi
 
 if [ -f /etc/motd ] 
+  then
     mv /etc/motd /etc/motd_before_ms_kernel
 fi
 

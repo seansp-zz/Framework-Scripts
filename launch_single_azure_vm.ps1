@@ -10,12 +10,12 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
-try {
+# try {
     echo "Making sure the VM is stopped..."  
-    stop-vm $vmName -TurnOff -Force
+    Stop-AzureRmVM -Name $vmName -ResourceGroupName $rg -Force -ErrorAction SilentlyContinue
 
     echo "Deleting any existing VM"
-    Remove-VM -Name $vmName -Force -ErrorAction SilentlyContinue
+    Remove-AzureRmVM -Name $vmName -ResourceGroupName $rg -Force -ErrorAction SilentlyContinue
 
     echo "Creating a new VM config..."   
     $vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2'
@@ -24,17 +24,20 @@ try {
     $VMVNETObject = Get-AzureRmVirtualNetwork -Name SmokeVNet -ResourceGroupName $rg
     $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name SmokeSubnet-1 -VirtualNetwork $VMVNETObject
 
-    echo "Creating the public IP address"  
-    $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -ErrorAction SilentlyContinue
+    echo "Assigning the public IP address"  
+    $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $vmName -ErrorAction SilentlyContinue
     if ($? -eq $false) {
-        $pip = New-AzureRmPublicIpAddress -ResourceGroupName $rg -Location westus `
-            -Name $vmName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
+        Write-Host "Creating new IP address..."
+        New-AzureRmPublicIpAddress -ResourceGroupName $rg -Location westus -Name $vmName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $vmName
     }
 
-    echo "Creating the network interface"  
-    $VNIC = Get-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg
+    echo "Assigning the network interface"  
+    $VNIC = Get-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg -ErrorAction SilentlyContinue
     if ($? -eq $false) {
-        $VNIC = New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+        Write-Host "Creating new network interface"
+        New-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+        $VNIC = Get-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $rg
     }
 
     echo "Adding the network interface"  
@@ -47,12 +50,12 @@ try {
 
     echo "Setting the OS disk to interface $blobURIRaw" 
     Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -linux
-}
+<# }
 Catch
 {
     echo "Caught exception attempting to create the Azure VM.  Aborting..." 
     return 1
-}
+} #>
 
 try {
     echo "Starting the VM"  
@@ -68,5 +71,3 @@ Catch
     echo "Caught exception attempting to start the new VM.  Aborting..." 
     return 1
 }
-Contact GitHub API Training Shop Blog About
-© 2017 GitHub, Inc. Terms Privacy Security Status Help

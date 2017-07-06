@@ -142,7 +142,7 @@ function copy_azure_machines {
             Write-Host "Initiating job to copy VHD $vmName from cache to working directory..." -ForegroundColor Yellow
             $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $global:workingContainerName -SrcContainer $global:sourceContainerName -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
-            $global:copyblobs.Add($vmName)
+            $global:copyblobs.Add($targetName)
         }
     } else {
         Write-Host "Clearing the destination container..."  -ForegroundColor green
@@ -164,7 +164,7 @@ function copy_azure_machines {
             Write-Host "Initiating job to copy VHD $vhd_name from cache to working directory..." -ForegroundColor Yellow
             $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $global:workingContainerName -SrcContainer $global:sourceContainerName -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
-            $global:copyblobs.Add($vmName)
+            $global:copyblobs.Add($targetName)
         }
     }
 
@@ -174,12 +174,13 @@ function copy_azure_machines {
         $stillCopying = $false
         $reset_copyblobs = $true
 
+        Write-Host "Checking copy status..." -ForegroundColor Green
         while ($reset_copyblobs -eq $true) {
             $reset_copyblobs = $false
             foreach ($blob in $global:copyblobs) {
                 $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $global:workingContainerName -ErrorAction SilentlyContinue
                 if ($? -eq $false) {
-                    Write-Host "Could not get copy state for job $blob.  Job may not have started."
+                    Write-Host "     --- Could not get copy state for job $blob.  Job may not have started." -ForegroundColor Red
                     $copyblobs.Remove($blob)
                     $reset_copyblobs = $true
                     break
@@ -187,11 +188,11 @@ function copy_azure_machines {
                     $bytesCopied = $status.BytesCopied
                     $bytesTotal = $status.TotalBytes
                     $pctComplete = ($bytesCopied / $bytesTotal) * 100
-                    Write-Host "Job $blob has copied $bytesCopied of $bytesTotal bytes (%$pctComplete)."
+                    Write-Host "Job $blob has copied $bytesCopied of $bytesTotal bytes ($pctComplete %)." -ForegroundColor Yellow
                     $stillCopying = $true
                 } else {
                     $exitStatus = $status.Status
-                    Write-Host "Job $blob has failed with state $exitStatus."
+                    Write-Host "     --- Job $blob has failed with state $exitStatus." -ForegroundColor Red
                     $copyblobs.Remove($blob)
                     $reset_copyblobs = $true
                     break
@@ -200,7 +201,7 @@ function copy_azure_machines {
         }
 
         if ($stillCopying -eq $true) {
-            sleep(10)
+            sleep(15)
         } else {
             Write-Host "All copy jobs have completed.  Rock on."
         }
@@ -528,7 +529,8 @@ write-host "$global:num_remaining machines have been launched.  Waiting for comp
 
 #
 #  Wait for the machines to report back
-#               
+#    
+unregister-event AzureBootTimer -ErrorAction SilentlyContinue           
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
 $global:timer_is_running=1

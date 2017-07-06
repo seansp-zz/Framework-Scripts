@@ -62,12 +62,13 @@ while ($stillCopying -eq $true) {
     $stillCopying = $false
     $reset_copyblobs = $true
 
+    write-host "Checking blob copy status..." -ForegroundColor yellow
     while ($reset_copyblobs -eq $true) {
         $reset_copyblobs = $false
         foreach ($blob in $copyblobs) {
             $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $destContainer -ErrorAction SilentlyContinue
             if ($? -eq $false) {
-                Write-Host "Could not get copy state for job $blob.  Job may not have started."
+                Write-Host "  ***** Could not get copy state for job $blob.  Job may not have started." -ForegroundColor red
                 $copyblobs.Remove($blob)
                 $reset_copyblobs = $true
                 break
@@ -75,11 +76,15 @@ while ($stillCopying -eq $true) {
                 $bytesCopied = $status.BytesCopied
                 $bytesTotal = $status.TotalBytes
                 $pctComplete = ($bytesCopied / $bytesTotal) * 100
-                Write-Host "Job $blob has copied $bytesCopied of $bytesTotal bytes (%$pctComplete)."
+                Write-Host "   --- Job $blob has copied $bytesCopied of $bytesTotal bytes ($pctComplete % complete)." -ForegroundColor yellow
                 $stillCopying = $true
             } else {
                 $exitStatus = $status.Status
-                Write-Host "Job $blob has failed with state $exitStatus."
+                if ($exitStatus -eq "Success") {
+                    Write-Host "   ***** Job $blob has completed with state $exitStatus." -ForegroundColor green
+                } else {
+                    Write-Host "   ***** Job $blob has failed with state $exitStatus." -ForegroundColor Red
+                }
                 $copyblobs.Remove($blob)
                 $reset_copyblobs = $true
                 break
@@ -90,9 +95,8 @@ while ($stillCopying -eq $true) {
     if ($stillCopying -eq $true) {
         sleep(10)
     } else {
-        Write-Host "All copy jobs have completed.  Rock on."
+        Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor Green
     }
 }
 
-write-host "All done!"
 exit 0

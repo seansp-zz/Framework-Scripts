@@ -22,10 +22,10 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
-Write-Host "Attempting to create templeate from $vmName.  Stopping any running machines..."
+Write-Host "Attempting to create templeate from $name.  Stopping any running machines..." -ForegroundColor Green
 $existingVM=Get-AzureRmVM -name $vmName -ResourceGroupName $rg -ErrorAction SilentlyContinue
 if ($?) {
-    Write-Host "There was already a VM present and running with the name $vmName.  Stopping and deleting so it can be replaced..."
+    Write-Host "There was already a VM present and running with the name $vmName.  Stopping and deleting so it can be replaced..." -ForegroundColor Yellow
     Stop-AzureRmVM -Name $vmName -ResourceGroupName $rg -force
     Remove-AzureRmVM -Name $vmName -Force
 }
@@ -49,12 +49,12 @@ $vmSize = "Standard_A2"
 
 $osDiskName = $vmName + "-osDisk"
 $blobURIRaw="https://smokesourcestorageacct.blob.core.windows.net/clean-vhds/" + $name + "-Smoke-1.vhd"
+Write-Host "Clearing any old images..." -ForegroundColor Green
 Get-AzureStorageBlob -Container $destContainerName -Prefix $name | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainerName}
 $destUri = $blobURIRaw.Replace("clean-vhds","safe-templates")
 
-Write-Host "Attempting to create virtual machine $vmName.  This may take some time."
-
+Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 ## Setup local VM object
 # $cred = Get-Credential
 az vm create -n $vmName -g $rg -l $location --os-type linux --image $blobURIRaw --storage-container-name "safe-templates" --use-unmanaged-disk --nsg SmokeNSG `
-   --subnet SmokeSubnet-1 --vnet-name SmokeVNet --storage-account $nm --os-disk-name $vmName
+   --subnet SmokeSubnet-1 --vnet-name SmokeVNet --storage-account $nm --os-disk-name $vmName 
