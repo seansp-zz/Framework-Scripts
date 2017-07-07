@@ -107,10 +107,10 @@ function copy_azure_machines {
     {
         #
         #  In the source group, stop any machines, then get the keys.
-        Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName
+        Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName > $null
 
         Write-Host "Stopping any currently running machines in the source resource group..."  -ForegroundColor green
-        Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName | Stop-AzureRmVM -Force
+        Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName | Stop-AzureRmVM -Force > $null
 
         $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:sourceResourceGroupName -Name $global:sourceStorageAccountName
         $sourceContext=New-AzureStorageContext -StorageAccountName $global:sourceStorageAccountName -StorageAccountKey $sourceKey[0].Value
@@ -119,14 +119,14 @@ function copy_azure_machines {
 
         #
         #  Switch to the target resource group
-        Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName –StorageAccountName $global:workingStorageAccountName
+        Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName –StorageAccountName $global:workingStorageAccountName > $null
 
         Write-Host "Stopping and deleting any currently running machines in the target resource group..."  -ForegroundColor green
-        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Stop-AzureRmVM -Force
-        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Remove-AzureRmVM -Force
+        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Stop-AzureRmVM -Force > $null
+        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Remove-AzureRmVM -Force > $null
 
         Write-Host "Clearing VHDs in the working storage container $global:workingContainerName..."  -ForegroundColor green
-        Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName }
+        Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName } > $null
 
         $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:workingResourceGroupName -Name $global:workingStorageAccountName
         $destContext=New-AzureStorageContext -StorageAccountName $global:workingStorageAccountName -StorageAccountKey $destKey[0].Value
@@ -146,7 +146,7 @@ function copy_azure_machines {
         }
     } else {
         Write-Host "Clearing the destination container..."  -ForegroundColor green
-        Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName}
+        Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName}  > $null
 
         foreach ($singleURI in $global:URI) {
             Write-Host "Preparing to copy disk by URI.  Source URI is $singleURI"  -ForegroundColor green
@@ -215,8 +215,8 @@ function copy_azure_machines {
 
 
 function launch_azure_vms {
-    get-job | Stop-Job
-    get-job | remove-job
+    get-job | Stop-Job  > $null
+    get-job | remove-job  > $null
     foreach ($vmName in $global:neededVms) {
         $machine = new-Object MonitoredMachine
         $machine.name = $vmName
@@ -232,7 +232,7 @@ function launch_azure_vms {
         $machine_log.job_name = $jobname
         $global:machineLogs.Add($machine_log)        
 
-        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $args[0] } -ArgumentList @($vmName)
+        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $args[0] } -ArgumentList @($vmName)  > $null
     }
 
     foreach ($machineLog in $global:machineLogs) {
@@ -318,7 +318,7 @@ $action={
         {
             # Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
             $installed_vers="Unknown"
-            Remove-PSSession -Session $localSession
+            Remove-PSSession -Session $localSession > $null
             $localMachine.session = $null
         }
 
@@ -534,11 +534,11 @@ Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRON
 Write-Host "    "
 
 Write-Host "Importing the context...." -ForegroundColor Green
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
 
 Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName
+Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4" > $null
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName > $null
 
 #
 #  Copy the virtual machines to the staging container
@@ -554,9 +554,9 @@ write-host "$global:num_remaining machines have been launched.  Waiting for comp
 #
 #  Wait for the machines to report back
 #    
-unregister-event AzureBORGTimer -ErrorAction SilentlyContinue           
+unregister-event AzureBORGTimer -ErrorAction SilentlyContinue     > $null       
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBORGTimer -Action $action
+Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBORGTimer -Action $action > $null
 $global:timer_is_running=1
 $timer.Interval = 1000
 $timer.Enabled = $true
@@ -572,7 +572,7 @@ Write-Host "                         Exiting Temporal Evaluation Loop (Unregiste
 Write-Host ""
 $global:timer_is_running=0
 $timer.stop()
-unregister-event AzureBORGTimer
+unregister-event AzureBORGTimer > $null
 
 if ($global:num_remaining -eq 0) {
     Write-Host "                          All machines have come back up.  Checking results." -ForegroundColor green
