@@ -43,7 +43,7 @@ foreach ($oneblob in $blobs) {
     $targetName = $sourceName | % { $_ -replace "BORG.vhd", "Booted-and-Verified.vhd" }
 
     Write-Host "Initiating job to copy VHD $targetName from cache to working directory..." -ForegroundColor Yellow
-    $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
+    $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext -Force
     if ($? -eq $true) {
         $copyblobs.Add($targetName)
     } else {
