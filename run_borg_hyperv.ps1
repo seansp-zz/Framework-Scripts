@@ -317,8 +317,8 @@ foreach-Object {
 #  Wait for the machines to report back
 #                     
 write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-unregister-event bootTimer -ErrorAction SilentlyContinue
-Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier bootTimer -Action $action
+unregister-event HyperVBORGTimer -ErrorAction SilentlyContinue
+Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier HyperVBORGTimer -Action $action
 $global:timer_is_running = 1
 $timer.Interval = 1000
 $timer.Enabled = $true
@@ -331,7 +331,7 @@ while ($global:completed -eq 0) {
 write-host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
 $global:timer_is_running = 0
 $timer.stop()
-unregister-event bootTimer
+unregister-event HyperVBORGTimer
 
 #
 #  We either had success or timed out.  Figure out which

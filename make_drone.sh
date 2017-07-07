@@ -214,12 +214,13 @@ cat << "MOTD_EOF" > /etc/motd
 *************************************************************************************
 
     WARNING   WARNING   WARNING   WARNING   WARNING   WARNING   WARNING   WARNING
-    apt
+    
       THIS IS AN EXPERIMENTAL COMPUTER.  IT IS NOT INTENDED FOR PRODUCTION USE
 
 
                  Microsoft Authorized Employees and Partners ONLY!
 
+                   Please wave your badge in front of the screen
 
      If you are authorized to use this machine, we welcome you and invite your
    feedback through the established channels.  If you're not authorized, please

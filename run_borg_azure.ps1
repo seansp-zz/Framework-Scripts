@@ -131,7 +131,7 @@ function copy_azure_machines {
         $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:workingResourceGroupName -Name $global:workingStorageAccountName
         $destContext=New-AzureStorageContext -StorageAccountName $global:workingStorageAccountName -StorageAccountKey $destKey[0].Value
 
-        Write-Host "Preparing the individual machines..." -ForegroundColor Yellow
+        Write-Host "Preparing the individual machines..." -ForegroundColor green
         foreach ($oneblob in $blobs) {
             $sourceName=$oneblob.Name
             $targetName = $sourceName | % { $_ -replace "RunOnce-Primed.vhd", "BORG.vhd" }
@@ -139,7 +139,7 @@ function copy_azure_machines {
             $vmName = $targetName.Replace(".vhd","")
             $global:neededVMs.Add($vmName)
    
-            Write-Host "Initiating job to copy VHD $vmName from cache to working directory..." -ForegroundColor Yellow
+            Write-Host "    ---- Initiating job to copy VHD $vmName from cache to working directory..." -ForegroundColor Yellow
             $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $global:workingContainerName -SrcContainer $global:sourceContainerName -DestBlob $targetName -Context $sourceContext -DestContext $destContext
 
             $global:copyblobs.Add($targetName)
@@ -168,7 +168,8 @@ function copy_azure_machines {
         }
     }
 
-    Write-Host "All copy jobs have been launched.  Initial check is:" -ForegroundColor Yellow
+    Write-Host "All copy jobs have been launched.  Waiting for completion..." -ForegroundColor green
+    Write-Host ""
     $stillCopying = $true
     while ($stillCopying -eq $true) {
         $stillCopying = $false
@@ -180,22 +181,26 @@ function copy_azure_machines {
             foreach ($blob in $global:copyblobs) {
                 $status = Get-AzureStorageBlobCopyState -Blob $blob -Container $global:workingContainerName -ErrorAction SilentlyContinue
                 if ($? -eq $false) {
-                    Write-Host "     --- Could not get copy state for job $blob.  Job may not have started." -ForegroundColor Red
-                    $copyblobs.Remove($blob)
-                    $reset_copyblobs = $true
+                    Write-Host "     **** Could not get copy state for job $blob.  Job may not have started." -ForegroundColor Red
+                    # $copyblobs.Remove($blob)
+                    # $reset_copyblobs = $true
                     break
                 } elseif ($status.Status -eq "Pending") {
                     $bytesCopied = $status.BytesCopied
                     $bytesTotal = $status.TotalBytes
                     $pctComplete = ($bytesCopied / $bytesTotal) * 100
-                    Write-Host "Job $blob has copied $bytesCopied of $bytesTotal bytes ($pctComplete %)." -ForegroundColor Yellow
+                    Write-Host "    ---- Job $blob has copied $bytesCopied of $bytesTotal bytes ($pctComplete %)." -ForegroundColor Yellow
                     $stillCopying = $true
                 } else {
                     $exitStatus = $status.Status
-                    Write-Host "     --- Job $blob has failed with state $exitStatus." -ForegroundColor Red
-                    $copyblobs.Remove($blob)
-                    $reset_copyblobs = $true
-                    break
+                    if ($exitStatus -eq "Success") {
+                        Write-Host "     **** Job $blob has completed successfully." -ForegroundColor Green
+                    } else {
+                        Write-Host "     **** Job $blob has failed with state $exitStatus." -ForegroundColor Red
+                    }
+                    # $copyblobs.Remove($blob)
+                    # $reset_copyblobs = $true
+                    # break
                 }
             }
         }
@@ -267,12 +272,12 @@ $action={
         $machineIP=$machine.ipAddress
 
         if ($machineStatus -eq "Completed" -or $global:num_remaining -eq 0) {
-            Write-Host "Machine $machineName is in state $machineStatus" -ForegroundColor green
+            Write-Host "    **** Machine $machineName is in state $machineStatus, which is complete, or there are no remaining machines" -ForegroundColor green
             return 0
         }
 
         if ($machineStatus -ne "Booting") {
-            Write-Host "??? Machine $machineName was not in state Booting.  Cannot process" -ForegroundColor red
+            Write-Host "    **** ??? Machine $machineName was not in state Booting.  Cannot process" -ForegroundColor red
             return 1
         }        
 
@@ -292,9 +297,9 @@ $action={
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
                 if ($localMachine.session -eq $null) {
-                    $localMachine.session=new-PSSession -computername $ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
+                    $localMachine.session=new-PSSession -computername $localMachine.ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
                 
-                    if ($?) {
+                    if ($? -eq $true) {
                         $machineIsUp = $true
                     } else {
                         return 0
@@ -304,14 +309,17 @@ $action={
             }
         }
 
-        
+        $localSession = $localMachine.session
         try {            
-            $installed_vers=invoke-command -session $localMachine.session -ScriptBlock {/bin/uname -r}
+            $installed_vers=invoke-command -session $localSession -ScriptBlock {/bin/uname -r}
             # Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
         }
         Catch
         {
-            Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
+            # Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
+            $installed_vers="Unknown"
+            Remove-PSSession -Session $localSession
+            $localMachine.session = $null
         }
 
         #
@@ -335,12 +343,14 @@ $action={
 
         if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -and ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
-                Write-Host "Machine $machineName is up, but the kernel version is $installed_vers when we expected something like $expected_verCent or $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
+                Write-Host "     Machine $machineName is up, but the kernel version is $installed_vers when we expected" -ForegroundColor Cyan
+                Write-Host "             something like $expected_verCent or $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
+                Write-Host ""
             }
             # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
             # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
         } else {
-            Write-Host "Machine $machineName came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
+            Write-Host "    *** Machine $machineName came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
             $localMachine.Status = "Completed"
             $global:num_remaining--
         }
@@ -435,7 +445,7 @@ $action={
                         if ($? -eq $true) {
                             $jobStatus = $jobStatusObj.State
                         } else {
-                            $jobStatus -eq "Completed"
+                            $jobStatus = "Unknown"
                         }
                     } else {
                         $jobStatus = "Completed"
@@ -444,30 +454,46 @@ $action={
                     if ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed") {
                         if ($jobStatus -eq "Completed") {
                            if ($monitoredMachineStatus -eq "Completed") {
-                                Write-Host "--- Machine $monitoredMachineName has completed..." -ForegroundColor green
+                                Write-Host "    *** Machine $monitoredMachineName has completed..." -ForegroundColor green
                                 $calledIt = $true
                             } else {
-                                Write-Host "--- Testing of machine $monitoredMachineName is in progress..." -ForegroundColor Yellow
+                                Write-Host "    --- Testing of machine $monitoredMachineName is in progress..." -ForegroundColor Yellow
+                                if ($monitoredMachine.session -eq $null) {
+                                    $monitoredMachine.session=new-PSSession -computername $monitoredMachine.ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
+                
+                                    if ($? -eq $true) {
+                                        $machineIsUp = $true
+                                    } else {
+                                        $monitoredMachine.session = $null
+                                    }
+                                }
 
                                 if ($monitoredMachine.session -ne $null) {
-                                    Write-Host "          Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta                
-                                    $last_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 } -ErrorAction SilentlyContinue
-                                    if ($?) {
-                                        $last_lines | write-host -ForegroundColor Magenta
-                                    } else {
-                                        Write-Host "Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
+                                    $localSession = $localMachine.session
+                                    Write-Host "          Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta   
+                                    try {             
+                                        $last_lines=invoke-command -session $localSession -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 }
+                                        if ($? -eq $true) {
+                                            $last_lines | write-host -ForegroundColor Magenta
+                                        } else {
+                                            Write-Host "      +++ Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        Write-Host "    +++ Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
                                     }
                                 }
                                 $calledIt = $true
                             }                          
                         } elseif ($jobStatus -eq "Failed") {
-                            Write-Host "--- Job $singleLogName failed to start." -ForegroundColor Red
-                            Write-Host "Log information, if any, follows:" -ForegroundColor Red
-                            receive-job $singleLogJobName
+                            Write-Host "    *** Job $singleLogName failed to start." -ForegroundColor Red
+                            Write-Host "        Log information, if any, follows:" -ForegroundColor Red
+                            receive-job $singleLogJobName 
                             $calledIt = $true
                         }                      
                     } elseif ($jobStatusObj -ne $null) {
-                        $message="--- The job starting VM $monitoredMachineName has not completed yet.  The current state is " + $jobStatus
+                        $message="    --- The job starting VM $monitoredMachineName has not completed yet.  The current state is " + $jobStatus
                         Write-Host $message -ForegroundColor Yellow
                         $calledIt = $true
                     }
@@ -478,15 +504,13 @@ $action={
 
             if ($calledIt -eq $false -and $monitoredMachineStatus -ne "Completed") {
                 Write-Host "--- Machine $monitoredMachineName has not completed yet" -ForegroundColor yellow
-            }
-                        
-            
+            }                                  
         }
     }
     [Console]::Out.Flush() 
 }
 
-unregister-event AzureBootTimer -ErrorAction SilentlyContinue
+unregister-event AzureBORGTimer -ErrorAction SilentlyContinue
 
 Write-Host "    " -ForegroundColor green
 Write-Host "                 **********************************************" -ForegroundColor yellow
@@ -530,9 +554,9 @@ write-host "$global:num_remaining machines have been launched.  Waiting for comp
 #
 #  Wait for the machines to report back
 #    
-unregister-event AzureBootTimer -ErrorAction SilentlyContinue           
+unregister-event AzureBORGTimer -ErrorAction SilentlyContinue           
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBootTimer -Action $action
+Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBORGTimer -Action $action
 $global:timer_is_running=1
 $timer.Interval = 1000
 $timer.Enabled = $true
@@ -543,47 +567,56 @@ while ($global:completed -eq 0) {
     start-sleep -s 1
 }
 
+Write-Host ""
 Write-Host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
+Write-Host ""
 $global:timer_is_running=0
 $timer.stop()
-unregister-event AzureBootTimer
-
-Write-Host "     Checking results" -ForegroundColor green
+unregister-event AzureBORGTimer
 
 if ($global:num_remaining -eq 0) {
-    Write-Host "All machines have come back up.  Checking results." -ForegroundColor green
+    Write-Host "                          All machines have come back up.  Checking results." -ForegroundColor green
+    Write-Host ""
     
     if ($global:failed -eq $true) {
-        Write-Host "Failures were detected in reboot and/or reporting of kernel version.  See log above for details." -ForegroundColor red
-        Write-Host "             BORG TESTS HAVE FAILED!!" -ForegroundColor red
+        Write-Host "     Failures were detected in reboot and/or reporting of kernel version.  See log above for details." -ForegroundColor red
+        Write-Host "                                             BORG TESTS HAVE FAILED!!" -ForegroundColor red
     } else {
-        Write-Host "All machines rebooted successfully to kernel some derivitive of version $global:booted_version" -ForegroundColor green
-        Write-Host "             BORG has been passed successfully!" -ForegroundColor yellow
+        Write-Host "     All machines rebooted successfully to some derivitive of kernel version $global:booted_version" -ForegroundColor green
+        Write-Host "                                  BORG has been passed successfully!" -ForegroundColor green
     }
 } else {
-        Write-Host "Not all machines booted in the allocated time!" -ForegroundColor red
+        Write-Host "                              Not all machines booted in the allocated time!" -ForegroundColor red
+        Write-Host ""
         Write-Host " Machines states are:" -ForegroundColor red
         foreach ($localMachine in $global:monitoredMachines) {
             [MonitoredMachine]$monitoredMachine=$localMachine
             $monitoredMachineName=$monitoredMachine.name
             $monitoredMachineState=$monitoredMachine.status
             if ($monitoredMachineState -ne "Completed") {
-                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState.  This is the log, if any:" -ForegroundColor red 
-                $log_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log } -ErrorAction SilentlyContinue
-                if ($? -eq $true) {
-                    $log_lines | write-host -ForegroundColor Magenta
+                
+                if ($monitoredMachine.session -ne $null) {
+                    Write-Host "  --- Machine $monitoredMachineName is in state $monitoredMachineState.  This is the log, if any:" -ForegroundColor red 
+                    $log_lines=invoke-command -session $monitoredMachine.session -ScriptBlock { get-content /opt/microsoft/borg_progress.log } -ErrorAction SilentlyContinue
+                    if ($? -eq $true) {
+                        $log_lines | write-host -ForegroundColor Magenta
+                    }
+                } else {
+                    Write-Host "     --- No remote log available.  Either the machine is off-line or the log was not created." -ForegroundColor Red
                 }
             } else {
-                Write-Host Machine "$monitoredMachineName is in state $monitoredMachineState" -ForegroundColor green
+                Write-Host Machine "  --- Machine $monitoredMachineName is in state $monitoredMachineState" -ForegroundColor green
             }
             $global:failed = 1
         }
     }
 
+Write-Host ""
+
 if ($global:failed -eq 0) {    
-    Write-Host "     BORG is   Exiting with success.  Thanks for Playing" -ForegroundColor green
+    Write-Host "                                    BORG is Exiting with success.  Thanks for Playing" -ForegroundColor green
     exit 0
 } else {
-    Write-Host "     BORG is Exiting with failure.  Thanks for Playing" -ForegroundColor red
+    Write-Host "                                    BORG is Exiting with failure.  Thanks for Playing" -ForegroundColor red
     exit 1
 }
