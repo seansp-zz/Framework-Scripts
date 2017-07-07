@@ -37,7 +37,7 @@ $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $sourceRG -Name $sour
 $sourceContext=New-AzureStorageContext -StorageAccountName $sourceSA -StorageAccountKey $sourceKey[0].Value
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA
-$blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*-Smoke-1*.vhd"
+$blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*-BORG.vhd"
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
     $targetName = $sourceName | % { $_ -replace "BORG.vhd", "Booted-and-Verified.vhd" }
