@@ -39,10 +39,10 @@ $action={
         $machineName=$machine.name
         $machineStatus=$machine.status
 
-        Write-Host "Checking boot results for machine $machineName" -ForegroundColor green
+        Write-Host "      Checking boot results for machine $machineName" -ForegroundColor green
 
         if ($machineStatus -ne "Booting") {
-            Write-Host "??? Machine was not in state Booting.  Cannot process"
+            Write-Host "       ???? Machine was not in state Booting.  Cannot process" -ForegroundColor Red
             return
         }
 
@@ -50,7 +50,7 @@ $action={
         $progressFile="c:\temp\progress_logs\" + $machineName
         
         if ((test-path $resultsFile) -eq $false) {
-            Write-Host "Unable to locate results file $resultsFile.  Cannot process"
+            Write-Host "      Unable to locate results file $resultsFile.  Cannot process" -ForegroundColor Red
             return
         }
 
@@ -61,10 +61,10 @@ $action={
 
         if ($resultsSplit[0] -ne "Success") {
             $resultExpected = $resultsSplit[2]
-            Write-Host "Machine $machineName rebooted, but wrong version detected.  Expected $resultExpected but got $resustsgot" -ForegroundColor red
+            Write-Host "       **** Machine $machineName rebooted, but wrong version detected.  Expected $resultExpected but got $resustsgot" -ForegroundColor red
             $global:failed=$true
         } else {
-            Write-Host "Machine rebooted successfully to kernel version $resustsgot" -ForegroundColor green
+            Write-Host "       **** Machine rebooted successfully to kernel version $resustsgot" -ForegroundColor green
             $global:booted_version=$resustsgot
         }
 
@@ -94,7 +94,6 @@ $action={
         $bootFile="c:\temp\boot_results\" + $monitoredMachineName
 
         if (($monitoredMachineStatus -eq "Booting") -and ((test-path $bootFile) -eq $true)) {
-            Write-Host "Checking machine..."
             checkMachine $monitoredMachine
         }
     }
@@ -125,11 +124,11 @@ $action={
 
             if ($monitoredMachineStatus -eq "Booting") {
                 if ((test-path $logFile) -eq $true) {
-                    write-host "--- Last 3 lines of results from $logFile" -ForegroundColor magenta
-                    get-content $logFile | Select-Object -Last 3 | write-host  -ForegroundColor cyan
-                    write-host "---" -ForegroundColor magenta
+                    write-host "     --- Last 3 lines of results from $logFile" -ForegroundColor magenta
+                    get-content $logFile | Select-Object -Last 3 | write-host -ForegroundColor cyan
+                    write-host "" -ForegroundColor magenta
                 } else {
-                    Write-Host "--- Machine $monitoredMachineName has not checked in yet"
+                    Write-Host "     --- Machine $monitoredMachineName has not checked in yet"
                 }
             }
         }
@@ -171,8 +170,8 @@ Write-Host " "
 Write-Host "*************************************************************************************************************************************"
 Write-Host "                      Stopping and cleaning any existing machines.  Any errors here may be ignored." -ForegroundColor green
 
-get-job | Stop-Job
-get-job | remove-job
+get-job | Stop-Job > $null
+get-job | remove-job > $null
 
 #
 #  Copy the template VHDs from the safe folder to a working one
@@ -193,26 +192,26 @@ foreach-Object {
     $global:monitoredMachines.Add($machine)
    
     Write-Host "Stopping and cleaning any existing instances of machine $vhdFileName." -ForegroundColor green
-    stop-vm -Name $vhdFileName -Force -ErrorAction SilentlyContinue
-    remove-vm -Name $vhdFileName -Force -ErrorAction SilentlyContinue
+    stop-vm -Name $vhdFileName -Force -ErrorAction SilentlyContinue > $null
+    remove-vm -Name $vhdFileName -Force -ErrorAction SilentlyContinue > $null
 
     $machine.status = "Allocating"
     # Copy-Item $sourceFile $destFile -Force
     $destFile="d:\working_images\" + $vhdFile
 
     if ($skipCopy -eq $false) {
-    Remove-Item -Path $destFile -Force
+    Remove-Item -Path $destFile -Force > $null
     
         Write-Host "Starting job to copy VHD $vhdFileName to working directory..." -ForegroundColor green
         $jobName=$vhdFileName + "_copy_job"
 
-        $existingJob = get-job $jobName -ErrorAction SilentlyContinue
+        $existingJob = get-job $jobName -ErrorAction SilentlyContinue > $null
         if ($? -eq $true) {
-            stop-job $jobName -ErrorAction SilentlyContinue
-            remove-job $jobName -ErrorAction SilentlyContinue
+            stop-job $jobName -ErrorAction SilentlyContinue > $null
+            remove-job $jobName -ErrorAction SilentlyContinue > $null
         }
 
-        Start-Job -Name $jobName -ScriptBlock { robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $args[0] } -ArgumentList @($vhdFile)
+        Start-Job -Name $jobName -ScriptBlock { robocopy /njh /ndl /nc /ns /np /nfl D:\azure_images\ D:\working_images\ $args[0] } -ArgumentList @($vhdFile) > $null
     } else {
         Write-Host "Skipping copy per command line option"
     }
@@ -298,7 +297,7 @@ foreach-Object {
 
     Write-Host "BORG DRONE $vhdFileName is starting" -ForegroundColor green
 
-    new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "External" -VHDPath $vhdPath
+    new-vm -Name $vhdFileName -MemoryStartupBytes 7168mb -Generation 1 -SwitchName "External" -VHDPath $vhdPath > $null
     $monitoredMachine.status = "Booting"
 
     if ($? -eq $false) {
@@ -306,7 +305,7 @@ foreach-Object {
         exit 1
     }
 
-    Start-VM -Name $vhdFileName
+    Start-VM -Name $vhdFileName > $null
     if ($? -eq $false) {
         Write-Host "Unable to start Hyper-V VM.  The BORG cannot continue." -ForegroundColor Red
         exit 1
@@ -317,8 +316,8 @@ foreach-Object {
 #  Wait for the machines to report back
 #                     
 write-host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-unregister-event HyperVBORGTimer -ErrorAction SilentlyContinue
-Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier HyperVBORGTimer -Action $action
+unregister-event HyperVBORGTimer -ErrorAction SilentlyContinue > $null
+Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier HyperVBORGTimer -Action $action > $null
 $global:timer_is_running = 1
 $timer.Interval = 1000
 $timer.Enabled = $true
@@ -331,7 +330,7 @@ while ($global:completed -eq 0) {
 write-host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow
 $global:timer_is_running = 0
 $timer.stop()
-unregister-event HyperVBORGTimer
+unregister-event HyperVBORGTimer > $null
 
 #
 #  We either had success or timed out.  Figure out which
