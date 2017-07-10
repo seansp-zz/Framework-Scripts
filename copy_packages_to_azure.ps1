@@ -1,7 +1,8 @@
 ﻿param (
-    [Parameter(Mandatory=$false)] [string] $destResourceGroup="smoke_output_resource_group",
-    [Parameter(Mandatory=$false)] [string] $destAccountName="smoketestoutstorageacct",
-    [Parameter(Mandatory=$false)] [string] $destContainer="last-known-good-packages",
+    [Parameter(Mandatory=$false)] [string] $destResourceGroup="smoke_working_resource_group",
+    [Parameter(Mandatory=$false)] [string] $destAccountName="smokeworkingstorageacct",
+    [Parameter(Mandatory=$false)] [string] $destContainer="last-build-packages",
+    [Parameter(Mandatory=$false)] [string] $driveLetter="Z:\",
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
@@ -29,7 +30,7 @@ if ($? -eq $false) {
 #
 #  Copy the latest packages up to Azure
 #
-$packages=get-childitem -path z:
+$packages=get-childitem -path $driveLetter
 Remove-Item -Path C:\temp\file_list -Force
 
 foreach ($package in $packages) {
@@ -48,7 +49,8 @@ if ($? -eq $false) {
 #
 #  Copy the kernel packages to Azure.
 #
-Get-ChildItem z:\ | Set-AzureStorageBlobContent -Container $destContainer -force
+$drive = $driveLetter+"\"
+Get-ChildItem $drive | Set-AzureStorageBlobContent -Container $destContainer -force
 if ($? -eq $false) {
     $failure_point="CopyPackages"
     ErrOut($failure_point)

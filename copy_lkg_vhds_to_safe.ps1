@@ -7,12 +7,15 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokeworkingstorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
+    [Parameter(Mandatory=$false)] [string] $sourcePkgContainer="last-build-packages",
 
     [Parameter(Mandatory=$false)] [string] $destSA="smoketestoutstorageacct",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_output_resource_group",
     [Parameter(Mandatory=$false)] [string] $destContainer="last-known-good-vhds",
+    [Parameter(Mandatory=$false)] [string] $destPkgContainer="last-known-good-packages",
 
-    [Parameter(Mandatory=$false)] [string] $location="westus"
+    [Parameter(Mandatory=$false)] [string] $location="westus",
+    [Parameter(Mandatory=$false)] [switch] $copyVHDs=$true
 )
 
 $copyblobs_array=@()
@@ -28,13 +31,34 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountN
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 Get-AzureRmVm -ResourceGroupName $sourceRG | Stop-AzureRmVM -Force > $null
 
-Write-Host "Launching jobs to copy individual machines..." -ForegroundColor green
-
+Write-Host "Copying the build packages to LKG"
 $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $destRG -Name $destSA
 $destContext=New-AzureStorageContext -StorageAccountName $destSA -StorageAccountKey $destKey[0].Value
 
 $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $sourceRG -Name $sourceSA
 $sourceContext=New-AzureStorageContext -StorageAccountName $sourceSA -StorageAccountKey $sourceKey[0].Value
+
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA > $null
+$blobs=get-AzureStorageBlob -Container $sourcePkgContainer -Blob "*-Smoke-1*.vhd"
+foreach ($oneblob in $blobs) {
+    $sourceName=$oneblob.Name
+    $targetName = $sourceName | % { $_ -replace "Smoke-1.*.vhd", "Smoke-1.vhd" }
+
+    Write-Host "Initiating job to copy VHD $targetName from cache to working directory..." -ForegroundColor Yellow
+    $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destPkgContainer -SrcContainer $sourcePkgContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
+    if ($? -eq $true) {
+        $copyblobs.Add($targetName)
+    } else {
+        Write-Host "Job to copy VHD $targetName failed to start.  Cannot continue"
+        exit 1
+    }
+}
+
+if ($copyVHDs -ne $true) {
+    exit 0
+}
+
+Write-Host "Launching jobs to copy individual machines..." -ForegroundColor green
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA > $null
 $blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*-BORG.vhd"
