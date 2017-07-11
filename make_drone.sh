@@ -132,6 +132,7 @@ else
     #
     #  Make sure we have the tools we need
     yum install -y yum-utils
+    yum install -y bind-utils
 
     #
     #  Clean up disk space
