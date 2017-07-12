@@ -1,10 +1,9 @@
 ﻿param (
-    [Parameter(Mandatory=$true)] [string] $vmName
+    [Parameter(Mandatory=$true)] [string] $vmName="Unknown",
+    [Parameter(Mandatory=$true)] [string] $rg="smoke_working_resource_group",
+    [Parameter(Mandatory=$true)] [string] $nm="smokeworkingstorageacct",
+    [Parameter(Mandatory=$true)] [string] $destContainerName="vhds-under-test"
 )
-
-$rg="smoke_working_resource_group"
-$nm="smokeworkingstorageacct"  
-$destContainerName = "vhds-under-test"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"

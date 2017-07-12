@@ -27,7 +27,7 @@ $existingVM=Get-AzureRmVM -name $vmName -ResourceGroupName $rg -ErrorAction Sile
 if ($?) {
     Write-Host "There was already a VM present and running with the name $vmName.  Stopping and deleting so it can be replaced..." -ForegroundColor Yellow
     Stop-AzureRmVM -Name $vmName -ResourceGroupName $rg -force
-    Remove-AzureRmVM -Name $vmName -Force
+    Remove-AzureRmVM -Name $vmName -ResourceGroupName $rg -Force
 }
 
 ## Global
