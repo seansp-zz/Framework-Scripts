@@ -35,7 +35,6 @@ param (
 )
 Set-StrictMode -Version 2.0
 
-
 $global:sourceResourceGroupName=$sourceResourceGroupName
 $global:sourceStorageAccountName=$sourceStorageAccountName
 $global:sourceContainerName=$sourceContainerName
@@ -110,7 +109,7 @@ function copy_azure_machines {
         Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName > $null
 
         Write-Host "Stopping any currently running machines in the source resource group..."  -ForegroundColor green
-        Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName | Stop-AzureRmVM -Force > $null
+        Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force > $null       
 
         $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:sourceResourceGroupName -Name $global:sourceStorageAccountName
         $sourceContext=New-AzureStorageContext -StorageAccountName $global:sourceStorageAccountName -StorageAccountKey $sourceKey[0].Value
@@ -122,7 +121,6 @@ function copy_azure_machines {
         Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName –StorageAccountName $global:workingStorageAccountName > $null
 
         Write-Host "Stopping and deleting any currently running machines in the target resource group..."  -ForegroundColor green
-        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Stop-AzureRmVM -Force > $null
         Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Remove-AzureRmVM -Force > $null
 
         Write-Host "Clearing VHDs in the working storage container $global:workingContainerName..."  -ForegroundColor green
@@ -232,7 +230,11 @@ function launch_azure_vms {
         $machine_log.job_name = $jobname
         $global:machineLogs.Add($machine_log)        
 
-        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $args[0] } -ArgumentList @($vmName)  > $null
+        $resourceGroup="smoke_working_resource_group"
+        $storageAccount="smokeworkingstorageacct"
+        $containerName="vhds-under-test"
+
+        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] -vmName $args[3]} -ArgumentList @($resourceGroup),@($storageAccount),@($containerName),@($vmName)
     }
 
     foreach ($machineLog in $global:machineLogs) {
@@ -291,7 +293,16 @@ $action={
             [MonitoredMachine]$monitoredMachine=$localMachine
 
             if ($localMachine.Name -eq $machineName) {
-                $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $global:workingResourceGroupName -Name $localMachine.Name
+                $haveAddress = $false
+                while ($haveAddress -eq $false) {
+                    $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $global:workingResourceGroupName -Name $localMachine.Name
+                    if ($? -eq $false) {
+                        sleep 10
+                        Write-Host "Waiting for machine $machineName to accept connections..."
+                    } else {
+                        $haveAddress = $true
+                    }
+                }
                 $ipAddress=$ip.IpAddress
                 $localMachine.ipAddress = $ipAddress
 

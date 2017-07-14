@@ -5,18 +5,21 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 param (
-    [Parameter(Mandatory=$false)] [string] $sourceSA="smoketestoutstorageacct",
-    [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_output_resource_group",
-    [Parameter(Mandatory=$false)] [string] $sourceContainer="last-known-good-vhds",
+    [Parameter(Mandatory=$false)] [string] $sourceSA="smokeworkingresourcegroup",
+    [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
+    [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds_under_test",
 
-    [Parameter(Mandatory=$false)] [string] $destSA="smoketestoutstorageacct",
-    [Parameter(Mandatory=$false)] [string] $destRG="smoke_output_resource_group",
+    [Parameter(Mandatory=$false)] [string] $destSA="smokebvtstorageaccount",
+    [Parameter(Mandatory=$false)] [string] $destRG="smoke_bvts_resource_group",
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
 
-    [Parameter(Mandatory=$false)] [string] $removeTag="-Built-and-Verified",
-    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs=$true
+    [Parameter(Mandatory=$false)] [string] $removeTag="-BORG",
+    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs=$true,
+    [Parameter(Mandatory=$false)] [switch] $deprovisionBeforeRunning=$true
 )
+
+
 
 #
 #  This is a required location
@@ -72,8 +75,7 @@ foreach ($oneblob in $blobs) {
     } else {
         Write-Host "There was an existing blob named $targetName, and the overwrite flag was not set.  Blob will not be copied."
         $start_copy = $false
-    }
-    
+    }    
     
     if ($start_copy -eq $true) {
         Write-Host "Initiating job to copy VHD $targetName from LKG to BVT directory..." -ForegroundColor Yellow
@@ -139,6 +141,44 @@ if ($copyblobs.Count -gt 0) {
         }
     }
 }
+
+#
+#  Session stuff
+#
+$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
+$pw = convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
+$cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
+
+$blobs=get-AzureStorageBlob -Container $destContainer -Blob $blobFilter
+foreach ($oneblob in $blobs) {
+    $sourceName=$oneblob.Name
+
+    #
+    #  If we need to deprovision the machine, use PSRP and do so...
+    if ($deprovisionBeforeRunning -eq $true) {
+
+        c:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $sourceName -resourceGroup $destRG -storageAccount $destSA -containerName vhds
+
+        $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $sourceName
+
+        $session = $null
+        while ($session -eq $null) {
+            $session=new-PSSession -computername $ip.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o -ErrorAction SilentlyContinue
+            if ($? -eq $false) {
+                sleep 10
+                $session = $null
+            } else {
+                break
+            }
+        }
+
+        invoke-command -session $localSession -ScriptBlock {waagent --deprovision -y; shutdown }
+    }
+
+    #
+    #  Launch the automation
+    .\AzureAutomationManager.ps1 -xmlConfigFile .\Azure_ICA_ALL_jwf.xml -runtests -email –Distro JWF -cycleName BVT -UseAzureResourceManager -EconomyMode
+}       
 
 #
 #  Run through the list again and launch the Jenkins jobs

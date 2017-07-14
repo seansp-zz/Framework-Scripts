@@ -22,7 +22,7 @@ param (
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
 
-Write-Host "Switch copyPackages is $copyPackages and switch copyVHDs is $copyVHDs"
+Write-Host "Switch excludePackages is $excludePackages and switch excludeVHDs is $excludeVHDs"
 
 Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
@@ -133,17 +133,20 @@ if ($excludePackages -eq $false) {
 
 }
 
-if ($excludeVHDs -ne $false) {
+if ($excludeVHDs -eq $true) {
     exit 0
 }
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor green
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA > $null
-$blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*-RunOnce-Primed.vhd"
+$sourceContainer
+
+get-AzureStorageBlob -Container $sourceContainer -Blob "*-BORG.vhd"
+$blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*-BORG.vhd"
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
-    $targetName = $sourceName | % { $_ -replace "-RunOnce-Primed.vhd", "-under-BVT.vhd" }
+    $targetName = $sourceName | % { $_ -replace "-BORG.vhd", "-Booted-and-Verified.vhd" }
 
     Write-Host "Initiating job to copy VHD $targetName from final build to output cache directory..." -ForegroundColor green
     $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext -Force > $null
