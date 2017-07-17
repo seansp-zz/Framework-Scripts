@@ -6,4 +6,4 @@ apt-get install build-essential software-properties-common -y
 apt-get -y install python python-pyasn1 python-argparse python-crypto python-paramiko
 export DEBIAN_FRONTEND=noninteractive
 apt-get -y install mysql-server
-
+apt-get -y install mysql-client
