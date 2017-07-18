@@ -24,6 +24,7 @@ if [ $is_rpm == 0 ]
     echo "Precursors."
 
 apt-get -y update
+apt-get -y install wget
 apt-get -y install iperf
 apt-get -y install bind9
 apt-get install build-essential software-properties-common -y
@@ -140,6 +141,7 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
 else
     echo "RPM-based system"
     echo "Precursors"
+yum -y install wget
 rpm -Uvh http://linux.mirrors.es.net/fedora-epel/7/x86_64/i/iperf-2.0.8-1.el7.x86_64.rpm
 yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
 yum -y install mysql-community-server
