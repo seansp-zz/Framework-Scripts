@@ -130,11 +130,13 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     #
     #  Set up runonce and copy in the right script
     mkdir runonce.d runonce.d/ran
-    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
+## Unhooking the runonce.d so that we can place other things there in the future.
+## to use, simply connect in and copy as shown below.
+#    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
     
     #
     #  Tell cron to run the runonce at reboot
-    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+#    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
     apt-get install -y ufw
     ufw allow 443
     ufw allow 5986
@@ -216,11 +218,15 @@ PASSWD_END
     #
     #  Set up runonce
     mkdir runonce.d runonce.d/ran
-    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
 
-    #
-    #  Tell cron to run the runonce at reboot
-    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+## Unhooking the runonce.d so that we can place other things there in the future.
+## to use, simply connect in and copy as shown below.
+#
+#    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
+#
+#    #
+#    #  Tell cron to run the runonce at reboot
+#    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
 
     #
     #  Make sure 443 is allowed through the firewall
