@@ -29,6 +29,9 @@ if [ $is_rpm == 0 ]
 P@ssW0rd-
 P@ssW0rd-
 PASSWD_END
+cat >> /etc/sudoers << SUDO_END
+mstest  ALL=(ALL)       NOPASSWD: ALL
+SUDO_END
 
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
 cat << NEW_SOURCES > /etc/apt/sources.list.orig
@@ -145,6 +148,9 @@ else
 P@ssW0rd-
 P@ssW0rd-
 PASSWD_END
+cat >> /etc/sudoers << SUDO_END
+mstest  ALL=(ALL)       NOPASSWD: ALL
+SUDO_END
 
     #
     #  Set up our repo and update
