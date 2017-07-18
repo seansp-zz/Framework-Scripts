@@ -21,6 +21,17 @@ fi
 if [ $is_rpm == 0 ]
   then
     echo "DEB-based system"
+    echo "Precursors."
+
+apt-get -y update
+apt-get -y install iperf
+apt-get -y install bind9
+apt-get install build-essential software-properties-common -y
+apt-get -y install python python-pyasn1 python-argparse python-crypto python-paramiko
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y install mysql-server
+apt-get -y install mysql-client
+    
     #
     #  Add the mstest user
     #
@@ -128,6 +139,16 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     ufw allow 5986
 else
     echo "RPM-based system"
+    echo "Precursors"
+rpm -Uvh http://linux.mirrors.es.net/fedora-epel/7/x86_64/i/iperf-2.0.8-1.el7.x86_64.rpm
+yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
+yum -y install mysql-community-server
+yum -y groupinstall "Development Tools"
+yum -y install bind bind-utils
+yum -y install python python-pyasn1
+yum -y install python-argparse
+yum -y install python-crypto
+yum -y install python-paramiko
 
     #
     #  Make sure we have the tools we need
