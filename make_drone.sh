@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 #
 #  Script to take a VM template and make it our own
 #
@@ -221,12 +221,12 @@ PASSWD_END
 
 ## Unhooking the runonce.d so that we can place other things there in the future.
 ## to use, simply connect in and copy as shown below.
-#
-#    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
-#
-#    #
-#    #  Tell cron to run the runonce at reboot
-#    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+    #
+    #    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
+    #
+    #
+    #  Tell cron to run the runonce at reboot
+    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
 
     #
     #  Make sure 443 is allowed through the firewall
@@ -259,6 +259,5 @@ cat << "MOTD_EOF" > /etc/motd
 
 
    Welcome to the Twilight Zone.                                      Let's Rock.
-
 *************************************************************************************
 MOTD_EOF
