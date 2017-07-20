@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
     [Parameter(Mandatory=$false)] [switch] $makeDronesFromAll,
-    [Parameter(Mandatory=$false)] [switch] $overwriteVNDs,
+    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs,
 
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
@@ -23,7 +23,7 @@
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
-if ($makeDronesFromAll -eq $false -and $requestedNames.Count -eq 0) {
+if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset") {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     exit 1
 }

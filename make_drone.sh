@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 #
 #  Script to take a VM template and make it our own
 #
