@@ -29,7 +29,7 @@ if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $reque
 }
     
 $LogDir = "c:\temp\job_logs"
-$randomFileName = $vmName + "_copyImages.log"
+
 get-job | Stop-Job
 get-job | Remove-Job
 
@@ -69,10 +69,11 @@ foreach ($oneblob in $blobs) {
 }
 
 write-host "Copying blobs..."
+$randomFileName = "copyImages.log"
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                         -destSA $destSA -destRG $destRG -destContainer $destContainer `
                                         -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
-                                        -overwriteVHDs:$overwriteVHDs -makeDronesFromAll:$makeDronesFromAll -vmNames $vmNames > $LogDir\$randomFileName
+                                        -overwriteVHDs:$overwriteVHDs -makeDronesFromAll:$makeDronesFromAll -vmNames $vmNames | out-file -Force $LogDir\$randomFileName
 
 
 $scriptBlockString = 
