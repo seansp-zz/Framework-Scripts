@@ -6,13 +6,11 @@
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
-Write-Host "Copying Linux kernel build artifacts to the cloud..."
-Write-Host "Importing the context...." -ForegroundColor green
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+. "C:\Framework-Scripts\common_functions.ps1"
 
-Write-Host "Selecting the Azure subscription..." -ForegroundColor green
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $destResourceGroup –StorageAccountName $destAccountName
+
+Write-Host "Copying Linux kernel build artifacts to the cloud..."
+login_azure $destResourceGroup $destAccountName
 
 $failure_point = "No failure"
 $key=Get-AzureRmStorageAccountKey -ResourceGroupName $destResourceGroup -Name $destAccountName

@@ -207,7 +207,7 @@ foreach ($vmName in $vmNames) {
     $newVMName = $vmName + $newSuffix
     $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
-    $session = create_psrp_session ($newVMName, $destRG, $cred, $o)
+    $session = create_psrp_session $newVMName $destRG $cred $o
     if ($session -ne $NULL) {
         invoke-command -session $session -ScriptBlock {/bin/uname -a}
         Remove-PSSession $session
