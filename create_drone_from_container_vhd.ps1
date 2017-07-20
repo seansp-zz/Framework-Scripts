@@ -69,11 +69,10 @@ foreach ($oneblob in $blobs) {
 }
 
 write-host "Copying blobs..."
-$randomFileName = "copyImages.log"
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                         -destSA $destSA -destRG $destRG -destContainer $destContainer `
                                         -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
-                                        -overwriteVHDs:$overwriteVHDs -makeDronesFromAll:$makeDronesFromAll -vmNames $vmNames | out-file -Force $LogDir\$randomFileName
+                                        -overwriteVHDs:$overwriteVHDs -makeDronesFromAll:$makeDronesFromAll -vmNames $vmNames
 
 
 $scriptBlockString = 
@@ -149,9 +148,6 @@ $scriptBlockString =
     $runDroneCommand="/tmp/make_drone.sh"
     $linuxChmodCommand="`"echo $password | sudo -S bash -c `'$chmodCommand`'`""
     $linuxDroneCommand="`"echo $password | sudo -S bash -c `'$runDroneCommand`'`""
-    $randomFileName = $newVMName + "chmod_.log"
-    write-host "Logging to file $randomFileName"
-    $LogDir = "c:\temp\job_logs"
 
     Write-Host "Using plink to chmod the script"
     #
@@ -172,11 +168,10 @@ $droneJobs.clear()
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 foreach ($vmName in $vmNames) { 
-    $randomFileName = $vmName + "_make_drone.log"
     $jobName=$vmName + "-drone-job"
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
                                                                       $destContainer,$location,$currentSuffix,$newSuffix,$NSG,`
-                                                                      $network,$subnet > $LogDir\$randomFileName
+                                                                      $network,$subnet
     if ($? -ne $true) {
         Write-Host "Error starting make_drone job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         exit 1
@@ -206,15 +201,10 @@ Write-Host "All jobs have completed.  Checking results..."
 #
 #  Get the results of that
 foreach ($vmName in $vmNames) { 
-    $randomFileName = $vmName + "_make_drone.log"
     $jobName=$vmName + "-drone-job"
 
     $out = receive-job $jobName 
-    $out2 = Get-Content $LogDir\$randomFileName
 
     Write-host "-------------------------------"
     Write-Host $out
-    Write-host "-------"
-    Write-Host $out2
-    
 }
