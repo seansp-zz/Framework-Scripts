@@ -16,6 +16,7 @@
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
+Write-Host "Working with RG $destRG and SA $destSA"
 login_azure $destRG $destSA
 
 # Global
@@ -52,7 +53,7 @@ if ($? -eq $false) {
 }
 
 Write-Host "VM Created successfully.  Stopping it now..."
-Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
+Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 Write-Host "Deleting the VM so we can harvest the VHD..."
 Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
