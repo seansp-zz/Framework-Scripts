@@ -235,6 +235,7 @@ PASSWD_END
     firewall-cmd --zone=public --add-port=443/tcp --permanent
     systemctl stop firewalld
     systemctl start firewalld
+    /opt/omi/bin/omiserver -d
 fi
 
 if [ -f /etc/motd ] 
