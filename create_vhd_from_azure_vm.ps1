@@ -22,8 +22,9 @@ param (
     [Parameter(Mandatory=$false)] [string[]] $vmNames=""
 )
 
-Write-Host "Launching jobs to copy machines..." -ForegroundColor Yellow
+Write-Host "Launching jobs to copy machine image from $sourceRG/$sourceSA/$sourceContainer to $destRG/$destSA/$destContainer..." -ForegroundColor Yellow
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer -destSA $destSA `
                                                                   -destRG $destRG -sourceExtension ".vhd" -destExtension $destExtension -destContainer $destContainer `
                                                                   -location $location -makeDronesFromAll -overwriteVHDs -vmNamesIn $vmNames
 
+Write-Host "Machines are ready for assimilation..."

@@ -5,16 +5,18 @@
     [Parameter(Mandatory=$false)] [string] $destRG="jpl_intake_rg",
     [Parameter(Mandatory=$false)] [string] $destSA="jplintakestorageacct",
     [Parameter(Mandatory=$false)] [string] $destContainer="ready-for-bvt",
+    [Parameter(Mandatory=$false)] [string] $location="westus",
 
-    [Parameter(Mandatory=$false)] [string] $cleanContainer="original-images"
+    [Parameter(Mandatory=$false)] [string] $vnetName = "JPL-VNet-1",
+    [Parameter(Mandatory=$false)] [string] $subnetName = "JPL-Subnet-1",
+    [Parameter(Mandatory=$false)] [string] $NSG = "JPL-NSG",
+
+    [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
 
 . "C:\Framework-Scripts\common_functions.ps1"
-    
-$vnetName="JPL-VNet-1"
-$subnetName="JPL-Subnet-1"
 
-login_azure $resourceGroup $SA
+login_azure $destRG $destSA
 
 # Global
 $location = "westus"
@@ -24,8 +26,7 @@ $storageType = "Standard_D2"
 
 ## Network
 $nicname = $name + "-NIC"
-$subnet1Name = "JPS-Subnet-1"
-$vnetName = "JPL-VNet-1"
+
 $vnetAddressPrefix = "10.0.0.0/16"
 $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
@@ -33,10 +34,27 @@ $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
 $vmSize = "Standard_A2"
 
+Write-Host "Stopping any running VMs" -ForegroundColor Green
+Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+
 Write-Host "Clearing any old images..." -ForegroundColor Green
 Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
-az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password 'P@ssW0rd-1_K6' --admin-username "mstest" `
+$diskName=$vmName + $suffix
+az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
+   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $vmName --admin-password 'P@ssW0rd-1_K6' --admin-username "mstest" `
    --authentication-type "password"
+
+if ($? -eq $false) {
+    Write-Error "Failed to create VM.  Details follow..."
+    exit 1
+}
+
+Write-Host "VM Created successfully.  Stopping it now..."
+Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
+
+Write-Host "Deleting the VM so we can harvest the VHD..."
+Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+
+Write-Host "Machine is ready for assimilation..."

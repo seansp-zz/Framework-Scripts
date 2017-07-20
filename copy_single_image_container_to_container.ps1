@@ -36,7 +36,7 @@ foreach($vmName in $vmNamesIn) {
     $vmNames.Add($vmName)
 }
 
-login-azure $destRG $destSA
+login_azure $destRG $destSA
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 if ($makeDronesFromAll -eq $true) {
@@ -61,9 +61,11 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccoun
 if ($makeDronesFromAll -eq $true) {
     $blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*$sourceExtension"
     $blobCount = $blobs.Count
-    Write-Host "Making drones of all VHDs in container $sourceContiner.  There will be $blobCount VHDs."-ForegroundColor Magenta
+    Write-Host "Making drones of all VHDs in container $sourceContainer.  There will be $blobCount VHDs:"-ForegroundColor Magenta
+    $vmNames.Clear()
     foreach ($blob in $blobs) {
         $blobName = $blob.Name
+        write-host "                       $blobName" -ForegroundColor Magenta
         $vmNames.Add($blobName)
     }
 } else {
