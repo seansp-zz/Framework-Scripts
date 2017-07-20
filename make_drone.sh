@@ -6,6 +6,8 @@
 #
 #  Find out what kind of system we're on
 #
+set -e
+
 if [ -f /usr/bin/dpkg ]
   then
     echo "This is a dpkg machine"
@@ -36,11 +38,14 @@ apt-get -y install mysql-client
     #
     #  Add the mstest user
     #
-    useradd -d /home/mstest -s /bin/bash -G sudo -m mstest -p 'P@ssW0rd-'
-    passwd mstest << PASSWD_END
+    user_exists=`grep "mstest" /etc/passwd`
+    if [ -z "${user_exists}" ]; then
+        useradd -d /home/mstest -s /bin/bash -G sudo -m mstest -p 'P@ssW0rd-'
+        passwd mstest << PASSWD_END
 P@ssW0rd-
 P@ssW0rd-
 PASSWD_END
+    fi
 
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
 cat << NEW_SOURCES > /etc/apt/sources.list.orig
@@ -63,7 +68,7 @@ NEW_SOURCES
     apt-get install -y apt-transport-https
 
     wget http://ftp.us.debian.org/debian/pool/main/o/openssl1.0/libssl1.0.2_1.0.2l-2_amd64.deb
-dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
+    dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
 
     #
     #  Set up the repos to look at and update
@@ -80,8 +85,6 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     #  This package is in a torn state
     wget http://launchpadlibrarian.net/201330288/libicu52_52.1-8_amd64.deb
     dpkg -i libicu52_52.1-8_amd64.deb
-    wget http://ftp.us.debian.org/debian/pool/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
-    dpkg -i libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
 
     #
     #  Install and remove PS
@@ -108,8 +111,10 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     #  Install git and clone our repo
     cd
     apt-get install -y git
-    git clone https://github.com/FawcettJohnW/Framework-Scripts.git
-    
+    framework_scripts_path="/root/Framework-Scripts"
+    if ! [ -d $framework_scripts_path ]; then
+        git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
+    fi
     #
     #  Need NFS
     apt-get install -y nfs-common
@@ -129,7 +134,9 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
    
     #
     #  Set up runonce and copy in the right script
-    mkdir runonce.d runonce.d/ran
+    if ! [ -d "runonce.d" ]; then
+        mkdir runonce.d runonce.d/ran
+    fi
 ## Unhooking the runonce.d so that we can place other things there in the future.
 ## to use, simply connect in and copy as shown below.
 #    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
