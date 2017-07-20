@@ -30,6 +30,8 @@ if ($makeDronesFromAll -eq $false -and $requestedNames.Count -eq 0) {
     
 $LogDir = "c:\temp\job_logs"
 $randomFileName = $vmName + "_copyImages.log"
+get-job | Stop-Job
+get-job | Remove-Job
 
 login_azure $destRG $destSA
 
@@ -62,7 +64,7 @@ foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
     write-host  "Adding sourceName $sourceName"
     $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
-
+    write-host  "Adding VM name $vmName"
     $vmNames.Add($vmName)
 }
 
@@ -90,45 +92,39 @@ $scriptBlockString =
             $subnet
             )
 
-    Write-Host "Importing the context...." -ForegroundColor Green
-    Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+    . "C:\Framework-Scripts\common_functions.ps1"
 
-    Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-    Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
-    Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
+    login_azure $destRG $destSA
 
     write-host "Stopping VM $vmName, if running"
     Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
 
     Write-Host "Deallocating machine $vmName, if it is up"
-    az vm delete -n $vmName -g $destRG --yes
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
 
-    $osDiskName = $vmName + "-osDisk"
+    $newVMName = $vmName + $newSuffix
+    $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
     $blobURIRaw="https://$sourceSA.blob.core.windows.net/$sourceContainer/" + $vmName + $currentSuffix
-    Write-Host "Clearing any old images..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
-    Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
-    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $vmName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer
-
-    # az vm create -n $vmName -g $destRG -l $location --image $blobURIRaw --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-    #     --subnet $subnet --vnet-name $network --os-type Linux --storage-account $destSA --os-disk-name $vmName --admin-password 'P@ssW0rd-1_K6' `
-    #     --admin-username "mstest" --authentication-type "password" 
+    Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
+    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser -adminUser mstest -adminPW "P@ssW0rd-1_K6"
     if ($? -ne $true) {
-        Write-Host "Error creating VM $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         exit 1
     }
 
-    exit 1
+    #
+    #  Just because it's up doesn't mean it's accepting connections yet.  Wait 1 minute, then try to connect
+    sleep(60)
 
     $currentDir="C:\Framework-Scripts"
     $username="mstest"
     $password="P@ssW0rd-1_K6"
     $port=22
-    $pipName = $vmName + "PublicIP"
+    $pipName = $newVMName + "-pip"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
-        Write-Host "Error getting IP address for VM $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         exit 1
     }
 
@@ -144,7 +140,7 @@ $scriptBlockString =
     C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\make_drone.sh
     echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
     if ($? -ne $true) {
-        Write-Host "Error copying make_drone.sh to $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         exit 1
     }
 
@@ -152,7 +148,7 @@ $scriptBlockString =
     $runDroneCommand="/tmp/make_drone.sh"
     $linuxChmodCommand="`"echo $password | sudo -S bash -c `'$chmodCommand`'`""
     $linuxDroneCommand="`"echo $password | sudo -S bash -c `'$runDroneCommand`'`""
-    $randomFileName = $vmName + "chmod_.log"
+    $randomFileName = $newVMName + "chmod_.log"
     write-host "Logging to file $randomFileName"
     $LogDir = "c:\temp\job_logs"
 
@@ -160,20 +156,11 @@ $scriptBlockString =
     #
     #  chmod the thing
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxChmodCommand
-    if ($? -ne $true) {
-        Write-Host "Error doing the chmod on make_drone.sh for $vmName.  This VM must be manually examined!!" -ForegroundColor red
-        exit 1
-    }
-
 
     #
     #  Now run make_drone
     Write-Host "And now running..."
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxDroneCommand
-    if ($? -ne $true) {
-        Write-Host "Error executing make_drone.sh on $vmName.  This VM must be manually examined!!" -ForegroundColor red
-        exit 1
-    }
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)

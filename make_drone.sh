@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 #
 #  Script to take a VM template and make it our own
 #
@@ -142,6 +142,8 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     ufw allow 5986
 else
     echo "RPM-based system"
+subscription-manager register --username seansp-msft --password abbarocks --auto-attach
+
     echo "Precursors"
 yum -y install wget
 rpm -Uvh http://linux.mirrors.es.net/fedora-epel/7/x86_64/i/iperf-2.0.8-1.el7.x86_64.rpm

@@ -12,15 +12,15 @@
     [Parameter(Mandatory=$true)] [string] $adminPW="P@ssW0rd-"
 )
 
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $resourceGroup –StorageAccountName $storageAccount
+. "C:\Framework-Scripts\common_functions.ps1"
+
+login_azure $resourceGroup $storageAccount
 
 echo "Making sure the VM is stopped..."  
-Stop-AzureRmVM -Name $vmName -ResourceGroupName $resourceGroup -Force -ErrorAction SilentlyContinue
+Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
 
 echo "Deleting any existing VM"
-Remove-AzureRmVM -Name $vmName -ResourceGroupName $resourceGroup -Force -ErrorAction SilentlyContinue
+Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
 
 echo "Creating a new VM config..."   
 $vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2'
