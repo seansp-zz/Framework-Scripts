@@ -2,7 +2,7 @@
     [Parameter(Mandatory=$true)] [string] $sourceName="Unknown",
     [Parameter(Mandatory=$true)] [string] $configFileName="Unknown",
     [Parameter(Mandatory=$true)] [string] $distro="Smoke-BVT",
-    [Parameter(Mandatory=$true)] [string] $testCycle="BVT",
+    [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
 #
@@ -10,8 +10,12 @@
 $transFile="c:\temp\transcripts\" + $sourceName + "_transcript.log"
 Start-Transcript -Path c:\temp\bvt_transcripts\$transFile
 
+Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
+
 $tests_failed = $false
-.\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro= -cycleName $testCycle -UseAzureResourceManager -EconomyMode
+cd C:\azure-linux-automation
+.\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode
 if ($? -ne $true) {
     $tests_failed = $true
 }

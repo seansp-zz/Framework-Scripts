@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 #
 #  Script to take a VM template and make it our own
 #
@@ -21,6 +21,18 @@ fi
 if [ $is_rpm == 0 ]
   then
     echo "DEB-based system"
+    echo "Precursors."
+
+apt-get -y update
+apt-get -y install wget
+apt-get -y install iperf
+apt-get -y install bind9
+apt-get install build-essential software-properties-common -y
+apt-get -y install python python-pyasn1 python-argparse python-crypto python-paramiko
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y install mysql-server
+apt-get -y install mysql-client
+    
     #
     #  Add the mstest user
     #
@@ -29,9 +41,6 @@ if [ $is_rpm == 0 ]
 P@ssW0rd-
 P@ssW0rd-
 PASSWD_END
-cat >> /etc/sudoers << SUDO_END
-mstest  ALL=(ALL)       NOPASSWD: ALL
-SUDO_END
 
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
 cat << NEW_SOURCES > /etc/apt/sources.list.orig
@@ -121,16 +130,29 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     #
     #  Set up runonce and copy in the right script
     mkdir runonce.d runonce.d/ran
-    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
+## Unhooking the runonce.d so that we can place other things there in the future.
+## to use, simply connect in and copy as shown below.
+#    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
     
     #
     #  Tell cron to run the runonce at reboot
-    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+#    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
     apt-get install -y ufw
     ufw allow 443
     ufw allow 5986
 else
     echo "RPM-based system"
+    echo "Precursors"
+yum -y install wget
+rpm -Uvh http://linux.mirrors.es.net/fedora-epel/7/x86_64/i/iperf-2.0.8-1.el7.x86_64.rpm
+yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
+yum -y install mysql-community-server
+yum -y groupinstall "Development Tools"
+yum -y install bind bind-utils
+yum -y install python python-pyasn1
+yum -y install python-argparse
+yum -y install python-crypto
+yum -y install python-paramiko
 
     #
     #  Make sure we have the tools we need
@@ -148,9 +170,6 @@ else
 P@ssW0rd-
 P@ssW0rd-
 PASSWD_END
-cat >> /etc/sudoers << SUDO_END
-mstest  ALL=(ALL)       NOPASSWD: ALL
-SUDO_END
 
     #
     #  Set up our repo and update
@@ -199,8 +218,12 @@ SUDO_END
     #
     #  Set up runonce
     mkdir runonce.d runonce.d/ran
-    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
 
+## Unhooking the runonce.d so that we can place other things there in the future.
+## to use, simply connect in and copy as shown below.
+    #
+    #    cp Framework-Scripts/update_and_copy.ps1 runonce.d/
+    #
     #
     #  Tell cron to run the runonce at reboot
     echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
@@ -236,6 +259,5 @@ cat << "MOTD_EOF" > /etc/motd
 
 
    Welcome to the Twilight Zone.                                      Let's Rock.
-
 *************************************************************************************
 MOTD_EOF

@@ -14,6 +14,7 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
 
+    [Parameter(Mandatory=$false)] [string] $templateFile="bvt_template.xml",
     [Parameter(Mandatory=$false)] [string] $removeTag="-BORG",
     [Parameter(Mandatory=$false)] [switch] $OverwriteVHDs,
 
@@ -47,7 +48,7 @@ $destContext=New-AzureStorageContext -StorageAccountName $destSA -StorageAccount
 $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $sourceRG -Name $sourceSA
 $sourceContext=New-AzureStorageContext -StorageAccountName $sourceSA -StorageAccountKey $sourceKey[0].Value
 
-$blobFilter = '.vhd'
+$blobFilter = '*.vhd'
 if ($removeTag -ne "") {
     $blobFilter = '*' + $removeTag + '*.vhd'
 }
@@ -123,7 +124,7 @@ if ($copyblobs.Count -gt 0) {
                     $bytesCopied = $status.BytesCopied
                     $bytesTotal = $status.TotalBytes
                     $pctComplete = ($bytesCopied / $bytesTotal) * 100
-                    Write-Host "        Job $blob has copied $bytesCopied of $bytesTotal bytes (%$pctComplete)." -ForegroundColor green
+                    Write-Host "        Job $blob has copied $bytesCopied of $bytesTotal bytes ($pctComplete %)." -ForegroundColor green
                     $stillCopying = $true
                 } else {
                     $exitStatus = $status.Status
@@ -152,22 +153,31 @@ if ($copyblobs.Count -gt 0) {
 $uri_front="https://"
 $uri_middle=".blob.core.windows.net/vhds/"
 
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
-$blobs=get-AzureStorageBlob -Container $destContainer
+# Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
+# $blobs=get-AzureStorageBlob -Container $destContainer
 cd C:\azure-linux-automation
 $launched_machines = 0
+
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA 
+$blobs=get-AzureStorageBlob -Container $sourceContainer -Blob $blobFilter
 
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
     $configFileName="bvt_exec_" + $sourceName + ".xml"
     $jobName=$sourceName + "_BVT_Runner"
 
-    $uri=$uri_front + $destSA + $uri_middle + "/" + $sourceName
-    (Get-Content .\bvt_template.xml).Replace("SMOKE_MACHINE_NAME_HERE",$uri) | out-file $configFileName
+    $targetName = $sourceName
+    if ($removeTag -ne "") {
+        $targetName = $sourceName | % { $_ -replace "-BORG.vhd", ".vhd" }
+    }
+    $targetName = $targetName | % { $_ -replace ".vhd", "-Booted-and-Verified.vhd" }
+
+    $uri=$uri_front + $destSA + $uri_middle + $targetName
+    (Get-Content .\$templateFile).Replace("SMOKE_MACHINE_NAME_HERE",$targetName) | out-file $configFileName
 
     #
     # Launch the automation
-    Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } -ArgumentList @($sourceName),@($configFileName),@($distro),@($cycle)
+    Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } -ArgumentList @($sourceName),@($configFileName),@($distro),@($testCycle)
     if ($? -ne $true) {
         Write-Host "Error launching job for source $sourceName.  BVT will not be run." -ForegroundColor Red
     } else {
@@ -195,7 +205,13 @@ while ($completed_machines -lt $launched_machines) {
         if ($? -eq $true) {
             $jobState = $jobStatus.State
         }
-        
+
+        $logThisOne=$false
+        if ($sleep_count % 6 -eq 0) {
+            $updateTime=date
+            write-host "Update as of $updateTime"
+            $logThisOne=$true
+        }
         if ($jobState -eq "Complete")
         {
             $completed_machines++
@@ -210,6 +226,10 @@ while ($completed_machines -lt $launched_machines) {
         elseif ($jobState -eq "Running")
         {
             $running_machines++
+            if ($logThisOne -eq $true) {
+                $logtext=Get-Content -Path C:\temp\transcripts\$jobName | Select-Object -last 3
+                Write-Host $logtext
+            }
         }
         else
         {
@@ -231,13 +251,8 @@ while ($completed_machines -lt $launched_machines) {
             Write-Host "All BVTs have passed! " -ForegroundColor Green
             exit 0
         } else {
-            write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $unknown_machines" -ForegroundColor Red
+            write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor Red
             exit 1
         }
-    }
-            
-
-    if ($sleep_count % 6 -eq 0) {
-        write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $unknown_machines" -ForegroundColor Yellow
     }
 }
