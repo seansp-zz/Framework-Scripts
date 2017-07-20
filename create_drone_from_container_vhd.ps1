@@ -200,11 +200,25 @@ while ($allComplete -eq $false) {
 Write-Host "All jobs have completed.  Checking results..."
 #
 #  Get the results of that
-foreach ($vmName in $vmNames) { 
-    $jobName=$vmName + "-drone-job"
+$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
+$cred = make_cred
+$sessionFailed = $false
+foreach ($vmName in $vmNames) {
+    $newVMName = $vmName + $newSuffix
+    $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
-    $out = receive-job $jobName 
+    $session = create_psrp_session ($newVMName, $destRG, $cred, $o)
+    if ($session -ne $NULL) {
+        invoke-command -session $session -ScriptBlock {/bin/uname -a}
+        Remove-PSSession $session
+    } else {
+        Write-Host "FAILED to create PSRP session to $newVMName"
+        $sessionFailed = $true
+    }
+}
 
-    Write-host "-------------------------------"
-    Write-Host $out
+if ($sessionFailed -eq $true) {    
+    exit 1
+} else {
+    exit 0
 }
