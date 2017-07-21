@@ -27,6 +27,8 @@ param (
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
+Write-Host "Switch overwriteVHDs is $overwriteVHDs"
+
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
 
@@ -116,8 +118,8 @@ while ($stillCopying -eq $true) {
     write-host "Checking blob copy status..." -ForegroundColor yellow
 
     foreach ($vmName in $vmNames) {
-        $sourceName=$vmName
-        $targetName = $sourceName | % { $_ -replace "$sourceExtension", "$destExtension" }
+        $sourceName = $vmName + $sourceExtension
+        $targetName = $vmName + $destExtension
 
         $copyStatus = Get-AzureStorageBlobCopyState -Blob $targetName -Container $destContainer -ErrorAction SilentlyContinue
         $status = $copyStatus.Status
