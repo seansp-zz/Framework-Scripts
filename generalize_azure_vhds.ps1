@@ -25,7 +25,7 @@ $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
 foreach ($vm in $runningVMs) {
     $vm_name=$vm.Name
 
-    $session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
+    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
     if ($? -eq $true -and $session -ne $null) {
         Write-Host "    PSRP Connection established; deprovisioning and shutting down" -ForegroundColor Green
         invoke-command -session $session -ScriptBlock {sudo waagent --deprovision -force; sudo shutdown}
