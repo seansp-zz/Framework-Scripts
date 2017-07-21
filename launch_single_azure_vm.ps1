@@ -19,7 +19,7 @@ Start-Transcript C:\temp\transcripts\launch_single_azure_vm.log -Force
 login_azure $resourceGroup $storageAccount
 
 echo "Making sure the VM is stopped..."  
-Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 
 echo "Deleting any existing VM"
 Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force

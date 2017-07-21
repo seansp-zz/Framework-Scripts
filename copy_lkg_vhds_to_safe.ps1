@@ -32,7 +32,7 @@ Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA > $null
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
-Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 # Get-AzureRmVm -ResourceGroupName $sourceRG | Stop-AzureRmVM -Force > $null
 
 

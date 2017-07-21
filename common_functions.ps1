@@ -15,13 +15,12 @@ function make_cred () {
 }
 
 function create_psrp_session ($vmName,$rg,$SA,$cred,$opts) {
-    Write-Host "Creating PSRP session for $vmName on $rg."
-
-    Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA
+    
+    Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA > $null
 
     $pipName=$vmName + "-PIP"
 
-    $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
+    $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName > $null
 
     if ($ipAddress.IpAddress -eq "Not Assigned") {
         Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
@@ -29,7 +28,7 @@ function create_psrp_session ($vmName,$rg,$SA,$cred,$opts) {
     }
 
     [System.Management.Automation.Runspaces.PSSession]$session = $null
-    $session=new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $opts
+    $session=new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $opts > $null
 
     return $session
 }
