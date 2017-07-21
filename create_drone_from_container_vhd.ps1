@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
-    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll,
-    [Parameter(Mandatory=$false)] [string] $overwriteVHDs,
+    [Parameter(Mandatory=$false)] [switch] $makeDronesFromAll,
+    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs,
 
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
@@ -22,6 +22,14 @@
 )
 
 . "C:\Framework-Scripts\common_functions.ps1"
+
+if ($overwriteVHDs -eq "False") {
+    Write-Host "It's false"
+    $overwriteVHDs = $false
+} else {
+    Write-Host "It's true"
+    $overwriteVHDs = $true
+}
 
 Write-Host "The value of overwriteVHDs is $overwriteVHDs"
 if ($overwriteVHDs -eq $true) {
