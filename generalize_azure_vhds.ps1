@@ -25,6 +25,8 @@ $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
 foreach ($vm in $runningVMs) {
     $vm_name=$vm.Name
 
+    $password="P@ssW0rd-"
+
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
     if ($? -eq $true -and $session -ne $null) {
         Write-Host "    PSRP Connection established; deprovisioning and shutting down" -ForegroundColor Green

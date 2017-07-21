@@ -48,6 +48,8 @@ $destContext=New-AzureStorageContext -StorageAccountName $destSA -StorageAccount
 $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $sourceRG -Name $sourceSA
 $sourceContext=New-AzureStorageContext -StorageAccountName $sourceSA -StorageAccountKey $sourceKey[0].Value
 
+$removeTag = $removeTag.Replace(".vhd"."")
+
 $blobFilter = '*.vhd'
 if ($removeTag -ne "") {
     $blobFilter = '*' + $removeTag + '*.vhd'
