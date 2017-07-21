@@ -96,6 +96,8 @@ $scriptBlockString =
             $subnet
             )
 
+    Start-Transcript C:\temp\transcripts\scriptblock.log -Force
+
     . "C:\Framework-Scripts\common_functions.ps1"
 
     login_azure $destRG $destSA
@@ -165,6 +167,8 @@ $scriptBlockString =
     #  Now run make_drone
     Write-Host "And now running..."
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxDroneCommand
+
+    Stop-Transcript
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
