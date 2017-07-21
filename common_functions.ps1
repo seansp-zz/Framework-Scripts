@@ -14,7 +14,9 @@ function make_cred () {
     return $cred
 }
 
-function create_psrp_session ($vmName, $rg, $cred, $opts) {
+function create_psrp_session ($vmName,$rg,$cred,$opts) {
+    Write-Host "Creating PSRP session for $vmName on $rg."
+
     $pipName=$vmName + "-PIP"
 
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
