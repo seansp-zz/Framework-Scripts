@@ -87,8 +87,8 @@ if ($clearDestContainer -eq $true) {
 }
 
 foreach ($vmName in $vmNames) {
-    $sourceName=$vmName
-    $targetName = $sourceName + $destExtension
+    $sourceName = $vmName + $sourceExtension
+    $targetName = $vmName + $destExtension
 
     Write-Host "Initiating job to copy VHD $targetName from cache to working directory..." -ForegroundColor Yellow
     if ($overwriteVHDs -eq $true) {
