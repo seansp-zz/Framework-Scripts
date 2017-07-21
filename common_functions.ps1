@@ -14,7 +14,7 @@ function make_cred () {
     return $cred
 }
 
-function create_psrp_session ($vmName,$rg,$SA,$cred,$opts) {
+function [System.Management.Automation.Runspaces.PSSession]create_psrp_session ($vmName,$rg,$SA,$cred,$opts) {
     Write-Host "Creating PSRP session for $vmName on $rg."
 
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA
@@ -28,7 +28,7 @@ function create_psrp_session ($vmName,$rg,$SA,$cred,$opts) {
         return $null
     }
 
-    $session=new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $opts
+    [System.Management.Automation.Runspaces.PSSession]$session=new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $opts
 
     return $session
 }
