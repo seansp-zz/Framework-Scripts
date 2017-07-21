@@ -235,8 +235,12 @@ while ($completed_machines -lt $launched_machines) {
         {
             $running_machines++
             if ($logThisOne -eq $true) {
-                $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
-                Write-Host $logtext
+                if (Test-Path C:\temp\transcripts\$logFileName) {
+                    $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
+                    Write-Host $logtext
+                } else {
+                    Write-Host "      Job $jobName is running, but has not reported in yet..."
+                }
             }
         }
         else
