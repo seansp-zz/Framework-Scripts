@@ -16,7 +16,7 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $templateFile="bvt_template.xml",
     [Parameter(Mandatory=$false)] [string] $removeTag="-BORG",
-    [Parameter(Mandatory=$false)] [string] $OverwriteVHDs=$false,
+    [Parameter(Mandatory=$false)] [string] $OverwriteVHDs="False",
 
     [Parameter(Mandatory=$true)] [string] $distro="Smoke-BVT",
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
@@ -29,7 +29,13 @@ $destContainer="vhds"
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
 
-write-host "Overwrite flag is $OverwriteVHDs"
+if ($OverwriteVHDs -ne "False") {
+    $overwriteVHDs = $true
+} else {
+    $overwriteVHDs = $false
+}
+
+write-host "Overwrite flag is $overwriteVHDs"
 
 Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
@@ -48,11 +54,9 @@ $destContext=New-AzureStorageContext -StorageAccountName $destSA -StorageAccount
 $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $sourceRG -Name $sourceSA
 $sourceContext=New-AzureStorageContext -StorageAccountName $sourceSA -StorageAccountKey $sourceKey[0].Value
 
-$removeTag = $removeTag.Replace(".vhd","")
-
 $blobFilter = '*.vhd'
 if ($removeTag -ne "") {
-    $blobFilter = '*' + $removeTag + '*.vhd'
+    $blobFilter = '*' + $removeTag
 }
 Write-Host "Blob filter is $blobFilter"
 
@@ -69,7 +73,7 @@ foreach ($oneblob in $blobs) {
 
     $targetName = $sourceName
     if ($removeTag -ne "") {
-        $targetName = $sourceName | % { $_ -replace "-BORG.vhd", ".vhd" }
+        $targetName = $sourceName | % { $_ -replace $removeTag, ".vhd" }
     }
     $targetName = $targetName | % { $_ -replace ".vhd", "-Booted-and-Verified.vhd" }
     
@@ -79,7 +83,7 @@ foreach ($oneblob in $blobs) {
     }
 
     $start_copy = $true
-    if (($blobIsInDest -eq $true) -and ($OverwriteVHDs -eq $true)) {
+    if (($blobIsInDest -eq $true) -and ($overwriteVHDs -eq $true)) {
         Write-Host "There is an existing blob in the destination and the overwrite flag has been set.  The existing blob will be deleted."
         Remove-AzureStorageBlob -Blob $targetName -Container $destContainer -Force
     } elseif ($blobIsInDest -eq $false) {
@@ -170,7 +174,7 @@ foreach ($oneblob in $blobs) {
 
     $targetName = $sourceName
     if ($removeTag -ne "") {
-        $targetName = $sourceName | % { $_ -replace "-BORG.vhd", ".vhd" }
+        $targetName = $sourceName | % { $_ -replace $removeTag, ".vhd" }
     }
     $targetName = $targetName | % { $_ -replace ".vhd", "-Booted-and-Verified.vhd" }
 
@@ -181,11 +185,11 @@ foreach ($oneblob in $blobs) {
     # Launch the automation
     Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } -ArgumentList @($sourceName),@($configFileName),@($distro),@($testCycle)
     if ($? -ne $true) {
-        Write-Host "Error launching job for source $sourceName.  BVT will not be run." -ForegroundColor Red
+        Write-Host "Error launching job for source $targetName.  BVT will not be run." -ForegroundColor Red
     } else {
         $launched_machines++
         $launchTime=date
-        Write-Host "Machine $sourceName launched as BVT $launchedMachines at $launchTime" -ForegroundColor Green
+        Write-Host "Machine $targetName launched as BVT $launched_machines at $launchTime" -ForegroundColor Green
     }
 }
 
@@ -202,6 +206,8 @@ while ($completed_machines -lt $launched_machines) {
     foreach ($oneblob in $blobs) {
         $sourceName=$oneblob.Name
         $jobName=$sourceName + "_BVT_Runner"
+
+        $logFileName = $sourceName + "_transcript.log"
 
         $jobStatus=get-job -Name $jobName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
@@ -229,7 +235,7 @@ while ($completed_machines -lt $launched_machines) {
         {
             $running_machines++
             if ($logThisOne -eq $true) {
-                $logtext=Get-Content -Path C:\temp\transcripts\$jobName | Select-Object -last 3
+                $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
                 Write-Host $logtext
             }
         }
