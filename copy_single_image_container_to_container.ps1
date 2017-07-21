@@ -46,11 +46,11 @@ Write-Host "Stopping all running machines..."  -ForegroundColor green
 if ($makeDronesFromAll -eq $false) {
     foreach ($vmName in $vmNames) {
         Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-        Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+        Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
     } 
 } else {
     Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-    Get-AzureRmVm -ResourceGroupName $destRG -status | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Remove-AzureRmVM -Force
 }
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
