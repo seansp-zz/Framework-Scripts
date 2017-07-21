@@ -195,16 +195,16 @@ foreach ($vmName in $vmNames) {
 write-host "Checking make_drone jobs..."
 $allComplete = $false
 while ($allComplete -eq $false) {
+    write-host "Status at "@(date)"is:" -ForegroundColor Green
     $allComplete = $true
     foreach ($vmName in $vmNames) {
         $jobName=$vmName + "-drone-job"
         $job = get-job $jobName
         $jobState = $job.State
-        write-host "    Job $jobName state is $jobState" -ForegroundColor Yellow
+        write-host "    Job $jobName is in state $jobState" -ForegroundColor Yellow
         if ($jobState -eq "Running") {
             $allComplete = $false
         }
-        Write-Host "Job $jobName state is $jobState"
     }
     sleep 10
 }
