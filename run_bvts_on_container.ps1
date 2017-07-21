@@ -16,7 +16,7 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $templateFile="bvt_template.xml",
     [Parameter(Mandatory=$false)] [string] $removeTag="-BORG",
-    [Parameter(Mandatory=$false)] [switch] $OverwriteVHDs,
+    [Parameter(Mandatory=$false)] [string] $OverwriteVHDs=$false,
 
     [Parameter(Mandatory=$true)] [string] $distro="Smoke-BVT",
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"

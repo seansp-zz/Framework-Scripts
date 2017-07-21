@@ -10,7 +10,7 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 param (
-    [Parameter(Mandatory=$false)] [switch] $skipCopy
+    [Parameter(Mandatory=$false)] [string] $skipCopy=$false
 )
 
 $global:completed=0

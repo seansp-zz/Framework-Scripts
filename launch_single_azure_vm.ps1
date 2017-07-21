@@ -7,7 +7,7 @@
     [Parameter(Mandatory=$true)] [string] $network="SmokeVNet",
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
 
-    [Parameter(Mandatory=$true)] [switch] $addAdminUser,
+    [Parameter(Mandatory=$true)] [string] $addAdminUser=$false,
     [Parameter(Mandatory=$true)] [string] $adminUser="mstest",
     [Parameter(Mandatory=$true)] [string] $adminPW="P@ssW0rd-"
 )

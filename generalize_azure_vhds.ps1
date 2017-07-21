@@ -22,7 +22,6 @@ login_azure $sourceRG $sourceSA
 
 Write-Host "Generalizing the running machines..."  -ForegroundColor green
 $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
-
 foreach ($vm in $runningVMs) {
     $vm_name=$vm.Name
 

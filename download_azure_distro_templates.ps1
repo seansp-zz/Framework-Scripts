@@ -10,8 +10,8 @@
 #
 ##############################################################
 param (
-    [Parameter(Mandatory=$false)] [switch] $getAll,
-    [Parameter(Mandatory=$false)] [switch] $replaceVHD,
+    [Parameter(Mandatory=$false)] [string] $getAll=$false,
+    [Parameter(Mandatory=$false)] [string] $replaceVHD=$false,
     [Parameter(Mandatory=$false)] [string[]] $requestedVMs
 )
 

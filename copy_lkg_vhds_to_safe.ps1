@@ -15,8 +15,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $destPkgContainer="last-known-good-packages",
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
-    [Parameter(Mandatory=$false)] [switch] $excludePackages=$false,
-    [Parameter(Mandatory=$false)] [switch] $excludeVHDs=$false
+    [Parameter(Mandatory=$false)] [string] $excludePackages=$false,
+    [Parameter(Mandatory=$false)] [string] $excludeVHDs=$false
 )
 
 $copyblobs_array=@()

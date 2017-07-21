@@ -20,9 +20,9 @@ param (
 
     [Parameter(Mandatory=$false)] [string[]] $vmNamesIn,
     
-    [Parameter(Mandatory=$false)] [switch] $makeDronesFromAll,
-    [Parameter(Mandatory=$false)] [switch] $clearDestContainer,
-    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll=$false,
+    [Parameter(Mandatory=$false)] [string] $clearDestContainer=$false,
+    [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false
 )
 
 . "C:\Framework-Scripts\common_functions.ps1"
