@@ -113,7 +113,7 @@ $scriptBlockString =
     $blobURIRaw="https://$sourceSA.blob.core.windows.net/$sourceContainer/" + $vmName + $currentSuffix
 
     Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
-    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser -adminUser mstest -adminPW "P@ssW0rd-1_K6"
+    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser mstest -adminUser mstest -adminPW "P@ssW0rd-1_K6"
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
