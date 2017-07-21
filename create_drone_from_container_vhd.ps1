@@ -50,7 +50,7 @@ if ($makeDronesFromAll -eq $true) {
     foreach ($vmName in $requestedNames) {
         Write-Host "Looking at image $vmName in container $sourceContainer"
         $theName = $vmName + $currentSuffix
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -name $theName
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
         $blobs += $singleBlob
     }
 }
