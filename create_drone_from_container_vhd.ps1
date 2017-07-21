@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
-    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll,
-    [Parameter(Mandatory=$false)] [string] $overwriteVHDs,
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll=$false,
+    [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false,
 
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
