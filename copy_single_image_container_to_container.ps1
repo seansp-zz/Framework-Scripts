@@ -71,7 +71,7 @@ if ($makeDronesFromAll -eq $true) {
 } else {
     foreach ($vmName in $vmNames) {
         $theName = $vmName + $sourceExtension
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -name $theName
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
         if ($? -eq $true) {
             $blobs += $singleBlob
         } else {
