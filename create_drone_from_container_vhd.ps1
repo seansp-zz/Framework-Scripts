@@ -21,24 +21,13 @@
     [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed.vhd"
 )
 
+Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
+
 . "C:\Framework-Scripts\common_functions.ps1"
-
-Write-Host "The value incoming is $overwriteVHDs"
-if ($overwriteVHDs -eq $false) {
-    Write-Host "It's false"
-    $overwriteVHDs = $false
-} else {
-    Write-Host "It's true"
-    $overwriteVHDs = $true
-}
-
-Write-Host "The value of overwriteVHDs is $overwriteVHDs"
-if ($overwriteVHDs -eq $true) {
-    Write-Host "It's true"
-}
 
 if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
+    Stop-Transcript
     exit 1
 }
     
@@ -71,6 +60,7 @@ if ($makeDronesFromAll -eq $true) {
 
 if ($blobs.Count -eq 0) {
     Write-Host "No blobs matched source extension $currentSuffix.  No VHDs to process."
+    Stop-Transcript
     exit 1
 }
 
@@ -124,6 +114,7 @@ $scriptBlockString =
     C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser -adminUser mstest -adminPW "P@ssW0rd-1_K6"
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -139,6 +130,7 @@ $scriptBlockString =
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -155,6 +147,7 @@ $scriptBlockString =
     echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -188,6 +181,7 @@ foreach ($vmName in $vmNames) {
                                                                       $network,$subnet
     if ($? -ne $true) {
         Write-Host "Error starting make_drone job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -221,7 +215,7 @@ foreach ($vmName in $vmNames) {
     $newVMName = $vmName + $newSuffix
     $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
-    $session = create_psrp_session $newVMName $destRG $cred $o
+    $session = create_psrp_session $newVMName $destRG $destSA $cred $o
     if ($session -ne $NULL) {
         invoke-command -session $session -ScriptBlock {/bin/uname -a}
         Remove-PSSession $session
@@ -230,6 +224,8 @@ foreach ($vmName in $vmNames) {
         $sessionFailed = $true
     }
 }
+
+Stop-Transcript
 
 if ($sessionFailed -eq $true) {    
     exit 1

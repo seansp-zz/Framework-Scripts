@@ -14,8 +14,10 @@ function make_cred () {
     return $cred
 }
 
-function create_psrp_session ($vmName,$rg,$cred,$opts) {
+function create_psrp_session ($vmName,$rg,$SA,$cred,$opts) {
     Write-Host "Creating PSRP session for $vmName on $rg."
+
+    Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA
 
     $pipName=$vmName + "-PIP"
 

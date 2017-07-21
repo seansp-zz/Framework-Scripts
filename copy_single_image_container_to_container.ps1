@@ -25,6 +25,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false
 )
 
+Start-Transcript C:\temp\transcripts\copy_single_image_container_to_container.log -Force
+
 . "C:\Framework-Scripts\common_functions.ps1"
 
 Write-Host "Switch overwriteVHDs is $overwriteVHDs"
@@ -103,6 +105,7 @@ foreach ($vmName in $vmNames) {
         $copyblobs.Add($targetName)
     } else {
         Write-Host "Job to copy VHD $targetName failed to start.  Cannot continue"
+        Stop-Transcript
         exit 1
     }
 }
@@ -151,5 +154,6 @@ while ($stillCopying -eq $true) {
         Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor Green
     }
 }
+Stop-Transcript
 
 exit 0

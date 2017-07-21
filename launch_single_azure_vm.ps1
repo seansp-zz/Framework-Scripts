@@ -12,6 +12,8 @@
     [Parameter(Mandatory=$true)] [string] $adminPW="P@ssW0rd-"
 )
 
+Start-Transcript C:\temp\transcripts\launch_single_azure_vm.log -Force
+
 . "C:\Framework-Scripts\common_functions.ps1"
 
 login_azure $resourceGroup $storageAccount
@@ -68,8 +70,11 @@ try {
 Catch
 {
     echo "Caught exception attempting to start the new VM.  Aborting..." 
+    Stop-Transcript
     return 1
 }
+
+Stop-Transcript
 
 # if ($addAdminUser -eq $true) {
 #     $pw = convertto-securestring -AsPlainText -force -string $adminPW

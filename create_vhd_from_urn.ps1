@@ -14,6 +14,8 @@
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
 
+Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log
+
 . "C:\Framework-Scripts\common_functions.ps1"
 
 Write-Host "Working with RG $destRG and SA $destSA"
@@ -49,6 +51,7 @@ az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-con
 
 if ($? -eq $false) {
     Write-Error "Failed to create VM.  Details follow..."
+    Stop-Transcript
     exit 1
 }
 
@@ -59,3 +62,4 @@ Write-Host "Deleting the VM so we can harvest the VHD..."
 Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 Write-Host "Machine is ready for assimilation..."
+Stop-Transcript
