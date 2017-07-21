@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
-    [Parameter(Mandatory=$false)] [switch] $makeDronesFromAll,
-    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs,
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll=$false,
+    [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false,
 
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
@@ -21,24 +21,13 @@
     [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed.vhd"
 )
 
+Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
+
 . "C:\Framework-Scripts\common_functions.ps1"
-
-Write-Host "The value incoming is $overwriteVHDs"
-if ($overwriteVHDs -eq "False") {
-    Write-Host "It's false"
-    $overwriteVHDs = $false
-} else {
-    Write-Host "It's true"
-    $overwriteVHDs = $true
-}
-
-Write-Host "The value of overwriteVHDs is $overwriteVHDs"
-if ($overwriteVHDs -eq $true) {
-    Write-Host "It's true"
-}
 
 if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
+    Stop-Transcript
     exit 1
 }
     
@@ -71,6 +60,7 @@ if ($makeDronesFromAll -eq $true) {
 
 if ($blobs.Count -eq 0) {
     Write-Host "No blobs matched source extension $currentSuffix.  No VHDs to process."
+    Stop-Transcript
     exit 1
 }
 
@@ -106,12 +96,14 @@ $scriptBlockString =
             $subnet
             )
 
+    Start-Transcript C:\temp\transcripts\scriptblock.log -Force
+
     . "C:\Framework-Scripts\common_functions.ps1"
 
     login_azure $destRG $destSA
 
     write-host "Stopping VM $vmName, if running"
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 
     Write-Host "Deallocating machine $vmName, if it is up"
     Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
@@ -121,9 +113,10 @@ $scriptBlockString =
     $blobURIRaw="https://$sourceSA.blob.core.windows.net/$sourceContainer/" + $vmName + $currentSuffix
 
     Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
-    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser -adminUser mstest -adminPW "P@ssW0rd-1_K6"
+    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser mstest -adminUser mstest -adminPW "P@ssW0rd-1_K6"
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -139,6 +132,7 @@ $scriptBlockString =
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -155,6 +149,7 @@ $scriptBlockString =
     echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -172,6 +167,8 @@ $scriptBlockString =
     #  Now run make_drone
     Write-Host "And now running..."
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxDroneCommand
+
+    Stop-Transcript
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
@@ -188,6 +185,7 @@ foreach ($vmName in $vmNames) {
                                                                       $network,$subnet
     if ($? -ne $true) {
         Write-Host "Error starting make_drone job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
@@ -197,16 +195,16 @@ foreach ($vmName in $vmNames) {
 write-host "Checking make_drone jobs..."
 $allComplete = $false
 while ($allComplete -eq $false) {
+    write-host "Status at "@(date)"is:" -ForegroundColor Green
     $allComplete = $true
     foreach ($vmName in $vmNames) {
         $jobName=$vmName + "-drone-job"
         $job = get-job $jobName
         $jobState = $job.State
-        write-host "    Job $jobName state is $jobState" -ForegroundColor Yellow
+        write-host "    Job $jobName is in state $jobState" -ForegroundColor Yellow
         if ($jobState -eq "Running") {
             $allComplete = $false
         }
-        Write-Host "Job $jobName state is $jobState"
     }
     sleep 10
 }
@@ -221,7 +219,7 @@ foreach ($vmName in $vmNames) {
     $newVMName = $vmName + $newSuffix
     $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
-    $session = create_psrp_session $newVMName $destRG $cred $o
+    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $newVMName $destRG $destSA $cred $o
     if ($session -ne $NULL) {
         invoke-command -session $session -ScriptBlock {/bin/uname -a}
         Remove-PSSession $session
@@ -230,6 +228,8 @@ foreach ($vmName in $vmNames) {
         $sessionFailed = $true
     }
 }
+
+Stop-Transcript
 
 if ($sessionFailed -eq $true) {    
     exit 1

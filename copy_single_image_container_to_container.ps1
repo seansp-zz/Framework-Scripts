@@ -20,10 +20,12 @@ param (
 
     [Parameter(Mandatory=$false)] [string[]] $vmNamesIn,
     
-    [Parameter(Mandatory=$false)] [switch] $makeDronesFromAll,
-    [Parameter(Mandatory=$false)] [switch] $clearDestContainer,
-    [Parameter(Mandatory=$false)] [switch] $overwriteVHDs
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll=$false,
+    [Parameter(Mandatory=$false)] [string] $clearDestContainer=$false,
+    [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false
 )
+
+Start-Transcript C:\temp\transcripts\copy_single_image_container_to_container.log -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
@@ -41,14 +43,14 @@ foreach($vmName in $vmNamesIn) {
 login_azure $destRG $destSA
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
-if ($makeDronesFromAll -eq $true) {
+if ($makeDronesFromAll -eq $false) {
     foreach ($vmName in $vmNames) {
-        Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
-        Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+        Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+        Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
     } 
 } else {
-    Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
-    Get-AzureRmVm -ResourceGroupName $destRG -status | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+    Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Remove-AzureRmVM -Force
 }
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
@@ -103,6 +105,7 @@ foreach ($vmName in $vmNames) {
         $copyblobs.Add($targetName)
     } else {
         Write-Host "Job to copy VHD $targetName failed to start.  Cannot continue"
+        Stop-Transcript
         exit 1
     }
 }
@@ -151,5 +154,6 @@ while ($stillCopying -eq $true) {
         Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor Green
     }
 }
+Stop-Transcript
 
 exit 0

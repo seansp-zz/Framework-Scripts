@@ -16,7 +16,7 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $templateFile="bvt_template.xml",
     [Parameter(Mandatory=$false)] [string] $removeTag="-BORG",
-    [Parameter(Mandatory=$false)] [switch] $OverwriteVHDs,
+    [Parameter(Mandatory=$false)] [string] $OverwriteVHDs=$false,
 
     [Parameter(Mandatory=$true)] [string] $distro="Smoke-BVT",
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
@@ -39,7 +39,7 @@ Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
-Get-AzureRmVm -ResourceGroupName $sourceRG -status |  where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+Get-AzureRmVm -ResourceGroupName $sourceRG -status |  where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 
 Write-Host "Copying the test VMs packages to BVT resource group"
 $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $destRG -Name $destSA
@@ -47,6 +47,8 @@ $destContext=New-AzureStorageContext -StorageAccountName $destSA -StorageAccount
 
 $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $sourceRG -Name $sourceSA
 $sourceContext=New-AzureStorageContext -StorageAccountName $sourceSA -StorageAccountKey $sourceKey[0].Value
+
+$removeTag = $removeTag.Replace(".vhd"."")
 
 $blobFilter = '*.vhd'
 if ($removeTag -ne "") {
