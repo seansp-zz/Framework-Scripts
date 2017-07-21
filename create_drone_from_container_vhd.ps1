@@ -23,6 +23,7 @@
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
+Write-Host "The value incoming is $overwriteVHDs"
 if ($overwriteVHDs -eq "False") {
     Write-Host "It's false"
     $overwriteVHDs = $false
