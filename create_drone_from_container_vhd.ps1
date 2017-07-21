@@ -23,6 +23,20 @@
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
+Write-Host "The value incoming is $overwriteVHDs"
+if ($overwriteVHDs -eq "False") {
+    Write-Host "It's false"
+    $overwriteVHDs = $false
+} else {
+    Write-Host "It's true"
+    $overwriteVHDs = $true
+}
+
+Write-Host "The value of overwriteVHDs is $overwriteVHDs"
+if ($overwriteVHDs -eq $true) {
+    Write-Host "It's true"
+}
+
 if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     exit 1
@@ -50,7 +64,7 @@ if ($makeDronesFromAll -eq $true) {
     foreach ($vmName in $requestedNames) {
         Write-Host "Looking at image $vmName in container $sourceContainer"
         $theName = $vmName + $currentSuffix
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -name $theName
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
         $blobs += $singleBlob
     }
 }
