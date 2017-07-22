@@ -24,6 +24,7 @@
 Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
+. ./secrets.ps1
 
 if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
@@ -99,6 +100,7 @@ $scriptBlockString =
     Start-Transcript C:\temp\transcripts\scriptblock.log -Force
 
     . "C:\Framework-Scripts\common_functions.ps1"
+    . ./secrets.ps1
 
     login_azure $destRG $destSA
 
@@ -113,7 +115,7 @@ $scriptBlockString =
     $blobURIRaw="https://$sourceSA.blob.core.windows.net/$sourceContainer/" + $vmName + $currentSuffix
 
     Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
-    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser mstest -adminUser mstest -adminPW "P@ssW0rd-1_K6"
+    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer -network $network -subnet $subnet -addAdminUser $TEST_USER_ACCOUNT_NAME -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
@@ -125,8 +127,8 @@ $scriptBlockString =
     sleep(60)
 
     $currentDir="C:\Framework-Scripts"
-    $username="mstest"
-    $password="P@ssW0rd-1_K6"
+    $username="$TEST_USER_ACCOUNT_NAME"
+    $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
     $port=22
     $pipName = $newVMName + "-pip"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
@@ -141,12 +143,15 @@ $scriptBlockString =
     #
     #  The first one gets the machine added to known_hosts
     Write-Host "Copying make_drone to the target.." -ForegroundColor Green
-    echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
+    echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
+    echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
 
     #
     #  Now transfer the files
     C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\make_drone.sh
-    echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
+    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\secrets.sh
+    echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript

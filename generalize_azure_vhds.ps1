@@ -11,6 +11,7 @@ param (
 )
 
 . "C:\Framework-Scripts\common_functions.ps1"
+. ./secrets.ps1
 
 #
 #  Session stuff
@@ -25,7 +26,7 @@ $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
 foreach ($vm in $runningVMs) {
     $vm_name=$vm.Name
 
-    $password="P@ssW0rd-"
+    $password="$TEST_USER_ACCOUNT_PASS"
 
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
     if ($? -eq $true -and $session -ne $null) {

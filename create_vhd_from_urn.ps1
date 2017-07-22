@@ -17,6 +17,7 @@
 Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
+. ./secrets.ps1
 
 Write-Host "Working with RG $destRG and SA $destSA"
 login_azure $destRG $destSA
@@ -46,7 +47,7 @@ Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 $diskName=$vmName + $suffix
 az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' --admin-username "mstest" `
+   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password "$TEST_USER_ACCOUNT_PAS2" --admin-username "$TEST_USER_ACCOUNT_NAME" `
    --authentication-type "password"
 
 if ($? -eq $false) {

@@ -22,6 +22,8 @@ param (
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
+. ./secrets.ps1
+
 #
 #  This is a required location
 $destContainer="vhds"
@@ -41,7 +43,7 @@ Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
 
 Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4" 
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green

@@ -16,11 +16,12 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $pkg_location="westus"
 )
+. ./secrets.ps1
 
 $global:isHyperV = $false
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$global:pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-$global:cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
+$global:pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
+$global:cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$global:pw
 $global:session=$null
 
 function ErrOut([string] $failPoint) {

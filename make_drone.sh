@@ -4,6 +4,13 @@
 #
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
+
+#
+#  Load our secrets.sh
+#
+source ./secrets.sh
+
+#
 #  Find out what kind of system we're on
 #
 if [ -f /usr/bin/dpkg ]
@@ -34,12 +41,12 @@ apt-get -y install mysql-server
 apt-get -y install mysql-client
     
     #
-    #  Add the mstest user
+    #  Add the test user
     #
-    useradd -d /home/mstest -s /bin/bash -G sudo -m mstest -p 'P@ssW0rd-'
-    passwd mstest << PASSWD_END
-P@ssW0rd-
-P@ssW0rd-
+    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
+    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
 PASSWD_END
 
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
@@ -142,7 +149,7 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     ufw allow 5986
 else
     echo "RPM-based system"
-subscription-manager register --username seansp-msft --password abbarocks --auto-attach
+subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
 
     echo "Precursors"
 yum -y install wget
@@ -166,11 +173,11 @@ yum -y install python-paramiko
     package-cleanup --oldkernels --count=2
 
     #
-    #  Add the mstest user
-    useradd -d /home/mstest -s /bin/bash -G wheel -m mstest -p 'P@ssW0rd-'
-        passwd mstest << PASSWD_END
-P@ssW0rd-
-P@ssW0rd-
+    #  Add the test user
+    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G wheel -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS 
+    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
 PASSWD_END
 
     #

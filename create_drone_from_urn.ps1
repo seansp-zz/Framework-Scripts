@@ -17,9 +17,10 @@
     
 $vnetName="JPL-VNet-1"
 $subnetName="JPL-Subnet-1"
+. ./secrets.ps1
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $resourceGroup –StorageAccountName $SA
 
 # Global
@@ -49,12 +50,12 @@ Write-Host "Attempting to create virtual machine $vmName.  This may take some ti
 ## Setup local VM object
 # $cred = Get-Credential
 az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password 'P@ssW0rd-1_K6' --admin-username "mstest" `
+   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password "$TEST_USER_ACCOUNT_PAS2" --admin-username "$TEST_USER_ACCOUNT_NAME" `
    --authentication-type "password"
 
 $currentDir="C:\Framework-Scripts"
-$username="mstest"
-$password="P@ssW0rd-1_K6"
+$username="$TEST_USER_ACCOUNT_NAME"
+$password="$TEST_USER_ACCOUNT_PAS2"
 $port=22
 $pipName = $vmName + "PublicIP"
 $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $pipName).IpAddress
@@ -63,18 +64,21 @@ $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $pipName
 #  Send make_drone to the new machine
 #
 #  The first one gets the machine added to known_hosts
-echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
+echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
+echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
 
 #
 #  Now transfer the file
 C:\azure-linux-automation\tools\dos2unix.exe .\make_drone.sh
-echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh mstest@$ip`:/tmp
+C:\azure-linux-automation\tools\dos2unix.exe .\secrets.sh
+echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
+echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
 
 C:\azure-linux-automation\tools\dos2unix.exe .\rpm_install_azure_test_prereq.sh
-echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\rpm_install_azure_test_prereq.sh mstest@$ip`:/tmp
+echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\rpm_install_azure_test_prereq.sh $username@$ip`:/tmp
 
 C:\azure-linux-automation\tools\dos2unix.exe .\deb_install_azure_test_prereq.sh
-echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\deb_install_azure_test_prereq.sh mstest@$ip`:/tmp
+echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\deb_install_azure_test_prereq.sh $username@$ip`:/tmp
 
 $chmodCommand="chmod 755 /tmp/make_drone.sh"
 $runDroneCommand="/tmp/make_drone.sh"

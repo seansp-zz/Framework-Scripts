@@ -1,5 +1,6 @@
-useradd -d /home/mstest -s /bin/bash -G admin -m mstest
-passwd mstest
+source ./secrets.sh
+useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G admin -m $TEST_USER_ACCOUNT_NAME
+passwd $TEST_USER_ACCOUNT_NAME
 apt-get update
 curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
 curl https://packages.microsoft.com/config/ubuntu/14.04/prod.list | sudo tee /etc/apt/sources.list.d/microsoft.list
@@ -24,8 +25,9 @@ ufw allow 443
 ufw allow 5986
 
 Check OMI and PSRP:
+   . ./secrets.ps1
    $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
    $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
-   $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+   $cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
    $session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
    invoke-command -session $session -ScriptBlock {/bin/uname -r}
