@@ -164,6 +164,6 @@ while ($stop_checking -eq $false) {
             }
         }
     }
-    $SleepCount++
+    $SleepCount+=1
     Start-Sleep 10
 }

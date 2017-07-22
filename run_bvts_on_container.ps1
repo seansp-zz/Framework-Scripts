@@ -187,7 +187,7 @@ foreach ($oneblob in $blobs) {
     if ($? -ne $true) {
         Write-Host "Error launching job for source $targetName.  BVT will not be run." -ForegroundColor Red
     } else {
-        $launched_machines++
+        $launched_machines += 1
         $launchTime=date
         Write-Host "Machine $targetName launched as BVT $launched_machines at $launchTime" -ForegroundColor Green
     }
@@ -212,45 +212,45 @@ while ($completed_machines -lt $launched_machines) {
         $jobStatus=get-job -Name $jobName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             $jobState = $jobStatus.State
-        }
 
-        $logThisOne=$false
-        if ($sleep_count % 6 -eq 0) {
-            $updateTime=date
-            write-host "Update as of $updateTime"
-            $logThisOne=$true
-        }
-        if ($jobState -eq "Complete")
-        {
-            $completed_machines++
-            $failed_machines++
-            Write-Host "----> BVT job $jobName exited with FAILED state!" -ForegroundColor red
-        }
-        elseif ($jobState -eq "Completed")
-        {
-            $completed_machines++
-            Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
-        }
-        elseif ($jobState -eq "Running")
-        {
-            $running_machines++
-            if ($logThisOne -eq $true) {
-                if (Test-Path C:\temp\transcripts\$logFileName) {
-                    $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
-                    Write-Host $logtext
-                } else {
-                    Write-Host "      Job $jobName is running, but has not reported in yet..."
+            $logThisOne=$false
+            if ($sleep_count % 6 -eq 0) {
+                $updateTime=date
+                write-host "Update as of $updateTime"
+                $logThisOne=$true
+            }
+            if ($jobState -eq "Complete")
+            {
+                $completed_machines += 1
+                $failed_machines += 1
+                Write-Host " -= 1 -= 1> BVT job $jobName exited with FAILED state!" -ForegroundColor red
+            }
+            elseif ($jobState -eq "Completed")
+            {
+                $completed_machines += 1
+                Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
+            }
+            elseif ($jobState -eq "Running")
+            {
+                $running_machines += 1
+                if ($logThisOne -eq $true) {
+                    if (Test-Path C:\temp\transcripts\$logFileName) {
+                        $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
+                        Write-Host $logtext
+                    } else {
+                        Write-Host "      Job $jobName is running, but has not reported in yet..."
+                    }
                 }
             }
-        }
-        else
-        {
-            $other_machines++
-            Write-Host "***** BVT job $jobName is in state $jobState." -ForegroundColor Yellow
+            else
+            {
+                $other_machines += 1
+                Write-Host "***** BVT job $jobName is in state $jobState." -ForegroundColor Yellow
+            }
         }
     }
 
-    $sleep_count++
+    $sleep_count += 1
     if ($completed_machines -lt $launched_machines) {
         sleep(10)
     } else {
