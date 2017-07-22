@@ -10,6 +10,9 @@
 #
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
+
+. ./secrets.ps1
+
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
 
@@ -20,6 +23,8 @@ function callItIn($c, $m) {
 $global:isHyperV = $false
 
 function phoneHome($m) {
+    . ./secrets.ps1
+    
     if ($global:isHyperV -eq $true) {
         invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 
@@ -30,8 +35,8 @@ function phoneHome($m) {
             #
             Exit-PSSession $s
             $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-            $pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-            $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+            $pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
+            $cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
             $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
         }
     } else {
@@ -55,8 +60,8 @@ if ($? -eq $false) {
 } else {
     echo "It looks like we're in Hyper-V"
     $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-    $pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-    $cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+    $pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
+    $cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
     $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
 }
 

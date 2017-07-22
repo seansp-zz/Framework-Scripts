@@ -1,7 +1,8 @@
 ﻿function login_azure([string] $rg, [string] $sa) {
+    . ./secrets.ps1
 
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
-    Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4" > $null
+    Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 
     if ($rg -ne "" -and $sa -ne "") {
         Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa > $null
@@ -9,8 +10,10 @@
 }
 
 function make_cred () {
-    $pw = convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-    $cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+    . ./secrets.ps1
+
+    $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
+    $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 
     return $cred
 }

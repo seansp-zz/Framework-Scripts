@@ -35,6 +35,8 @@ param (
 )
 Set-StrictMode -Version 2.0
 
+. ./secrets.ps1
+
 $global:sourceResourceGroupName=$sourceResourceGroupName
 $global:sourceStorageAccountName=$sourceStorageAccountName
 $global:sourceContainerName=$sourceContainerName
@@ -80,8 +82,9 @@ $global:timer_is_running = 0
 #  Session stuff
 #
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$global:pw = convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-$global:cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$global:pw
+$global:pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
+$global:cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$global:pw
+
 
 
 class MonitoredMachine {
@@ -548,7 +551,7 @@ Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
 
 Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4" > $null
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName > $null
 
 #

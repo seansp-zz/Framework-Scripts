@@ -6,6 +6,8 @@ param (
     [Parameter(Mandatory=$true)] [string] $j
 )
 
+. ./secrets.ps1
+
 $logFileName="c:/temp/"+$j +"_download.log"
 $localFileName=$n
 
@@ -20,7 +22,7 @@ Write-Host "Importing the context...." | out-file $logFileName
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 
 Write-Host "Selecting the Azure subscription..." | out-file -append $logFileName
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $g –StorageAccountName $nm 
 
 Write-Host "Attempting to save the VM..."
