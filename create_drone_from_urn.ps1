@@ -70,6 +70,7 @@ echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.
 #  Now transfer the file
 C:\azure-linux-automation\tools\dos2unix.exe .\make_drone.sh
 C:\azure-linux-automation\tools\dos2unix.exe .\secrets.sh
+C:\azure-linux-automation\tools\dos2unix.exe .\secrets.ps1
 echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
 echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
 echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.ps1 $username@$ip`:/tmp
