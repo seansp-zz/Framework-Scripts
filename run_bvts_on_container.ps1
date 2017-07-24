@@ -235,6 +235,7 @@ while ($completed_machines -lt $launched_machines) {
             elseif ($jobState -eq "Completed")
             {
                 $completed_machines += 1
+                get-job -Name $jobName | Receive-Job
                 Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
             }
             elseif ($jobState -eq "Running")
