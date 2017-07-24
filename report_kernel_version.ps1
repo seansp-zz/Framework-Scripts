@@ -22,7 +22,7 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 #
 #  Set up the PSRP session

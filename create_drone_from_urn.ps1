@@ -17,7 +17,7 @@
     
 $vnetName="JPL-VNet-1"
 $subnetName="JPL-Subnet-1"
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"

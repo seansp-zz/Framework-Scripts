@@ -5,7 +5,7 @@
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 #
 #  Launch the automation

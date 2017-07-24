@@ -15,7 +15,7 @@ param (
     [Parameter(Mandatory=$false)] [string[]] $requestedVMs
 )
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 $rg="smoke_source_resource_group"
 $nm="smokesourcestorageacct"

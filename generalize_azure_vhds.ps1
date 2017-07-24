@@ -11,7 +11,7 @@ param (
 )
 
 . "C:\Framework-Scripts\common_functions.ps1"
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 #
 #  Session stuff

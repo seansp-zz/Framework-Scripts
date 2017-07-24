@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory=$true)] [string] $j
 )
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 $logFileName="c:/temp/"+$j +"_download.log"
 $localFileName=$n
