@@ -8,7 +8,7 @@
 #
 #  Load our secrets.sh
 #
-source ./secrets.sh
+source /tmp/secrets.sh
 
 #
 #  Find out what kind of system we're on
@@ -124,8 +124,7 @@ NEW_SOURCES
     if ! [ -d $framework_scripts_path ]; then
         git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
     fi
-    cd $framework_scripts_path
-    cp /tmp/secrets.sh .$framework_scripts_path/secrets.sh
+    cp /tmp/secrets.sh $framework_scripts_path/secrets.sh
     cp /tmp/secrets.ps1 $framework_scripts_path/secrets.ps1
 
     #
@@ -217,9 +216,12 @@ PASSWD_END
     #  Git and sync
     yum install -y git
     cd
-    git clone https://github.com/FawcettJohnW/Framework-Scripts.git
-    cp /tmp/secrets.sh ./Framework-Scripts/secrets.sh
-    cp /tmp/secrets.ps1 ./Framework-Scripts/secrets.ps1
+    framework_scripts_path="/root/Framework-Scripts"
+    if ! [ -d $framework_scripts_path ]; then
+        git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
+    fi
+    cp /tmp/secrets.sh $framework_scripts_path/secrets.sh
+    cp /tmp/secrets.ps1 $framework_scripts_path/secrets.ps1
 
     #
     #  Need NFS
