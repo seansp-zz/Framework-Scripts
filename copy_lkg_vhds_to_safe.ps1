@@ -15,9 +15,11 @@ param (
     [Parameter(Mandatory=$false)] [string] $destPkgContainer="last-known-good-packages",
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
-    [Parameter(Mandatory=$false)] [switch] $excludePackages=$false,
-    [Parameter(Mandatory=$false)] [switch] $excludeVHDs=$false
+    [Parameter(Mandatory=$false)] [string] $excludePackages=$false,
+    [Parameter(Mandatory=$false)] [string] $excludeVHDs=$false
 )
+
+. ./secrets.ps1
 
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
@@ -28,11 +30,11 @@ Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
 
 Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4" > $null
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA > $null
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
-Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 # Get-AzureRmVm -ResourceGroupName $sourceRG | Stop-AzureRmVM -Force > $null
 
 

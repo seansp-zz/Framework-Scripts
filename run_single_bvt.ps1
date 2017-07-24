@@ -5,13 +5,15 @@
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
+. ./secrets.ps1
+
 #
 #  Launch the automation
 $transFile="c:\temp\transcripts\" + $sourceName + "_transcript.log"
 Start-Transcript -Path c:\temp\bvt_transcripts\$transFile
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"
 
 $tests_failed = $false
 cd C:\azure-linux-automation

@@ -10,10 +10,12 @@
 #
 ##############################################################
 param (
-    [Parameter(Mandatory=$false)] [switch] $getAll,
-    [Parameter(Mandatory=$false)] [switch] $replaceVHD,
+    [Parameter(Mandatory=$false)] [string] $getAll=$false,
+    [Parameter(Mandatory=$false)] [string] $replaceVHD=$false,
     [Parameter(Mandatory=$false)] [string[]] $requestedVMs
 )
+
+. ./secrets.ps1
 
 $rg="smoke_source_resource_group"
 $nm="smokesourcestorageacct"
@@ -25,7 +27,7 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
 $requestedVMs
 
 write-host "Selecting the Azure subscription..." -ForegroundColor green
-Select-AzureRmSubscription -SubscriptionId "2cd20493-fe97-42ef-9ace-ab95b63d82c4"
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
 
 $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $rg -Name $nm
@@ -164,6 +166,6 @@ while ($stop_checking -eq $false) {
             }
         }
     }
-    $SleepCount++
+    $SleepCount+=1
     Start-Sleep 10
 }

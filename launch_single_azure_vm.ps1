@@ -7,17 +7,29 @@
     [Parameter(Mandatory=$true)] [string] $network="SmokeVNet",
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
 
-    [Parameter(Mandatory=$true)] [switch] $addAdminUser,
-    [Parameter(Mandatory=$true)] [string] $adminUser="mstest",
-    [Parameter(Mandatory=$true)] [string] $adminPW="P@ssW0rd-"
+    [Parameter(Mandatory=$true)] [string] $addAdminUser=$false,
+    [Parameter(Mandatory=$true)] [string] $adminUser="",
+    [Parameter(Mandatory=$true)] [string] $adminPW=""
 )
+
+. ./secrets.ps1
+if( [string]::IsNullOrWhiteSpace( $adminUser ) )
+{
+    $adminUser = "$TEST_USER_ACCOUNT_NAME"
+}
+if( [string]::IsNullOrWhiteSpace( $adminPW ) )
+{
+    $adminPW = "$TEST_USER_ACCOUNT_PASS"
+}
+
+Start-Transcript C:\temp\transcripts\launch_single_azure_vm.log -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
 login_azure $resourceGroup $storageAccount
 
 echo "Making sure the VM is stopped..."  
-Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM Running" | Stop-AzureRmVM -Force
+Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 
 echo "Deleting any existing VM"
 Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
@@ -68,12 +80,15 @@ try {
 Catch
 {
     echo "Caught exception attempting to start the new VM.  Aborting..." 
+    Stop-Transcript
     return 1
 }
 
+Stop-Transcript
+
 # if ($addAdminUser -eq $true) {
 #     $pw = convertto-securestring -AsPlainText -force -string $adminPW
-#     $cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+#     $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 # 
 #     Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
 # }
