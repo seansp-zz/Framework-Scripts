@@ -38,6 +38,8 @@ if ($OverwriteVHDs -ne "False") {
 }
 
 write-host "Overwrite flag is $overwriteVHDs"
+get-job | Stop-Job
+get-job | Remove-Job
 
 Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
@@ -96,7 +98,7 @@ foreach ($oneblob in $blobs) {
     }    
     
     if ($start_copy -eq $true) {
-        Write-Host "Initiating job to copy VHD $targetName from LKG to BVT directory..." -ForegroundColor Yellow
+        Write-Host "Initiating job to copy VHD $targetName from container $sourceSA/$sourceContainer to $destSA/$destContainer..." -ForegroundColor Yellow
         $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
         if ($? -eq $true) {
             $copyblobs.Add($targetName)
