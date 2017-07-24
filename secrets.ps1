@@ -1,3 +1,4 @@
+Write-Host "Loaded SECRETS!!" -ForegroundColor Cyan
 $TEST_USER_ACCOUNT_NAME = "mstest"
 $TEST_USER_ACCOUNT_PASS = "P@ssW0rd-"
 $TEST_USER_ACCOUNT_PAS2 = "P@ssW0rd-1_K6"

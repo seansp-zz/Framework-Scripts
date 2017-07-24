@@ -96,11 +96,13 @@ $scriptBlockString =
             $network,
             $subnet
             )
-
+            write-host "Checkpoint 1" -ForegroundColor Cyan
     Start-Transcript C:\temp\transcripts\scriptblock.log -Force
-
+    write-host "Checkpoint 2" -ForegroundColor Cyan
     . "C:\Framework-Scripts\common_functions.ps1"
     . "C:\Framework-Scripts\secrets.ps1"
+
+    write-host "Checkpoint 3" -ForegroundColor Cyan
     
     login_azure $destRG $destSA
 
@@ -144,7 +146,6 @@ $scriptBlockString =
     #  The first one gets the machine added to known_hosts
     Write-Host "Copying make_drone to the target.." -ForegroundColor Green
     echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
-    echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
 
     #
     #  Now transfer the files
