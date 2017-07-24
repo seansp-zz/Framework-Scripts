@@ -13,8 +13,6 @@ source /tmp/secrets.sh
 #
 #  Find out what kind of system we're on
 #
-set -e
-
 if [ -f /usr/bin/dpkg ]
   then
     echo "This is a dpkg machine"
