@@ -119,10 +119,15 @@ NEW_SOURCES
     #  Install git and clone our repo
     cd
     apt-get install -y git
+
     framework_scripts_path="/root/Framework-Scripts"
     if ! [ -d $framework_scripts_path ]; then
         git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
     fi
+    cd $framework_scripts_path
+    cp /tmp/secrets.sh .$framework_scripts_path/secrets.sh
+    cp /tmp/secrets.ps1 $framework_scripts_path/secrets.ps1
+
     #
     #  Need NFS
     apt-get install -y nfs-common
@@ -213,6 +218,8 @@ PASSWD_END
     yum install -y git
     cd
     git clone https://github.com/FawcettJohnW/Framework-Scripts.git
+    cp /tmp/secrets.sh ./Framework-Scripts/secrets.sh
+    cp /tmp/secrets.ps1 ./Framework-Scripts/secrets.ps1
 
     #
     #  Need NFS
