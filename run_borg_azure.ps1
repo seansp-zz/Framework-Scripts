@@ -35,7 +35,7 @@ param (
 )
 Set-StrictMode -Version 2.0
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 $global:sourceResourceGroupName=$sourceResourceGroupName
 $global:sourceStorageAccountName=$sourceStorageAccountName

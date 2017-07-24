@@ -4,7 +4,7 @@ param (
     [Parameter(Mandatory=$false)] [string] $storageAccount="smokeworkingstorageacct"
 )
 
-. ./secrets.ps1 
+. "C:\Framework-Scripts\secrets.ps1" 
 
 Write-Host "Cleaning boot diag blobs from storage account $storageAccount, resource group $resourceGroup"
 

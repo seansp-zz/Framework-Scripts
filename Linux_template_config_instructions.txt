@@ -25,7 +25,7 @@ ufw allow 443
 ufw allow 5986
 
 Check OMI and PSRP:
-   . ./secrets.ps1
+   . "C:\Framework-Scripts\secrets.ps1"
    $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
    $pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
    $cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw

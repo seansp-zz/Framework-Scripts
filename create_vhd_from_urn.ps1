@@ -17,7 +17,7 @@
 Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 Write-Host "Working with RG $destRG and SA $destSA"
 login_azure $destRG $destSA

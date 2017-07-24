@@ -1,5 +1,7 @@
 ﻿function login_azure([string] $rg, [string] $sa) {
+
     . "./secrets.ps1"
+
 
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
     Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null

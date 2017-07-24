@@ -12,7 +12,7 @@
     [Parameter(Mandatory=$true)] [string] $adminPW=""
 )
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 if( [string]::IsNullOrWhiteSpace( $adminUser ) )
 {
     $adminUser = "$TEST_USER_ACCOUNT_NAME"

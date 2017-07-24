@@ -12,7 +12,7 @@ param (
     [Parameter(Mandatory=$true)] [string] $script
 )
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"

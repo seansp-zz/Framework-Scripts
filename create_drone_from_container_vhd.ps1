@@ -24,7 +24,7 @@
 Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
@@ -100,7 +100,7 @@ $scriptBlockString =
     Start-Transcript C:\temp\transcripts\scriptblock.log -Force
 
     . "C:\Framework-Scripts\common_functions.ps1"
-    . "./secrets.ps1"
+    . ".\secrets.ps1"
 
     login_azure $destRG $destSA
 

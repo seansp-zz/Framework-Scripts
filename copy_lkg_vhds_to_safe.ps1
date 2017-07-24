@@ -19,7 +19,7 @@ param (
     [Parameter(Mandatory=$false)] [string] $excludeVHDs=$false
 )
 
-. ./secrets.ps1
+. "C:\Framework-Scripts\secrets.ps1"
 
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
