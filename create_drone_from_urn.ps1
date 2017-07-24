@@ -65,7 +65,6 @@ $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $pipName
 #
 #  The first one gets the machine added to known_hosts
 echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
-echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
 
 #
 #  Now transfer the file
@@ -73,6 +72,7 @@ C:\azure-linux-automation\tools\dos2unix.exe .\make_drone.sh
 C:\azure-linux-automation\tools\dos2unix.exe .\secrets.sh
 echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
 echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
+echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.ps1 $username@$ip`:/tmp
 
 C:\azure-linux-automation\tools\dos2unix.exe .\rpm_install_azure_test_prereq.sh
 echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\rpm_install_azure_test_prereq.sh $username@$ip`:/tmp

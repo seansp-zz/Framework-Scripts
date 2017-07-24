@@ -116,6 +116,8 @@ dpkg -i ./libssl1.0.2_1.0.2l-2_amd64.deb
     cd
     apt-get install -y git
     git clone https://github.com/FawcettJohnW/Framework-Scripts.git
+    cp /tmp/secrets.sh ./Framework-Scripts/secrets.sh
+    cp /tmp/secrets.ps1 ./Framework-Scripts/secrets.ps1
     
     #
     #  Need NFS
@@ -205,6 +207,8 @@ PASSWD_END
     yum install -y git
     cd
     git clone https://github.com/FawcettJohnW/Framework-Scripts.git
+    cp /tmp/secrets.sh ./Framework-Scripts/secrets.sh
+    cp /tmp/secrets.ps1 ./Framework-Scripts/secrets.ps1
 
     #
     #  Need NFS
