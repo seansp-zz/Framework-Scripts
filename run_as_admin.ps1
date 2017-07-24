@@ -12,9 +12,11 @@ param (
     [Parameter(Mandatory=$true)] [string] $script
 )
 
+. ./secrets.ps1
+
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-$cred=new-object -typename system.management.automation.pscredential -argumentlist "MSTest",$pw
+$pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 
 $s=New-PSSession -ComputerName 169.254.241.55 -Authentication Basic -Credential $cred  -Port 443 -UseSSL -SessionOption $o
 if ($? -eq $true) {

@@ -22,12 +22,14 @@ function phoneHome($m) {
     invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 }
 
+. ./secrets.ps1
+
 #
 #  Set up the PSRP session
 #
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$pw=convertto-securestring -AsPlainText -force -string 'P@ssW0rd-'
-$cred=new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+$pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
+$cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $cred -authentication Basic -SessionOption $o
 
 #
