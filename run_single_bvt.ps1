@@ -10,25 +10,19 @@
 #
 #  Launch the automation
 $transFile="c:\temp\transcripts\" + $sourceName + "_transcript.log"
-Start-Transcript -Path c:\temp\bvt_transcripts\$transFile
+echo "Starting execution of test $testCycle on machine $sourceName" 2>&1 | out-file $transFile -Force
 
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
-Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"
+Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 2>&1 | out-file $transFile -Append
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" 2>&1 | out-file $transFile -Append
 
 $tests_failed = $false
 cd C:\azure-linux-automation
-.\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode
+git pull 2>&1 | out-file $transFile -Append
+.\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode 2>&1 | out-file $transFile -Append
 if ($? -ne $true) {
     $tests_failed = $true
 }
 
-if ($tests_failed -eq $true) {
-    Write-Host "BVTs for $sourceName have failed.  Transcript can be found in $transFile" -ForegroundColor Red
-} else { 
-    Write-Host "BVTs for $sourceName have passed.  Transcript can be found in $transFile" -ForegroundColor Green
-}
-
-Stop-Transcript
 if ($tests_failed -eq $true) {
     exit 1
 } else {
