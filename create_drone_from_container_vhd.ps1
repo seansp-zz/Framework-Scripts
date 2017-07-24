@@ -100,7 +100,7 @@ $scriptBlockString =
     Start-Transcript C:\temp\transcripts\scriptblock.log -Force
 
     . "C:\Framework-Scripts\common_functions.ps1"
-    . ".\secrets.ps1"
+    . "C:\Framework-Scripts\secrets.ps1"
 
     login_azure $destRG $destSA
 
