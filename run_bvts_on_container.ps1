@@ -188,7 +188,8 @@ foreach ($oneblob in $blobs) {
     #
     # Launch the automation
     write-host "Args are: $sourceName, $configFileName, $distro, $testCycle"
-    Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } -ArgumentList @($sourceName),@($configFileName),@($distro),@($testCycle)
+    $admin_command="C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $sourceName -configFileName $configFileName -distro $distro -testCycle $testCycle
+    Start-Job -Name $jobName -ScriptBlock {  C:\Framework-Scripts\run_as_admin.ps1 -script $arg[0] } -ArgumentList @($admin_command)
     if ($? -ne $true) {
         Write-Host "Error launching job $jobName for source $targetName.  BVT will not be run." -ForegroundColor Red
     } else {
