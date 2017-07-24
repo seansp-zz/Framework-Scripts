@@ -161,6 +161,8 @@ NEW_SOURCES
     ufw allow 5986
 else
     echo "RPM-based system"
+    echo "User name is $REDHAT_SUBSCRIPTION_ID"
+    echo "PW is $REDHAT_SUBSCRIPTION_PW"
 subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
 
     echo "Precursors"
