@@ -221,9 +221,10 @@ while ($completed_machines -lt $launched_machines) {
 
         $logFileName = $sourceName + "_transcript.log"
 
-        $jobStatus=get-job -Name $jobName -ErrorAction SilentlyContinue
+        $jobStatus=get-job -Name $jobName
         if ($? -eq $true) {
             $jobState = $jobStatus.State
+            Write-Host "Job $jobName reports state $jobState"
             
             if ($jobState -eq "Failed")
             {
@@ -241,8 +242,8 @@ while ($completed_machines -lt $launched_machines) {
                 $running_machines += 1
                 if ($logThisOne -eq $true) {
                     if (Test-Path C:\temp\transcripts\$logFileName) {
-                        $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
-                        Write-Host $logtext
+                        # $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
+                        Write-Host "Stuff..."
                     } else {
                         Write-Host "      Job $jobName is running, but has not reported in yet..."
                     }
