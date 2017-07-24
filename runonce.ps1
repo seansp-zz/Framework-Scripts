@@ -10,9 +10,15 @@
 #
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
+<<<<<<<
 
 . "C:\Framework-Scripts\secrets.ps1"
 
+=======
+
+. ./secrets.ps1
+
+>>>>>>>
 function callItIn($c, $m) {
     $output_path="c:\temp\progress_logs\$c"
 
@@ -23,8 +29,13 @@ function callItIn($c, $m) {
 $global:isHyperV = $false
 
 function phoneHome($m) {
+<<<<<<<
     . "C:\Framework-Scripts\secrets.ps1"
     
+=======
+    . ./secrets.ps1
+    
+>>>>>>>
     if ($global:isHyperV -eq $true) {
         invoke-command -session $s -ScriptBlock ${function:callItIn} -ArgumentList $c,$m
 

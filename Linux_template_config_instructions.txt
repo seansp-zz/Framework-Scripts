@@ -27,7 +27,7 @@ ufw allow 5986
 Check OMI and PSRP:
    . "C:\Framework-Scripts\secrets.ps1"
    $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-   $pw=convertto-securestring -AsPlainText -force -string 'P@$$w0rd!'
+   $pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
    $cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
    $session=new-PSSession -computername $ipAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
    invoke-command -session $session -ScriptBlock {/bin/uname -r}
