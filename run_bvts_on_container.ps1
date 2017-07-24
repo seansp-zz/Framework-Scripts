@@ -187,13 +187,14 @@ foreach ($oneblob in $blobs) {
 
     #
     # Launch the automation
+    write-host "Args are: $sourceName, $configFileName, $distro, $testCycle"
     Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } -ArgumentList @($sourceName),@($configFileName),@($distro),@($testCycle)
     if ($? -ne $true) {
-        Write-Host "Error launching job for source $targetName.  BVT will not be run." -ForegroundColor Red
+        Write-Host "Error launching job $jobName for source $targetName.  BVT will not be run." -ForegroundColor Red
     } else {
         $launched_machines += 1
         $launchTime=date
-        Write-Host "Machine $targetName launched as BVT $launched_machines at $launchTime" -ForegroundColor Green
+        Write-Host "Job $jobName launched machine $targetName as BVT $launched_machines at $launchTime" -ForegroundColor Green
     }
 }
 
@@ -207,6 +208,13 @@ while ($completed_machines -lt $launched_machines) {
     $running_machines = 0
     $other_machines = 0
 
+    $logThisOne=$false
+    if ($sleep_count % 6 -eq 0) {
+        $updateTime=date
+        write-host "Update as of $updateTime.  There were $launched_machines started..."
+        $logThisOne=$true
+    }
+    
     foreach ($oneblob in $blobs) {
         $sourceName=$oneblob.Name
         $jobName=$sourceName + "_BVT_Runner"
@@ -216,18 +224,12 @@ while ($completed_machines -lt $launched_machines) {
         $jobStatus=get-job -Name $jobName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             $jobState = $jobStatus.State
-
-            $logThisOne=$false
-            if ($sleep_count % 6 -eq 0) {
-                $updateTime=date
-                write-host "Update as of $updateTime"
-                $logThisOne=$true
-            }
-            if ($jobState -eq "Complete")
+            
+            if ($jobState -eq "Failed")
             {
                 $completed_machines += 1
                 $failed_machines += 1
-                Write-Host " -= 1 -= 1> BVT job $jobName exited with FAILED state!" -ForegroundColor red
+                Write-Host " >>>> BVT job $jobName exited with FAILED state!" -ForegroundColor red
             }
             elseif ($jobState -eq "Completed")
             {
