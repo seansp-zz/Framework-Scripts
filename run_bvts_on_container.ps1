@@ -176,7 +176,7 @@ $blobs=get-AzureStorageBlob -Container $sourceContainer -Blob $blobFilter
 
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
-    $configFileName="bvt_exec_" + $sourceName + ".xml"
+    $configFileName="c:\temp\bvt_configs\bvt_exec_" + $sourceName + ".xml"
     $jobName=$sourceName + "_BVT_Runner"
 
     $targetName = $sourceName
