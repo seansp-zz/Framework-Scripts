@@ -9,15 +9,14 @@
 
 #
 #  Launch the automation
-$transFile="c:\temp\transcripts\" + $sourceName + "_transcript.log"
-echo "Starting execution of test $testCycle on machine $sourceName" >$transFile 2>&1
+echo "Starting execution of test $testCycle on machine $sourceName" 
 
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' >>$transFile 2>&1
-Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" >>$transFile 2>&1
+Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
+Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" 
 
 $tests_failed = $false
 cd C:\azure-linux-automation
-C:\azure-linux-automation\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode >>$transFile 2>&1
+C:\azure-linux-automation\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode
 if ($? -ne $true) {
     $tests_failed = $true
 }

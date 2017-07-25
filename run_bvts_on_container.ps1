@@ -228,8 +228,6 @@ while ($completed_machines -lt $launched_machines) {
         $jobStatus=get-job -Name $jobName
         if ($? -eq $true) {
             $jobState = $jobStatus.State
-            Write-Host "Job $jobName reports state $jobState"
-            
             if ($jobState -eq "Failed")
             {
                 $completed_machines += 1
@@ -245,10 +243,13 @@ while ($completed_machines -lt $launched_machines) {
             elseif ($jobState -eq "Running")
             {
                 $running_machines += 1
-                if ($logThisOne -eq $true) {
+                Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green
+                if ($logThisOne -eq $true) {                    
                     if (Test-Path C:\temp\transcripts\$logFileName) {
-                        $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 5)
-                        Write-Host $logtext
+                        Write-Host "      Last log file output:" -ForegroundColor green
+                        $output_so_far = get-job -Name $jobName | Receive-Job -Keep
+                        $output = $output_so_far | Select-Object -last 5
+                        write-host $output -ForegroundColor Yellow
                     } else {
                         Write-Host "      Job $jobName is running, but has not reported in yet..."
                     }
