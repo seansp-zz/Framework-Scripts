@@ -22,13 +22,16 @@ if [ -f /usr/bin/dpkg ]
     wget http://apt.puppetlabs.com/puppetlabs-release-trusty.deb
     dpkg -i puppetlabs-release-trusty.deb
     apt-get -y install puppet
+    apt-get -y install git
 
     export is_rpm=0
 else
     echo "This is an RPM-based machine"
     # Let's grab the rpm puppet installer.
+    yum -y install wget #parity.
     rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
     yum -y install puppet
+    yum -y install git
 
     export is_rpm=1
 fi
