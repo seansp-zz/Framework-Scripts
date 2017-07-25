@@ -42,7 +42,7 @@ get-job | Stop-Job
 get-job | Remove-Job
 
 cd C:\azure-linux-automation
-git pull 2>&1 | out-file $transFile -Append
+git pull
 
 Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
