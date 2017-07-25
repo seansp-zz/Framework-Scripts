@@ -38,7 +38,26 @@ fi
 
 FLAVOR="$(facter operatingsystem) $(facter operatingsystemrelease)"
 IPADDRESS="$(facter ipaddress)"
+clear
 echo "$FLAVOR -- IP Address = $IPADDRESS"
+cd
+git clone -b facter http://github.com/seansp/Framework-Scripts.git
+if[ -f "/tmp/secrets.ps1" ] then
+  echo "Updating framework with secrets.ps1"
+  cp /tmp/secrets.ps1 ./Framework-Scripts.git/secrets.ps1
+fi
+if[ -f "/tmp/secrets.sh" ] then
+  echo "Updating framework with secrets.sh"
+  cp /tmp/secrets.sh ./Framework-Scripts.git/secrets.sh
+fi
+
+if[ "$(facter operatingsystem)" == "RedHat" ]  then
+  echo "Configuring RedHat subscription-manager."
+  subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
+  subscription-manager repos --enable rhel-7-server-optional-rpms 
+  subscription-manager repos --enable rhel-7-server-extras-rpms   
+fi
+
 exit
 
 #
