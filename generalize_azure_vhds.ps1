@@ -20,6 +20,7 @@ $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $cred = make_cred
 
 login_azure $sourceRG $sourceSA
+$error = $false
 
 Write-Host "Generalizing the running machines..."  -ForegroundColor green
 $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
@@ -44,12 +45,20 @@ foreach ($vm in $runningVMs) {
             az vm generalize --resource-group $sourceRG --name vm_name
         } else {
             write-host "Error on deprovisioning the target machine.  Please have a human take a look."
+            $error = $true
         }
     } else {
         Write-Host "    UNABLE TO PSRP TO MACHINE!  COULD NOT DEPROVISION" -ForegroundColor Red
+        $error = $true
     }
 
     if ($session -ne $null) {
         Remove-PSSession $session
+    }
+
+    if ($error -eq $true) {
+        exit 1
+    } else {
+        exit 0
     }
 }
