@@ -22,7 +22,7 @@ $cred = make_cred
 login_azure $sourceRG $sourceSA
 $error = $false
 
-Write-Host "Generalizing the running machines..."  -ForegroundColor green
+Write-Host "Locating the running machines..."  -ForegroundColor green
 $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
 foreach ($vm in $runningVMs) {
     $vm_name=$vm.Name
@@ -31,7 +31,7 @@ foreach ($vm in $runningVMs) {
 
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
     if ($? -eq $true -and $session -ne $null) {
-        Write-Host "    PSRP Connection established; deprovisioning and shutting down" -ForegroundColor Green
+        Write-Host "    PSRP Connection to machine $vm_name established; deprovisioning and shutting down" -ForegroundColor Green
         $deprovisionString = "echo $password | sudo -S bash -c `"/sbin/waagent -deprovision -force`""
         $deprovisionBlock=[scriptblock]::Create($deprovisionString)
         invoke-command -session $session -ScriptBlock $deprovisionBlock
@@ -40,7 +40,10 @@ foreach ($vm in $runningVMs) {
         $stopBlock=[scriptblock]::Create($stopBlockString)
         invoke-command -session $session -ScriptBlock $stopBlock
 
+        Write-Host "Now deallocating the machine..."
         az vm deallocate --resource-group $sourceRG --name $vm_name
+
+        Write-Host "And finally generalizing the machine..."
         az vm generalize --resource-group $sourceRG --name $vm_name
     } else {
         Write-Host "    UNABLE TO PSRP TO MACHINE!  COULD NOT DEPROVISION" -ForegroundColor Red
