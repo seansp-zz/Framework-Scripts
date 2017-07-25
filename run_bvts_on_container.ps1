@@ -245,14 +245,10 @@ while ($completed_machines -lt $launched_machines) {
                 $running_machines += 1
                 Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green
                 if ($logThisOne -eq $true) {                    
-                    if (Test-Path C:\temp\transcripts\$logFileName) {
-                        Write-Host "      Last log file output:" -ForegroundColor green
-                        $output_so_far = get-job -Name $jobName | Receive-Job -Keep
-                        $output = $output_so_far | Select-Object -last 5
-                        write-host $output -ForegroundColor Yellow
-                    } else {
-                        Write-Host "      Job $jobName is running, but has not reported in yet..."
-                    }
+                    Write-Host "      Last log file output:" -ForegroundColor green
+                    $output_so_far = Receive-Job -Name $jobName -Keep
+                    $output = $output_so_far | Select-Object -last 5
+                    write-host $output -ForegroundColor Yellow
                 }
             }
             else
