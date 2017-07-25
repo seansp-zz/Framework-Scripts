@@ -162,6 +162,11 @@ else
     echo "User name is $REDHAT_SUBSCRIPTION_ID"
     echo "PW is $REDHAT_SUBSCRIPTION_PW"
 subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
+subscription-manager repos --enable rhel-7-server-optional-rpms 
+subscription-manager repos --enable rhel-7-server-extras-rpms 
+wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
+rpm -i epel-release-latest-7.noarch.rpm 
+yum install -y epel-release 
 
     echo "Precursors"
 yum -y install wget
