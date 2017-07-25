@@ -42,7 +42,7 @@ foreach ($blob in $blobs) {
 
             if ($StartMachines -ne $false) {
                 Write-Host "Starting VM for VHD $blobName..."
-                .\launch_single_azure_vm.ps1 -vmName RHEL72-BORG -resourceGroup $sourceRG -storageAccount $sourceSA -containerName $sourceContainer -network SmokeVNet -subnet SmokeSubnet-1
+                .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA -containerName $sourceContainer -network SmokeVNet -subnet SmokeSubnet-1
             } else {
                 Write-Host "StartMachine was not set.  VM $blobName will not be started or used."
                 continue

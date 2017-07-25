@@ -191,7 +191,8 @@ foreach ($oneblob in $blobs) {
     #
     # Launch the automation
     write-host "Args are: $sourceName, $configFileName, $distro, $testCycle"
-    Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } -ArgumentList @($sourceName),@($configFileName),@($distro),@($testCycle)
+    Start-Job -Name $jobName -ScriptBlock { C:\Framework-Scripts\run_single_bvt.ps1 -sourceName $args[0] -configFileName $args[1] -distro $args[2] -testCycle $args[3]  } `
+                                            -ArgumentList @($sourceName),@($configFileName),@($distro),@($testCycle)
     if ($? -ne $true) {
         Write-Host "Error launching job $jobName for source $targetName.  BVT will not be run." -ForegroundColor Red
     } else {
@@ -246,8 +247,8 @@ while ($completed_machines -lt $launched_machines) {
                 $running_machines += 1
                 if ($logThisOne -eq $true) {
                     if (Test-Path C:\temp\transcripts\$logFileName) {
-                        # $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 3)
-                        Write-Host "Stuff..."
+                        $logtext=(Get-Content -Path C:\temp\transcripts\$logFileName | Select-Object -last 5)
+                        Write-Host $logtext
                     } else {
                         Write-Host "      Job $jobName is running, but has not reported in yet..."
                     }

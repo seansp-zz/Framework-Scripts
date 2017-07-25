@@ -16,7 +16,8 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' >>$transFile 2>&1
 Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" >>$transFile 2>&1
 
 $tests_failed = $false
-.\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode >>$transFile 2>&1
+cd C:\azure-linux-automation
+C:\azure-linux-automation\AzureAutomationManager.ps1 -xmlConfigFile $configFileName -runtests -email –Distro $distro -cycleName $testCycle -UseAzureResourceManager -EconomyMode >>$transFile 2>&1
 if ($? -ne $true) {
     $tests_failed = $true
 }
