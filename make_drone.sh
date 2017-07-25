@@ -16,11 +16,27 @@ source /tmp/secrets.sh
 if [ -f /usr/bin/dpkg ]
   then
     echo "This is a dpkg machine"
+    #  Let's grab the dpkg puppet installer.
+    #  TODO: do i really need wget here?
+    apt-get -y install wget   # We use the wget to get the installer.
+    wget http://apt.puppetlabs.com/puppetlabs-release-trusty.deb
+    dpkg -i puppetlabs-release-trusty.deb
+    apt-get -y install puppet
+
     export is_rpm=0
 else
     echo "This is an RPM-based machine"
+    # Let's grab the rpm puppet installer.
+    rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+    yum -y install puppet
+
     export is_rpm=1
 fi
+
+FLAVOR="$(facter operatingsystem) $(facter operatingsystemrelease)"
+IPADDRESS="$(facter ipaddress)"
+echo "$FLAVOR -- IP Address = $IPADDRESS"
+exit
 
 #
 #  Do the setup for that system
