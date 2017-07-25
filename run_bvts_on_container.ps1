@@ -41,6 +41,9 @@ write-host "Overwrite flag is $overwriteVHDs"
 get-job | Stop-Job
 get-job | Remove-Job
 
+cd C:\azure-linux-automation
+git pull 2>&1 | out-file $transFile -Append
+
 Write-Host "Importing the context...." -ForegroundColor Green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
 
@@ -188,8 +191,10 @@ foreach ($oneblob in $blobs) {
     #
     # Launch the automation
     write-host "Args are: $sourceName, $configFileName, $distro, $testCycle"
-    $admin_command="C:\Framework-Scripts\run_single_bvt.ps1 -sourceName " + $sourceName + " -configFileName " + $configFileName + " -distro " + $distro + " -testCycle " + $testCycle
-    Start-Job -Name $jobName -ScriptBlock {  C:\Framework-Scripts\run_as_admin.ps1 -script $arg[0] } -ArgumentList @($admin_command)
+    $run_command= "C:\Framework-Scripts\run_single_bvt.ps1 -sourceName `"" + $sourceName + "`" -configFileName `"" + $configFileName + "`" -distro `"" + $distro + "`" -testCycle `"" + $testCycle + "`""
+    $admin_command="C:\Framework-Scripts\run_as_admin.ps1 -script `'" + $run_command + "`'"
+    $script = [scriptblock]::Create($admin_command)
+    Start-Job -Name $jobName -ScriptBlock { $script }
     if ($? -ne $true) {
         Write-Host "Error launching job $jobName for source $targetName.  BVT will not be run." -ForegroundColor Red
     } else {
