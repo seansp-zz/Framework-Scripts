@@ -40,13 +40,8 @@ foreach ($vm in $runningVMs) {
         $stopBlock=[scriptblock]::Create($stopBlockString)
         invoke-command -session $session -ScriptBlock $stopBlock
 
-        if ($? -eq $true) {
-            az vm deallocate --resource-group $sourceRG --name vm_name
-            az vm generalize --resource-group $sourceRG --name vm_name
-        } else {
-            write-host "Error on deprovisioning the target machine.  Please have a human take a look."
-            $error = $true
-        }
+        az vm deallocate --resource-group $sourceRG --name $vm_name
+        az vm generalize --resource-group $sourceRG --name $vm_name
     } else {
         Write-Host "    UNABLE TO PSRP TO MACHINE!  COULD NOT DEPROVISION" -ForegroundColor Red
         $error = $true
