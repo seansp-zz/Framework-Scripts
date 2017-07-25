@@ -31,9 +31,13 @@ foreach ($vm in $runningVMs) {
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
     if ($? -eq $true -and $session -ne $null) {
         Write-Host "    PSRP Connection established; deprovisioning and shutting down" -ForegroundColor Green
-        $scriptBlockString = "echo $password | sudo -S bash -c waagent -deprovision -force; echo $password | sudo -S bash -c shutdown"
-        $scriptBlock=[scriptblock]::Create($scriptBlockString)
-        invoke-command -session $session -ScriptBlock $scriptBlock
+        $deprovisionString = "echo $password | sudo -S bash -c /sbin/waagent -deprovision -force"
+        $deprovisionBlock=[scriptblock]::Create($deprovisionString)
+        invoke-command -session $session -ScriptBlock $deprovisionBlock
+
+        $stopBlockString = "echo $password | sudo -S bash -c shutdown"
+        $stopBlock=[scriptblock]::Create($stopBlockString)
+        invoke-command -session $session -ScriptBlock $stopBlock
     } else {
         Write-Host "    UNABLE TO PSRP TO MACHINE!  COULD NOT DEPROVISION" -ForegroundColor Red
     }
