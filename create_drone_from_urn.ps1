@@ -50,7 +50,7 @@ Write-Host "Attempting to create virtual machine $vmName.  This may take some ti
 ## Setup local VM object
 # $cred = Get-Credential
 az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password "$TEST_USER_ACCOUNT_PAS2" --admin-username "$TEST_USER_ACCOUNT_NAME" `
+   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
    --authentication-type "password"
 
 $currentDir="C:\Framework-Scripts"

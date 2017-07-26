@@ -55,7 +55,7 @@ if ($? -eq $false) {
     Stop-Transcript
     exit 1
 }
-
+exit 1
 Write-Host "VM Created successfully.  Stopping it now..."
 Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
