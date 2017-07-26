@@ -13,7 +13,7 @@ source /tmp/secrets.sh
 #
 #  Find out what kind of system we're on
 #
-if [ -f /usr/bin/dpkg ]
+if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
     #  Let's grab the dpkg puppet installer.
@@ -23,8 +23,7 @@ if [ -f /usr/bin/dpkg ]
     dpkg -i puppetlabs-release-trusty.deb
     apt-get -y install puppet
     apt-get -y install git
-
-    export is_rpm=0
+    export is_rpm=0;
 else
     echo "This is an RPM-based machine"
     # Let's grab the rpm puppet installer.
@@ -32,33 +31,47 @@ else
     rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
     yum -y install puppet
     yum -y install git
+    export is_rpm=1;
+fi;
 
-    export is_rpm=1
-fi
-
-FLAVOR="$(facter operatingsystem) $(facter operatingsystemrelease)"
+FAMILY="$(facter operatingsystem)"
+FAMILYVER="$(facter operatingsystemrelease)"
+FLAVOR="$FAMILY [$FAMILYVER]"
 IPADDRESS="$(facter ipaddress)"
 clear
 echo "$FLAVOR -- IP Address = $IPADDRESS"
 cd
 git clone -b facter http://github.com/seansp/Framework-Scripts.git
-if[ -f "/tmp/secrets.ps1" ] then
-  echo "Updating framework with secrets.ps1"
-  cp /tmp/secrets.ps1 ./Framework-Scripts.git/secrets.ps1
-fi
-if[ -f "/tmp/secrets.sh" ] then
-  echo "Updating framework with secrets.sh"
-  cp /tmp/secrets.sh ./Framework-Scripts.git/secrets.sh
-fi
 
-if[ "$(facter operatingsystem)" == "RedHat" ]  then
-  echo "Configuring RedHat subscription-manager."
+#
+# Copy existing secrets files.
+#
+if [ -f /tmp/secrets.ps1 ] ;
+  then 
+  echo "Updating framework with preconfigured secrets.ps1"
+  cp /tmp/secrets.ps1 ~/Framework-Scripts/secrets.ps1;
+fi;
+
+if [ -f /tmp/secrets.sh ] ;
+  then 
+  echo "Updating framework with preconfigured secrets.sh"
+  cp /tmp/secrets.sh ~/Framework-Scripts/secrets.sh;
+fi;
+
+#
+# Specific platform steps.
+#
+case "${facter operatingsystem}" in 
+  RedHat) 
+  echo "RedHat specific configuration."
+  echo " -- configuring subscription-manager."
   subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
   subscription-manager repos --enable rhel-7-server-optional-rpms 
-  subscription-manager repos --enable rhel-7-server-extras-rpms   
-fi
+  subscription-manager repos --enable rhel-7-server-extras-rpms
+  ;;  
+esac
 
-exit
+## -- Legacy follows. ##
 
 #
 #  Do the setup for that system
