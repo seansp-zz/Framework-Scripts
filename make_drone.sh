@@ -38,10 +38,17 @@ FAMILY="$(facter operatingsystem)"
 FAMILYVER="$(facter operatingsystemrelease)"
 FLAVOR="$FAMILY [$FAMILYVER]"
 IPADDRESS="$(facter ipaddress)"
-clear
+
 echo "$FLAVOR -- IP Address = $IPADDRESS"
-cd
-git clone -b facter http://github.com/seansp/Framework-Scripts.git
+
+# 
+# Retrieve our depot.
+#
+framework_scripts_path="/root/Framework-Scripts"
+if ! [ -d $framework_scripts_path ]; then
+  git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
+fi
+git clone http://github.com/FawcettJohnW/Framework-Scripts.git
 
 #
 # Copy existing secrets files.
@@ -49,22 +56,24 @@ git clone -b facter http://github.com/seansp/Framework-Scripts.git
 if [ -f /tmp/secrets.ps1 ] ;
   then 
   echo "Updating framework with preconfigured secrets.ps1"
-  cp /tmp/secrets.ps1 ~/Framework-Scripts/secrets.ps1;
+  cp /tmp/secrets.ps1 $framework_scripts_path/secrets.ps1
 fi;
 
 if [ -f /tmp/secrets.sh ] ;
   then 
   echo "Updating framework with preconfigured secrets.sh"
-  cp /tmp/secrets.sh ~/Framework-Scripts/secrets.sh;
+  cp /tmp/secrets.sh $framework_scripts_path/secrets.sh
 fi;
 
 #
 # Specific platform steps.
 #
-case "${facter operatingsystem}" in 
+case $FAMILY in 
   RedHat) 
   echo "RedHat specific configuration."
   echo " -- configuring subscription-manager."
+  echo " -- $REDHAT_SUBSCRIPTION_ID:$REDHAT_SUBSCRIPTION_PW"
+
   subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
   subscription-manager repos --enable rhel-7-server-optional-rpms 
   subscription-manager repos --enable rhel-7-server-extras-rpms
@@ -82,7 +91,6 @@ if [ $is_rpm == 0 ]
     echo "Precursors."
 
 apt-get -y update
-apt-get -y install wget
 apt-get -y install iperf
 apt-get -y install bind9
 apt-get install build-essential software-properties-common -y
@@ -165,18 +173,6 @@ NEW_SOURCES
     apt-get install -y omi-psrp-server
 
     #
-    #  Install git and clone our repo
-    cd
-    apt-get install -y git
-
-    framework_scripts_path="/root/Framework-Scripts"
-    if ! [ -d $framework_scripts_path ]; then
-        git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
-    fi
-    cp /tmp/secrets.sh $framework_scripts_path/secrets.sh
-    cp /tmp/secrets.ps1 $framework_scripts_path/secrets.ps1
-
-    #
     #  Need NFS
     apt-get install -y nfs-common
 
@@ -210,11 +206,6 @@ NEW_SOURCES
     ufw allow 5986
 else
     echo "RPM-based system"
-    echo "User name is $REDHAT_SUBSCRIPTION_ID"
-    echo "PW is $REDHAT_SUBSCRIPTION_PW"
-subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
-subscription-manager repos --enable rhel-7-server-optional-rpms 
-subscription-manager repos --enable rhel-7-server-extras-rpms 
 wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
 rpm -i epel-release-latest-7.noarch.rpm 
 yum install -y epel-release 
@@ -225,8 +216,8 @@ rpm -Uvh http://linux.mirrors.es.net/fedora-epel/7/x86_64/i/iperf-2.0.8-1.el7.x8
 yum -y localinstall https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
 yum -y install mysql-community-server
 yum -y groupinstall --skip-broken "Development Tools"
-yum -y install bind bind-utils
-yum -y install python python-pyasn1
+yum -y install python 
+yum -y install python-pyasn1
 yum -y install python-argparse
 yum -y install python-crypto
 yum -y install python-paramiko
@@ -238,7 +229,7 @@ yum -y install python-paramiko
 
     #
     #  Clean up disk space
-    package-cleanup --oldkernels --count=2
+    package-cleanup -y --oldkernels --count=2
 
     #
     #  Add the test user
@@ -267,17 +258,6 @@ PASSWD_END
     #  OMI and PSRP
     yum install -y omi
     yum install -y omi-psrp-server
-
-    #
-    #  Git and sync
-    yum install -y git
-    cd
-    framework_scripts_path="/root/Framework-Scripts"
-    if ! [ -d $framework_scripts_path ]; then
-        git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
-    fi
-    cp /tmp/secrets.sh $framework_scripts_path/secrets.sh
-    cp /tmp/secrets.ps1 $framework_scripts_path/secrets.ps1
 
     #
     #  Need NFS
