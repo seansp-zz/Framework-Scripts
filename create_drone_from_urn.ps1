@@ -105,8 +105,7 @@ write-host "Job $setupJobId launched to chmod make_drone"
 sleep 1
 $jobState = get-job $setupJobId
 While($jobState -eq "Running") {
-    write-host "Sleeping..."
-    sleep 1
+    sleep 10
     $jobState = get-job $setupJobId
 }
 
@@ -114,9 +113,8 @@ Write-Host "Job $setupJobId state at completion was $jobState"
 
 #
 #  This should be empty
-$chmod_out = receive-job $setupJobId 2> $LogDir\$randomFileName
+receive-job $droneJobId | Out-File $LogDir\$randomFileName
 $chmod_out2 = Get-Content $LogDir\$randomFileName
-Write-Host $chmod_out
 Write-Host $chmod_out2
 
 #
@@ -134,17 +132,20 @@ $droneJobId = $runLinuxDroneJob.Id
 write-host "Job $droneJobId launched to turn the machine into a drone..."
 sleep 1
 $jobState = get-job $droneJobId
+$randomFileName = $vmName + "_make_drone.log"
+echo "make_drone for $vmName starting..." | Out-File $LogDir\$randomFileName -Force
+
 While($jobState -eq "Running") {
-    write-host "Sleeping..."
-    sleep 1
+    sleep 10
     $jobState = get-job $droneJobId
+    receive-job $droneJobId | Out-File $LogDir\$randomFileName -Append
+    Get-Content $LogDir\$randomFileName -Tail 3
 }
 
 Write-Host "Job $droneJobId state at completion was $jobState"
 
 #
 #  Get the results of that
-$randomFileName = $vmName + "_make_drone.log"
-receive-job $droneJobId | Out-File $LogDir\$randomFileName
+receive-job $droneJobId | Out-File $LogDir\$randomFileName -Append
 $out2 = Get-Content $LogDir\$randomFileName
 Write-Host $out2

@@ -77,7 +77,7 @@ write-host "Copying blobs..."
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                         -destSA $destSA -destRG $destRG -destContainer $destContainer `
                                         -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
-                                        -overwriteVHDs:$overwriteVHDs -makeDronesFromAll:$makeDronesFromAll -vmNames $vmNames
+                                        -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNames
 
 
 $scriptBlockString = 
