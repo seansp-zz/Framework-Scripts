@@ -223,7 +223,7 @@ while ($completed_machines -lt $launched_machines) {
         $sourceName=$oneblob.Name
         $jobName=$sourceName + "_BVT_Runner"
 
-        $logFileName = $sourceName + "_transcript.log"
+        $logFileName = "c:\temp\transcripts\" + $sourceName + "_transcript.log"
 
         $jobStatus=get-job -Name $jobName
         if ($? -eq $true) {
@@ -246,9 +246,8 @@ while ($completed_machines -lt $launched_machines) {
                 Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green
                 if ($logThisOne -eq $true) {                    
                     Write-Host "      Last log file output:" -ForegroundColor green
-                    $output_so_far = Receive-Job -Name $jobName -Keep
-                    $output = $output_so_far | Select-Object -last 5
-                    write-host $output -ForegroundColor Yellow
+                    Receive-Job -Name $jobName | Out-File $logFileName -Append
+                    Get-Content $logFileName -Tail 5
                 }
             }
             else
