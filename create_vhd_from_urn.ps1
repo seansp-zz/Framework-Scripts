@@ -58,8 +58,8 @@ if ($? -eq $false) {
 Write-Host "VM Created successfully.  Stopping it now..."
 Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
-Write-Host "Deleting the VM so we can harvest the VHD..."
-Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+# Write-Host "Deleting the VM so we can harvest the VHD..."
+# Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 Write-Host "Machine is ready for assimilation..."
 Stop-Transcript

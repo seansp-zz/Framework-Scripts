@@ -9,9 +9,7 @@
 
     [Parameter(Mandatory=$true)] [string] $addAdminUser=$false,
     [Parameter(Mandatory=$true)] [string] $adminUser="",
-    [Parameter(Mandatory=$true)] [string] $adminPW="",
-
-    [Parameter(Mandatory=$false)] [string] $startFromImage="False"
+    [Parameter(Mandatory=$true)] [string] $adminPW=""
 )
 
 . "C:\Framework-Scripts\secrets.ps1"
@@ -37,7 +35,7 @@ echo "Deleting any existing VM"
 Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
 
 echo "Creating a new VM config..."   
-$vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2'
+$vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2' 
 
 echo "Assigning resource group $resourceGroup network and subnet config to new machine" 
 $VMVNETObject = Get-AzureRmVirtualNetwork -Name $network -ResourceGroupName $resourceGroup
@@ -68,11 +66,7 @@ $blobName=$vmName + ".vhd"
 $blobURIRaw = $c.CloudBlobContainer.Uri.ToString() + "/" + $blobName
 
 echo "Setting the OS disk to interface $blobURIRaw" 
-if ($startFromImage -ne $true) {
-    Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -linux
-} else {
-    Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "FromImage"
-}
+Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -Linux
 
 try {
     echo "Starting the VM"  
@@ -87,7 +81,7 @@ Catch
 {
     echo "Caught exception attempting to start the new VM.  Aborting..." 
     Stop-Transcript
-    return 1
+    return
 }
 
 Stop-Transcript
