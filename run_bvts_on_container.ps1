@@ -232,29 +232,30 @@ while ($completed_machines -lt $launched_machines) {
             {
                 $completed_machines += 1
                 $failed_machines += 1
+                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Force
                 Write-Host " >>>> BVT job $jobName exited with FAILED state!" -ForegroundColor red
             }
             elseif ($jobState -eq "Completed")
             {
                 $completed_machines += 1
-                get-job -Name $jobName | Receive-Job
+                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Force
                 Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
             }
             elseif ($jobState -eq "Running")
             {
                 $running_machines += 1
-                Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green
-                if ($logThisOne -eq $true) {                    
-                    Write-Host "      Last log file output:" -ForegroundColor green
-                    Receive-Job -Name $jobName | Out-File $logFileName -Append
-                    Get-Content $logFileName -Tail 5
+                if ($logThisOne -eq $true) {
+                    Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green                
                 }
             }
             else
             {
                 $other_machines += 1
-                Write-Host "***** BVT job $jobName is in state $jobState." -ForegroundColor Yellow
+                Write-Host "????? BVT job $jobName is in state $jobState." -ForegroundColor Yellow
             }
+        }
+        if ($logThisOne -eq $true) {
+            write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor green
         }
     }
 
