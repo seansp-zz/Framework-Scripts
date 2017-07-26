@@ -7,9 +7,9 @@
     [Parameter(Mandatory=$false)] [string] $destContainer="ready-for-bvt",
     [Parameter(Mandatory=$false)] [string] $location="westus",
 
-    [Parameter(Mandatory=$false)] [string] $vnetName = "JPL-VNet-1",
-    [Parameter(Mandatory=$false)] [string] $subnetName = "JPL-Subnet-1",
-    [Parameter(Mandatory=$false)] [string] $NSG = "JPL-NSG",
+    [Parameter(Mandatory=$false)] [string] $vnetName = "SmokeVNet",
+    [Parameter(Mandatory=$false)] [string] $subnetName = "SmokeSubnet-1",
+    [Parameter(Mandatory=$false)] [string] $NSG = "SmokeNSG",
 
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
@@ -47,7 +47,7 @@ Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 $diskName=$vmName + $suffix
 az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password "$TEST_USER_ACCOUNT_PAS2" --admin-username "$TEST_USER_ACCOUNT_NAME" `
+   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
    --authentication-type "password"
 
 if ($? -eq $false) {
@@ -55,7 +55,6 @@ if ($? -eq $false) {
     Stop-Transcript
     exit 1
 }
-
 Write-Host "VM Created successfully.  Stopping it now..."
 Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 

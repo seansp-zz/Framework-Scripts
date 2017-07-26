@@ -9,7 +9,9 @@
 
     [Parameter(Mandatory=$true)] [string] $addAdminUser=$false,
     [Parameter(Mandatory=$true)] [string] $adminUser="",
-    [Parameter(Mandatory=$true)] [string] $adminPW=""
+    [Parameter(Mandatory=$true)] [string] $adminPW="",
+
+    [Parameter(Mandatory=$false)] [string] $startFromImage="False"
 )
 
 . "C:\Framework-Scripts\secrets.ps1"
@@ -66,7 +68,11 @@ $blobName=$vmName + ".vhd"
 $blobURIRaw = $c.CloudBlobContainer.Uri.ToString() + "/" + $blobName
 
 echo "Setting the OS disk to interface $blobURIRaw" 
-Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -linux
+if ($startFromImage -ne $true) {
+    Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -linux
+} else {
+    Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "FromImage"
+}
 
 try {
     echo "Starting the VM"  

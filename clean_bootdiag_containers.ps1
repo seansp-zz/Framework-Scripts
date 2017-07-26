@@ -1,7 +1,7 @@
 ﻿
 param (
-    [Parameter(Mandatory=$false)] [string] $resourceGroup="smoke_working_resource_group",
-    [Parameter(Mandatory=$false)] [string] $storageAccount="smokeworkingstorageacct"
+    [Parameter(Mandatory=$false)] [string] $resourceGroup="smoke_bvts_resource_group",
+    [Parameter(Mandatory=$false)] [string] $storageAccount="smokebvtstorageaccount"
 )
 
 . "C:\Framework-Scripts\secrets.ps1" 
