@@ -1,7 +1,7 @@
 ﻿param (
-    [Parameter(Mandatory=$true)] [string[]] $vmNames="Unset",
+    [Parameter(Mandatory=$true)] [string[]] $vmNames,
 
-    [Parameter(Mandatory=$true)] [string[]] $blobURNs="Unset",
+    [Parameter(Mandatory=$true)] [string[]] $blobURNs,
 
     [Parameter(Mandatory=$false)] [string] $testCycle="BVT",
 
