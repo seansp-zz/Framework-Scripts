@@ -4,6 +4,15 @@
 #
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
+#
+#  Load our secrets.sh
+#
+source /tmp/secrets.sh
+
+#
+#  Add the test user
+#
+
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
@@ -21,12 +30,7 @@ else
 $TEST_USER_ACCOUNT_PASS
 $TEST_USER_ACCOUNT_PASS
 PASSWD_END
-fi
-
-#
-#  Load our secrets.sh
-#
-source /tmp/secrets.sh
+fi;
 
 #
 #  Find out what kind of system we're on
@@ -80,7 +84,7 @@ echo "$FLAVOR -- IP Address = $IPADDRESS"
 framework_scripts_path="/root/Framework-Scripts"
 if ! [ -d $framework_scripts_path ]; then
   git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
-fi
+fi;
 git clone http://github.com/FawcettJohnW/Framework-Scripts.git
 
 #
@@ -132,15 +136,6 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get -y install mysql-server
 apt-get -y install mysql-client
     
-    #
-    #  Add the test user
-    #
-
-    user_exists=`grep $TEST_USER_ACCOUNT_NAME /etc/passwd`
-    if [ -z "${user_exists}" ]; then
-        
-    fi
-
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
 cat << NEW_SOURCES > /etc/apt/sources.list.orig
 deb  http://deb.debian.org/debian stretch main

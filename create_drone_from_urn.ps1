@@ -15,8 +15,8 @@
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
     
-$vnetName="JPL-VNet-1"
-$subnetName="JPL-Subnet-1"
+
+## Compute
 . "C:\Framework-Scripts\secrets.ps1"
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
@@ -30,34 +30,40 @@ $location = "westus"
 $storageType = "Standard_D2"
 
 ## Network
-$nicname = $name + "-NIC"
+$nicname = $vmName + "-NIC"
 $subnet1Name = "SmokeSubnet-1"
-$vnetName = "SmokeVNet-1"
+$vnetName = "SmokeVNet"
 $vnetAddressPrefix = "10.0.0.0/16"
 $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
-## Compute
-
 $vmSize = "Standard_D2"
 
-$osDiskName = $vmName + "-osDisk"
 $blobURIRaw="https://jplintakestorageacct.blob.core.windows.net/$bvtContainer/" + $vmName + "-JPL-1.vhd"
 Write-Host "Clearing any old images..." -ForegroundColor Green
+Write-Host "Making sure the VM is stopped..."  
+Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+
+echo "Deleting any existing VM"
+Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+
 Get-AzureStorageBlob -Container $bvtContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $bvtContainer}
 $destUri = $blobURIRaw.Replace($bvtContainer,$cleanContainer)
 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 ## Setup local VM object
 # $cred = Get-Credential
-Write-Host "Creating machine $newVMName in RG $destRG and SA $destSA
-C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
-                                                    -network $network -subnet $subnet -NSG $NSG #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
-                                                    # -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
+Write-Host "Creating machine $newVMName in RG $destRG and SA $destSA"
+
+# C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
+  #                                                  -network $network -subnet $subnet -NSG $NSG #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
+   #                                                 # -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
 
 
-# az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
-#    --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
-#    --authentication-type "password" --nics $nicName --vnet-name $vnetName
+   $nicName
+
+az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
+   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
+   --authentication-type "password" --vnet-name $vnetName
    
 
 #
@@ -75,7 +81,7 @@ $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $pipName
 #  Send make_drone to the new machine
 #
 #  The first one gets the machine added to known_hosts
-# echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
+echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
 
 #
 #  Now transfer the file
@@ -112,20 +118,20 @@ $runLinuxSetupJob = Start-Job -ScriptBlock `
 			} `
 			-ArgumentList $currentDir, $username, $password, $ip, $port, $linuxChmodCommand
 
-$setupJobId = $runLinuxSetupJob.Id
+$setupJobID = $runLinuxSetupJob.Id
 write-host "Job $setupJobId launched to chmod make_drone"
 sleep 1
-$jobState = get-job $setupJobId
+$jobState = (get-job $setupJobID).State
 While($jobState -eq "Running") {
     sleep 10
-    $jobState = get-job $setupJobId
+    $jobState = (get-job $setupJobId).State
 }
 
 Write-Host "Job $setupJobId state at completion was $jobState"
 
 #
 #  This should be empty
-receive-job $droneJobId | Out-File $LogDir\$randomFileName
+receive-job $setupJobID | Out-File $LogDir\$randomFileName
 $chmod_out2 = Get-Content $LogDir\$randomFileName
 Write-Host $chmod_out2
 
@@ -149,7 +155,7 @@ echo "make_drone for $vmName starting..." | Out-File $LogDir\$randomFileName -Fo
 
 While($jobState -eq "Running") {
     sleep 10
-    $jobState = get-job $droneJobId
+    $jobState = (get-job $droneJobId).State
     receive-job $droneJobId | Out-File $LogDir\$randomFileName -Append
     Get-Content $LogDir\$randomFileName -Tail 3
 }
