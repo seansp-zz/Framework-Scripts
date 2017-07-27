@@ -33,9 +33,11 @@ Write-Host "Switch overwriteVHDs is $overwriteVHDs"
 
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
+$copyblobs.Clear()
 
 $vmNames_array=@()
 $vmNames = {$vmNames_array}.Invoke()
+$vmNames.Clear()
 foreach($vmName in $vmNamesIn) {
     $vmNames.Add($vmName)
 }
@@ -68,6 +70,7 @@ if ($makeDronesFromAll -eq $true) {
     Write-Host "Making drones of all VHDs in container $sourceContainer.  There will be $blobCount VHDs:"-ForegroundColor Magenta
     $vmNames.Clear()
     foreach ($blob in $blobs) {
+        $copyblobs.Add($blob)
         $blobName = $blob.Name
         write-host "                       $blobName" -ForegroundColor Magenta
         $vmNames.Add($blobName)
@@ -77,7 +80,7 @@ if ($makeDronesFromAll -eq $true) {
         $theName = $vmName + $sourceExtension
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
         if ($? -eq $true) {
-            $blobs += $singleBlob
+            $copyblobs.Add($singleBlob)
         } else {
             Write-Host " ***** ??? Could not find source blob $theName in container $sourceContainer.  This request is skipped" -ForegroundColor Red
         }
