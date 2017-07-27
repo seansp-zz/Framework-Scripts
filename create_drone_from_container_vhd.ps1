@@ -151,12 +151,12 @@ $scriptBlockString =
 
     #
     #  Now transfer the files
-    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\make_drone.sh
-    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\secrets.sh
-    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\secrets.ps1
-    echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\secrets.ps1 $username@$ip`:/tmp
+    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\make_drone.sh c:\temp\make_drone.sh
+    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\secrets.sh c:\temp\secrets.sh
+    C:\azure-linux-automation\tools\dos2unix.exe C:\Framework-Scripts\secrets.ps1 c:\temp\secrets.ps1
+    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\make_drone.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\secrets.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\secrets.ps1 $username@$ip`:/tmp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
