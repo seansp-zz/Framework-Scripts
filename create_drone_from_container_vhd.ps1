@@ -24,15 +24,15 @@
 Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
-. "C:\Framework-Scripts\secrets.ps1"
+. "C:\Framework-Scripts\secrets.ps1"view source
 
-$vmNames_array=@()
-$vmNameArray = {$vmNames_array}.Invoke()
+[System.Collections.ArrayList]$vmNames_array
+$vmNames_array.GetType()
 $vmNameArray.Clear()
 $vmNameArray = $requestedNames.Split(',')
 
-$copyblobs_array=@()
-$copyblobs = {$copyblobs_array}.Invoke()
+[System.Collections.ArrayList]$copyblobs_array
+$copyblobs.GetType()
 $copyblobs.clear()
 
 Write-Host "Names array: " $vmNameArray
