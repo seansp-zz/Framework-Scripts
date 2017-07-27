@@ -21,7 +21,7 @@
     [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed.vhd"
 )
 
-Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
+# Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"view source
@@ -255,7 +255,7 @@ foreach ($vmName in $vmNames) {
 
 get-job | Receive-Job
 
-Stop-Transcript
+# Stop-Transcript
 
 if ($sessionFailed -eq $true) {    
     exit 1

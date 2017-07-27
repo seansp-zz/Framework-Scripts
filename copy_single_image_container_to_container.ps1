@@ -25,8 +25,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false
 )
 
-$logName=$VMNamesIn[0]
-Start-Transcript -path C:\temp\transcripts\copy_single_image_container_to_container.$logName.log -Force
+# $logName=$VMNamesIn[0]
+# Start-Transcript -path C:\temp\transcripts\copy_single_image_container_to_container.$logName.log -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
@@ -158,6 +158,6 @@ while ($stillCopying -eq $true) {
         Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor Green
     }
 }
-Stop-Transcript
+# Stop-Transcript
 
 exit 0
