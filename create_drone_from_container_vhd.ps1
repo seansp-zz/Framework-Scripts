@@ -119,7 +119,7 @@ $scriptBlockString =
     Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
     C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
                                                     -network $network -subnet $subnet -addAdminUser $TEST_USER_ACCOUNT_NAME `
-                                                    -adminUser $TEST_USER_ACCOUNT_NAME -adminPW "$TEST_USER_ACCOUNT_PAS2" -NSG $NSG
+                                                    -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2 -NSG $NSG
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript

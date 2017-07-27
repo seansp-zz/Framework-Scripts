@@ -76,6 +76,7 @@ Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Att
 if ([string]::IsNullOrWhiteSpace( $addAdminUser )) {
     write-host "?????????????????????????? NO ADMIN USER!!!!!" -ForegroundColor Red
 } else {
+    Write-Host "Setting the admin uer to $adminUser and password to $adminPW"
     Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
 }
 
