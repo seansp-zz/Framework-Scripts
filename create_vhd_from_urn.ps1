@@ -17,11 +17,11 @@
 $vmNames_array=@()
 $vmNameArray = {$vmNamess_array}.Invoke()
 $vmNameArray.Clear()
-$vmNameArray = $Incoming_vmNames
+$vmNameArray = $Incoming_vmNames.Split(',')
 
 $blobURNArray=@()
 $blobURNArray = {$blobURNArray}.Invoke()
-$blobURNArray = $Incoming_blobURNs
+$blobURNArray = $Incoming_blobURNs.Split(',')
 
 Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Length
