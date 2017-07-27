@@ -71,13 +71,13 @@ if ($makeDronesFromAll -eq $true) {
     }
 }
 
-if ($blobs.Count -eq 0) {
+if ($copyblobs.Count -eq 0) {
     Write-Host "No blobs matched source extension $currentSuffix.  No VHDs to process."
     Stop-Transcript
     exit 1
 }
 
-foreach ($oneblob in $blobs) {
+foreach ($oneblob in $copyblobs) {
     $sourceName=$oneblob.Name
     write-host  "Adding sourceName $sourceName"
     $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
