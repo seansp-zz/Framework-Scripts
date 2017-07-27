@@ -14,6 +14,7 @@
 )
 
 . "C:\Framework-Scripts\secrets.ps1"
+
 if( [string]::IsNullOrWhiteSpace( $adminUser ) )
 {
     $adminUser = "$TEST_USER_ACCOUNT_NAME"
@@ -61,9 +62,8 @@ if ($? -eq $false) {
 $sg = Get-AzureRmNetworkSecurityGroup -Name SmokeNSG -ResourceGroupName $resourceGroup
 $VNIC.NetworkSecurityGroup = $sg
 Set-AzureRmNetworkInterface -NetworkInterface $VNIC
-
-$cred=make_cred
-$vm | Add-AzureProvisioningConfig -Windows -AdminUsername $cred.Username -Password $cred.GetNetworkCredential().Password
+$pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
+$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 
 echo "Adding the network interface"  
 Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id

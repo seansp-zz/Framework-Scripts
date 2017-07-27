@@ -49,6 +49,7 @@ $destUri = $blobURIRaw.Replace($bvtContainer,$cleanContainer)
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 ## Setup local VM object
 # $cred = Get-Credential
+Write-Host "Creating machine $newVMName in RG $destRG and SA $destSA
 C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
                                                     -network $network -subnet $subnet -NSG $NSG #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
                                                     # -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
