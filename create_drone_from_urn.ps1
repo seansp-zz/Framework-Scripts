@@ -31,14 +31,14 @@ $storageType = "Standard_D2"
 
 ## Network
 $nicname = $name + "-NIC"
-$subnet1Name = "JPS-Subnet-1"
-$vnetName = "JPL-VNet-1"
+$subnet1Name = "SmokeSubnet-1"
+$vnetName = "SmokeVNet-1"
 $vnetAddressPrefix = "10.0.0.0/16"
 $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
 ## Compute
 
-$vmSize = "Standard_A2"
+$vmSize = "Standard_D2"
 
 $osDiskName = $vmName + "-osDisk"
 $blobURIRaw="https://jplintakestorageacct.blob.core.windows.net/$bvtContainer/" + $vnName + "-JPL-1.vhd"
@@ -51,7 +51,7 @@ Write-Host "Attempting to create virtual machine $vmName.  This may take some ti
 # $cred = Get-Credential
 az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
    --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
-   --authentication-type "password"
+   --authentication-type "password" --nics $nicName --vnet-name $vnetName
 
 $currentDir="C:\Framework-Scripts"
 $username="$TEST_USER_ACCOUNT_NAME"

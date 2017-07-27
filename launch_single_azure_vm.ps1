@@ -6,6 +6,7 @@
 
     [Parameter(Mandatory=$true)] [string] $network="SmokeVNet",
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
+    [Parameter(Mandatory=$true)] [string] $NSG="SmokeNSG",
 
     [Parameter(Mandatory=$true)] [string] $addAdminUser=$false,
     [Parameter(Mandatory=$true)] [string] $adminUser="",
@@ -57,6 +58,9 @@ if ($? -eq $false) {
     $VNIC = Get-AzureRmNetworkInterface -Name $vmName-nic -ResourceGroupName $resourceGroup
 }
 
+$sg = Get-AzureRmNetworkSecurityGroup -Name SmokeNSG -ResourceGroupName $resourceGroup
+$VNIC.NetworkSecurityGroup = $sg
+
 echo "Adding the network interface"  
 Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
@@ -86,9 +90,9 @@ Catch
 
 Stop-Transcript
 
-# if ($addAdminUser -eq $true) {
-#     $pw = convertto-securestring -AsPlainText -force -string $adminPW
-#     $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
-# 
-#     Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
-# }
+if ($addAdminUser -eq $true) {
+    $pw = convertto-securestring -AsPlainText -force -string $adminPW
+    $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
+
+    Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
+}
