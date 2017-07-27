@@ -73,7 +73,6 @@ while ($i -lt $vmNameArray.Length) {
     Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 
     Write-Host "Clearing any old images..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $sourceContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $sourceContainer}
     Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
     Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
