@@ -15,7 +15,7 @@
 )
 write-host "The array is $vmNames"
 $vmNameArray = $vmNames.Split(",")
-$blobURNArray = $blobURNArray.Split(",")
+$blobURNArray = $blobURNs.Split(",")
 
 if ($vmNameArray.Count -ne $blobURNs.Count) {
     Write-Host "Please procvide the same number of names and URNs."
