@@ -14,7 +14,7 @@
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
 $vmNameArray = $vmNames.Split(",")
-$blobURNArray = $blobURNs.Split(",")
+$blobURNArray = $blobURNs.Split(" ")
 
 Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Length
