@@ -1,6 +1,6 @@
 ﻿param (
-    [Parameter(Mandatory=$false)] [string] $vmName="RHEL74BETA",
-    [Parameter(Mandatory=$false)] [string] $blobURN="RedHat:RHEL:7.4.Beta:7.4.2017063000",
+    [Parameter(Mandatory=$false)] [string[]] $vmNames,
+    [Parameter(Mandatory=$false)] [string[]] $blobURNs,
 
     [Parameter(Mandatory=$false)] [string] $destRG="jpl_intake_rg",
     [Parameter(Mandatory=$false)] [string] $destSA="jplintakestorageacct",
@@ -13,8 +13,18 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
+write-host "The array is $vmNames"
+$vmNameArray = $vmNames.Split(",")
+$vmNameArray
 
-Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
+if ($vmNames.Count -ne $blobURNs.Count) {
+    Write-Host "Please procvide the same number of names and URNs."
+    exit 1
+} else {
+    Write-Host "There are $vmNames.Count() left..."
+}
+
+Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmNames[0].log
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
