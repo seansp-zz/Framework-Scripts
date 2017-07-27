@@ -1,6 +1,6 @@
 ﻿param (
-    [Parameter(Mandatory=$true)] [string] $vmName="Unset",
-    [Parameter(Mandatory=$true)] [string] $blobURN="Unset",
+    [Parameter(Mandatory=$false)] [string] $vmName="RHEL74BETA",
+    [Parameter(Mandatory=$false)] [string] $blobURN="RedHat:RHEL:7.4.Beta:7.4.2017063000",
 
     [Parameter(Mandatory=$false)] [string] $destRG="jpl_intake_rg",
     [Parameter(Mandatory=$false)] [string] $destSA="jplintakestorageacct",
@@ -45,6 +45,7 @@ Write-Host "Clearing any old images..." -ForegroundColor Green
 Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
+Write-Host "User is $TEST_USER_ACCOUNT_NAME"
 $diskName=$vmName + $suffix
 az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
    --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' --admin-username $TEST_USER_ACCOUNT_NAME `
@@ -56,10 +57,10 @@ if ($? -eq $false) {
     exit 1
 }
 Write-Host "VM Created successfully.  Stopping it now..."
-Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+# Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 # Write-Host "Deleting the VM so we can harvest the VHD..."
-#Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+# Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 Write-Host "Machine is ready for assimilation..."
 Stop-Transcript

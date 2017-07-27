@@ -49,9 +49,14 @@ $destUri = $blobURIRaw.Replace($bvtContainer,$cleanContainer)
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 ## Setup local VM object
 # $cred = Get-Credential
-az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
-   --authentication-type "password" --nics $nicName --vnet-name $vnetName
+C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
+                                                    -network $network -subnet $subnet -NSG $NSG #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
+                                                    # -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
+
+
+# az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
+#    --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
+#    --authentication-type "password" --nics $nicName --vnet-name $vnetName
    
 
 #

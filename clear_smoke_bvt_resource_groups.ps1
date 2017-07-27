@@ -2,7 +2,7 @@
 
 login_azure "smoke_source_resource_group" "smokesourcestorageacct"
 
-$names=(Get-AzureRmResourceGroup | Where-Object {$_.ResourceGroupName -like "*Smoke-*"}).ResourceGroupName
+$names=(Get-AzureRmResourceGroup | Where-Object {$_.ResourceGroupName -like "ICA-RG-BVTDe*"}).ResourceGroupName
 get-job | Remove-Job
 
 foreach ($name in $names) {
