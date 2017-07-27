@@ -57,6 +57,7 @@ if ($makeDronesFromAll -eq $true) {
     Write-Host "Looking at all images in container $sourceContainer"
     $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix"
     foreach ($blob in $copyblob_new) {
+        Write-Host "Adding blob $blob.Name to the list"
         copyblobs.add($blob)
     }
 } else {
@@ -64,6 +65,7 @@ if ($makeDronesFromAll -eq $true) {
         Write-Host "Looking for image $vmName in container $sourceContainer"
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName*$suffix" -ErrorAction SilentlyContinue
         if ($? -eq $true) {
+            Write-Host "Adding blob for $vmName to the list..."
             $copyblobs.add($singleBlob)
         } else {
             Write-Host "Blob for machine $vmName was not found.  This machine cannot be processed."
