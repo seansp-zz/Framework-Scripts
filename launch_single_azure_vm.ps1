@@ -63,7 +63,7 @@ $VNIC.NetworkSecurityGroup = $sg
 Set-AzureRmNetworkInterface -NetworkInterface $VNIC
 
 $cred=make_cred
-$vm | Add-AzureProvisioningConfig -Windows -AdminUsername $cred.Username -Password $cred.GetNetworkCredential().Passwor
+$vm | Add-AzureProvisioningConfig -Windows -AdminUsername $cred.Username -Password $cred.GetNetworkCredential().Password
 
 echo "Adding the network interface"  
 Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
