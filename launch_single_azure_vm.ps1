@@ -44,7 +44,7 @@ $VMVNETObject = Get-AzureRmVirtualNetwork -Name $network -ResourceGroupName $res
 $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $subnet -VirtualNetwork $VMVNETObject
 
 echo "Assigning the public IP address"  
-$ipName= $vmName + "PublicIP:
+$ipName= $vmName + "PublicIP"
 $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $ipName -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     Write-Host "Creating new IP address..."
