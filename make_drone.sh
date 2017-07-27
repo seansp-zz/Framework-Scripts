@@ -292,6 +292,7 @@ PASSWD_END
 
     #
     #  Make sure 443 is allowed through the firewall
+    systemctl start firewalld
     firewall-cmd --zone=public --add-port=443/tcp --permanent
     systemctl stop firewalld
     systemctl start firewalld
