@@ -150,3 +150,5 @@ Write-Host "Job $droneJobId state at completion was $jobState"
 receive-job $droneJobId | Out-File $LogDir\$randomFileName -Append
 $out2 = Get-Content $LogDir\$randomFileName
 Write-Host $out2
+
+exit 0
