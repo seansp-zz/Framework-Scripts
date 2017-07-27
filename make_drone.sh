@@ -4,6 +4,24 @@
 #
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
+if [ -f /usr/bin/dpkg ] ;
+  then
+    echo "This is a dpkg machine"
+    useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
+    passwd mstest << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
+PASSWD_END
+else
+    echo "This is an RPM-based machine"
+    #
+    #  Add the test user
+    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G wheel -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS 
+    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
+PASSWD_END
+fi
 
 #
 #  Load our secrets.sh
@@ -47,7 +65,7 @@ PASSWD_END
     yum -y install puppet
     yum -y install git
     export is_rpm=1;
-fi;
+fi
 
 FAMILY="$(facter operatingsystem)"
 FAMILYVER="$(facter operatingsystemrelease)"
