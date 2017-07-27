@@ -25,7 +25,7 @@ param (
     [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false
 )
 
-Start-Transcript C:\temp\transcripts\copy_single_image_container_to_container.log -Force
+Start-Transcript C:\temp\transcripts\copy_single_image_container_to_container.$VMNamesIn[0].log -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 

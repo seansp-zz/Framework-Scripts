@@ -14,7 +14,7 @@
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
 
-Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log
+Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"

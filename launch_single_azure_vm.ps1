@@ -23,7 +23,7 @@ if( [string]::IsNullOrWhiteSpace( $adminPW ) )
     $adminPW = "$TEST_USER_ACCOUNT_PASS"
 }
 
-Start-Transcript C:\temp\transcripts\launch_single_azure_vm.log -Force
+Start-Transcript C:\temp\transcripts\launch_single_azure_vm_$vmName.log -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
