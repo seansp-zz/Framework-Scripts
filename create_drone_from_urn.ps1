@@ -18,6 +18,9 @@
 
 ## Compute
 . "C:\Framework-Scripts\secrets.ps1"
+write-host "The array is $vmNames"
+$vmNameArray = $vmNames.Split(",")
+$vmNameArray
 
 if ($vmNames.Count -ne $blobURNs.Count) {
     Write-Host "Please procvide the same number of names and URNs."
