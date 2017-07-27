@@ -17,11 +17,11 @@ write-host "The array is $vmNames"
 $vmNameArray = $vmNames.Split(",")
 $blobURNArray = $blobURNs.Split(",")
 
-if ($vmNameArray.Count -ne $blobURNs.Count) {
-    Write-Host "Please procvide the same number of names and URNs."
+if ($vmNameArray.Length -ne $blobURNs.Length) {
+    Write-Host "Please provide the same number of names and URNs."
     exit 1
 } else {
-    Write-Host "There are $vmNames.Count() left..."
+    Write-Host "There are $vmNameArray.Length left..."
 }
 $vmName = $vmNames[0]
 Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmNames[0].log
