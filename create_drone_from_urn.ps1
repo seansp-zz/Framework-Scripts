@@ -52,6 +52,11 @@ Write-Host "Attempting to create virtual machine $vmName.  This may take some ti
 az vm create -n $vmName -g $resourceGroup -l $location --image $blobURN --storage-container-name $bvtContainer --use-unmanaged-disk --nsg $NSG `
    --subnet $subnet1Name --vnet-name $vnetName  --storage-account $SA --os-disk-name $vmName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
    --authentication-type "password" --nics $nicName --vnet-name $vnetName
+   
+
+#
+#  Just because it's up doesn't mean it's ready.  Wait a minute here...
+sleep(60)
 
 $currentDir="C:\Framework-Scripts"
 $username="$TEST_USER_ACCOUNT_NAME"
