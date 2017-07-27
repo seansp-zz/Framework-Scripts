@@ -27,9 +27,13 @@ Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcrip
 . "C:\Framework-Scripts\secrets.ps1"
 
 $vmNames_array=@()
-$vmNameArray = {$vmNamess_array}.Invoke()
+$vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
 $vmNameArray = $requestedNames.Split(',')
+
+$copyblobs_array=@()
+$copyblobs = {$copyblobs_array}.Invoke()
+$copyblobs.clear()
 
 Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Length
@@ -51,14 +55,17 @@ login_azure $destRG $destSA
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA
 if ($makeDronesFromAll -eq $true) {
     Write-Host "Looking at all images in container $sourceContainer"
-    $blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix"
+    $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix"
+    foreach ($blob in $copyblob_new) {
+        copyblobs.add($blob)
+    }
 } else {
-    foreach ($vmName in $requestedNames) {
+    foreach ($vmName in $vmNameArray) {
         Write-Host "Looking at image $vmName in container $sourceContainer"
         $theName = $vmName + $currentSuffix
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
-            $blobs += $singleBlob
+            $copyblobs.add($singleBlob)
         } else {
             Write-Host "Blob for machine $vmName was not found.  This machine cannot be processed."
         }
