@@ -19,13 +19,11 @@
 ## Compute
 . "C:\Framework-Scripts\secrets.ps1"
 
-$all_vmNames = $vmNames.Split(" ")
-$all_URNs    = $blobURNs.Split(" ")
-if ($all_vmNames.Count -ne $all_URNs.Count) {
+if ($vmNames.Count -ne $blobURNs.Count) {
     Write-Host "Please procvide the same number of names and URNs."
     exit 1
 } else {
-    Write-Host "There are $app_vmNames.Count() left..."
+    Write-Host "There are $vmNames.Count() left..."
 }
 
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
@@ -48,11 +46,8 @@ $vmSize = "Standard_D2"
 #
 #  Yes, these are done sequentially, not in parallel.  I will figure that out later :)
 #
-$num_vms = $all_vmNames.Count
-$num_URN = $all_blobURNs.Count
-
 $i = 0
-foreach ($vmName in $all_vmNames) {
+while ($i -lt $vmNames.Count) {
     $blobURN = $all_URNs[$i]
     $i++
     Write-Host "Preparing machine $vmName for service as a drone..."
