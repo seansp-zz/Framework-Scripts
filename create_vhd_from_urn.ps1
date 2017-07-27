@@ -1,6 +1,6 @@
 ﻿param (
-    [Parameter(Mandatory=$false)] [string[]] $vmNames,
-    [Parameter(Mandatory=$false)] [string[]] $blobURNs,
+    [Parameter(Mandatory=$false)] [string[]] $Incoming_vmNames,
+    [Parameter(Mandatory=$false)] [string[]] $Incoming_blobURNs,
 
     [Parameter(Mandatory=$false)] [string] $destRG="jpl_intake_rg",
     [Parameter(Mandatory=$false)] [string] $destSA="jplintakestorageacct",
@@ -13,21 +13,28 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
-$vmNameArray = $vmNames.Split(',')
-$blobURNArray = $blobURNs.Split(',')
+
+$vmNames_array=@()
+$vmNameArray = {$vmNamess_array}.Invoke()
+$vmNameArray.Clear()
+$vmNameArray = $Incoming_vmNames
+
+$blobURNArray=@()
+$blobURNArray = {$blobURNArray}.Invoke()
+$blobURNArray = $Incoming_blobURNs
 
 Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Length
 Write-Host "blobs array: " $blobURNArray
-$numBlobs = $blobURNs.Length
+$numBlobs = $blobURNArray.Length
 
-if ($vmNameArray.Length -ne $blobURNs.Length) {
+if ($vmNameArray.Length -ne $blobURNArray.Length) {
     Write-Host "Please provide the same number of names and URNs. You have $numNames names and $numBlobs blobs"
     exit 1
 } else {
     Write-Host "There are $vmNameArray.Length left..."
 }
-$vmName = $vmNames[0]
+$vmName = $vmNameArray[0]
 Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
