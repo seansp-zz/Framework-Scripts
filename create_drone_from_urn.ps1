@@ -18,7 +18,9 @@
 
 ## Compute
 . "C:\Framework-Scripts\secrets.ps1"
+
 write-host "The array is $vmNames"
+
 $vmNameArray = $vmNames.Split(",")
 $vmNameArray
 
