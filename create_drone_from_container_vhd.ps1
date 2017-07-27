@@ -147,16 +147,16 @@ $scriptBlockString =
     #
     #  The first one gets the machine added to known_hosts
     Write-Host "Copying make_drone to the target.." -ForegroundColor Green
-    # echo "y" | C:\azure-linux-automation\tools\pscp -batch C:\temp\make_drone.sh $username@$ip`:/tmp
+    echo "y" | C:\azure-linux-automation\tools\pscp -batch C:\temp\make_drone.sh $username@$ip`:/tmp
 
     #
     #  Now transfer the files
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\secrets.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\secrets.ps1
-    echo $password | C:\azure-linux-automation\tools\pscp -batch C:\temp\make_drone.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp -batch C:\temp\secrets.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp -batch C:\temp\secrets.ps1 $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\make_drone.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\secrets.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\secrets.ps1 $username@$ip`:/tmp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
