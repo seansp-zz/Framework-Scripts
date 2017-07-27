@@ -148,7 +148,7 @@ $scriptBlockString =
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
     $port=22
-    $pipName = $newVMName + "-pip"
+    $pipName = $newVMName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red

@@ -44,19 +44,21 @@ $VMVNETObject = Get-AzureRmVirtualNetwork -Name $network -ResourceGroupName $res
 $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $subnet -VirtualNetwork $VMVNETObject
 
 echo "Assigning the public IP address"  
-$pip = Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $vmName-pip -ErrorAction SilentlyContinue
+$ipName= $vmName + "PublicIP:
+$pip = Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $ipName -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     Write-Host "Creating new IP address..."
-    New-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Location westus -Name $vmName-pip -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
-    $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $vmName-pip
+    New-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Location westus -Name $ipName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
+    $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $ipName
 }
 
 echo "Assigning the network interface"  
-$VNIC = Get-AzureRmNetworkInterface -Name $vmName-nic -ResourceGroupName $resourceGroup -ErrorAction SilentlyContinue
+$nicName=$vmName + "VMNic"
+$VNIC = Get-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $resourceGroup -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     Write-Host "Creating new network interface"
-    New-AzureRmNetworkInterface -Name $vmName-nic -ResourceGroupName $resourceGroup -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
-    $VNIC = Get-AzureRmNetworkInterface -Name $vmName-nic -ResourceGroupName $resourceGroup
+    New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $resourceGroup -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+    $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $resourceGroup
 }
 
 $sg = Get-AzureRmNetworkSecurityGroup -Name SmokeNSG -ResourceGroupName $resourceGroup

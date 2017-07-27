@@ -50,7 +50,7 @@ $location = "westus"
 $storageType = "Standard_D2"
 
 ## Network
-$nicname = $vmName + "-NIC"
+$nicname = $vmName + "VMNic"
 
 $vnetAddressPrefix = "10.0.0.0/16"
 $vnetSubnetAddressPrefix = "10.0.0.0/24"

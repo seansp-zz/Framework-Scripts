@@ -57,7 +57,7 @@ while ($i -lt $vmNames.Count) {
     $i++
     Write-Host "Preparing machine $vmName for service as a drone..."
 
-    $nicname = $vmName + "-NIC"
+    $nicname = $vmName + "VMNic"
 
     $blobURIRaw="https://jplintakestorageacct.blob.core.windows.net/$bvtContainer/" + $vmName + "-JPL-1.vhd"
     Write-Host "Clearing any old images..." -ForegroundColor Green
