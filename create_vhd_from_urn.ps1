@@ -13,9 +13,10 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
-write-host "The array is $vmNames"
 $vmNameArray = $vmNames.Split(",")
 $blobURNArray = $blobURNs.Split(",")
+
+Write-Host "Names array: " $vmNameArray
 
 if ($vmNameArray.Length -ne $blobURNs.Length) {
     Write-Host "Please provide the same number of names and URNs."
@@ -52,9 +53,9 @@ $vmSize = "Standard_A2"
 #  Yes, these are done sequentially, not in parallel.  I will figure that out later :)
 #
 $i = 0
-while ($i -lt $vmNames.Count) {
-    $vmName = $vmNames[$i]
-    $blobURN = $all_URNs[$i]
+while ($i -lt $vmNameArray.Length) {
+    $vmName = $vmNameArray[$i]
+    $blobURN = $blobURNArray[$i]
     $i++
     Write-Host "Preparing machine $vmName for service as a drone..."
 
