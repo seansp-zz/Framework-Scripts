@@ -16,6 +16,12 @@ source /tmp/secrets.sh
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
+    useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
+    passwd mstest << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
+PASSWD_END
+
     #  Let's grab the dpkg puppet installer.
     #  TODO: do i really need wget here?
     apt-get -y install wget   # We use the wget to get the installer.
@@ -26,6 +32,15 @@ if [ -f /usr/bin/dpkg ] ;
     export is_rpm=0;
 else
     echo "This is an RPM-based machine"
+    #
+    #  Add the test user
+    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G wheel -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS 
+    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
+PASSWD_END
+
+
     # Let's grab the rpm puppet installer.
     yum -y install wget #parity.
     rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
@@ -105,13 +120,8 @@ apt-get -y install mysql-client
 
     user_exists=`grep $TEST_USER_ACCOUNT_NAME /etc/passwd`
     if [ -z "${user_exists}" ]; then
-        useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
+        
     fi
-
-passwd mstest << PASSWD_END
-$TEST_USER_ACCOUNT_PASS
-$TEST_USER_ACCOUNT_PASS
-PASSWD_END
 
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
 cat << NEW_SOURCES > /etc/apt/sources.list.orig
@@ -231,14 +241,6 @@ yum -y install python-paramiko
     #
     #  Clean up disk space
     package-cleanup -y --oldkernels --count=2
-
-    #
-    #  Add the test user
-    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G wheel -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS 
-    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
-$TEST_USER_ACCOUNT_PASS
-$TEST_USER_ACCOUNT_PASS
-PASSWD_END
 
     #
     #  Set up our repo and update
