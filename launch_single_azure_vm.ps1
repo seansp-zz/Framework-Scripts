@@ -73,6 +73,13 @@ $blobURIRaw = $c.CloudBlobContainer.Uri.ToString() + "/" + $blobName
 echo "Setting the OS disk to interface $blobURIRaw" 
 Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -Linux
 
+if ($addAdminUser -eq $true) {
+    $pw = convertto-securestring -AsPlainText -force -string "P@ssW0rd-1_K6"
+    $cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
+
+    Set-AzureRmVMAccessExtension -UserName "mstest" -Password "P@ssW0rd-1_K6" -ResourceGroupName $resourceGroup -VMName $vmName 
+}
+
 try {
     echo "Starting the VM"  
     $NEWVM = New-AzureRmVM -ResourceGroupName $resourceGroup -Location westus -VM $vm
@@ -91,9 +98,3 @@ Catch
 
 Stop-Transcript
 
-if ($addAdminUser -eq $true) {
-    $pw = convertto-securestring -AsPlainText -force -string $adminPW
-    $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
-
-    Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
-}
