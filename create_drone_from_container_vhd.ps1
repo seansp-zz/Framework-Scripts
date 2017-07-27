@@ -61,8 +61,8 @@ if ($makeDronesFromAll -eq $true) {
     }
 } else {
     foreach ($vmName in $vmNameArray) {
-        Write-Host "Looking at image $vmName in container $sourceContainer"
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName*.vhd" -ErrorAction SilentlyContinue
+        Write-Host "Looking for image $vmName in container $sourceContainer"
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName*" -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             $copyblobs.add($singleBlob)
         } else {
