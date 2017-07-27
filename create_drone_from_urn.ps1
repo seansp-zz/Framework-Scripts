@@ -64,7 +64,7 @@ $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -Name $pipName
 #  Send make_drone to the new machine
 #
 #  The first one gets the machine added to known_hosts
-echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
+# echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\make_drone.sh $username@$ip`:/tmp
 
 #
 #  Now transfer the file
