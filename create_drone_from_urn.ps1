@@ -106,19 +106,19 @@ while ($i -lt $vmNames.Count) {
 
     #
     #  Now transfer the file
-    C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\make_drone.sh
-    C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\secrets.sh
-    C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\secrets.ps1
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\make_drone.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\secrets.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\secrets.ps1 $username@$ip`:/tmp
+    C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files_2\make_drone.sh
+    C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files_2\secrets.sh
+    C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\nix_files_2\secrets.ps1
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files_2\make_drone.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files_2\secrets.sh $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files_2\secrets.ps1 $username@$ip`:/tmp
 
 
-    C:\azure-linux-automation\tools\dos2unix.exe .\rpm_install_azure_test_prereq.sh c:\temp\rpm_install_azure_test_prereq.sh
-    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\rpm_install_azure_test_prereq.sh $username@$ip`:/tmp
+    C:\azure-linux-automation\tools\dos2unix.exe .\rpm_install_azure_test_prereq.sh c:\temp\nix_files_2\rpm_install_azure_test_prereq.sh
+    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\nix_files_2\rpm_install_azure_test_prereq.sh $username@$ip`:/tmp
 
-    C:\azure-linux-automation\tools\dos2unix.exe .\deb_install_azure_test_prereq.sh c:\temp\deb_install_azure_test_prereq.sh
-    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\deb_install_azure_test_prereq.sh $username@$ip`:/tmp
+    C:\azure-linux-automation\tools\dos2unix.exe .\deb_install_azure_test_prereq.sh c:\temp\nix_files_2\deb_install_azure_test_prereq.sh
+    echo $password | C:\azure-linux-automation\tools\pscp C:\temp\nix_files_2\deb_install_azure_test_prereq.sh $username@$ip`:/tmp
 
     $chmodCommand="chmod 755 /tmp/make_drone.sh"
     $runDroneCommand="/tmp/make_drone.sh"
