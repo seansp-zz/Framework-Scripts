@@ -60,6 +60,7 @@ if ($? -eq $false) {
 
 $sg = Get-AzureRmNetworkSecurityGroup -Name SmokeNSG -ResourceGroupName $resourceGroup
 $VNIC.NetworkSecurityGroup = $sg
+Set-AzureRmNetworkInterface -NetworkInterface $VNIC
 
 echo "Adding the network interface"  
 Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
