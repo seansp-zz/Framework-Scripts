@@ -106,11 +106,12 @@ apt-get -y install mysql-client
     user_exists=`grep $TEST_USER_ACCOUNT_NAME /etc/passwd`
     if [ -z "${user_exists}" ]; then
         useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
-        passwd mstest << PASSWD_END
+    fi
+
+passwd mstest << PASSWD_END
 $TEST_USER_ACCOUNT_PASS
 $TEST_USER_ACCOUNT_PASS
 PASSWD_END
-    fi
 
 cp /etc/apt/sources.list /etc/apt/sources.list.orig
 cat << NEW_SOURCES > /etc/apt/sources.list.orig
@@ -303,6 +304,11 @@ if [ -f /etc/motd ]
   then
     mv /etc/motd /etc/motd_before_ms_kernel
 fi
+
+passwd mstest << PASSWD_END
+$TEST_USER_ACCOUNT_PASS
+$TEST_USER_ACCOUNT_PASS
+PASSWD_END
 
 cat << "MOTD_EOF" > /etc/motd
 *************************************************************************************
