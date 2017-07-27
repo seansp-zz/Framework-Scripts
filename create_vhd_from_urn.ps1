@@ -82,6 +82,7 @@ while ($i -lt $vmNameArray.Length) {
     write-host "Creating machine $vmName"
     $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
     [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
+
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
        --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' `
        --admin-username mstest --authentication-type password
@@ -92,10 +93,10 @@ while ($i -lt $vmNameArray.Length) {
         exit 1
     }
     Write-Host "VM Created successfully.  Stopping it now..."
-    # Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     # Write-Host "Deleting the VM so we can harvest the VHD..."
-    # Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     Write-Host "Machine $vmName is ready for assimilation..."
 }

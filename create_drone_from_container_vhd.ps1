@@ -26,6 +26,15 @@ Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcrip
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
+$copyblobs_array=@()
+$copyblobs = {$copyblobs_array}.Invoke()
+
+$vmNames_array=@()
+$vmNames = {$vmNames_array}.Invoke()
+foreach($vmName in $requestedNames) {
+    $vmNames.Add($vmName)
+}
+
 if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
@@ -54,8 +63,12 @@ if ($makeDronesFromAll -eq $true) {
     foreach ($vmName in $requestedNames) {
         Write-Host "Looking at image $vmName in container $sourceContainer"
         $theName = $vmName + $currentSuffix
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
-        $blobs += $singleBlob
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName -ErrorAction SilentlyContinue
+        if ($? -eq $true) {
+            $blobs += $singleBlob
+        } else {
+            Write-Host "Blob for machine $vmName was not found.  This machine cannot be processed."
+        }
     }
 }
 
