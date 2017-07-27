@@ -201,8 +201,10 @@ $dronejobs_array=@()
 $droneJobs = {$dronejobs_array}.Invoke()
 $droneJobs.clear()
 
+write-host "Setting up the drone jobs..."
+
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
-foreach ($vmName in $vmNames) { 
+foreach ($vmName in $vmNameArray) { 
     $jobName=$vmName + "-drone-job"
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
                                                                       $destContainer,$location,$currentSuffix,$newSuffix,$NSG,`
@@ -221,7 +223,7 @@ $notDone = $true
 while ($notDone -eq $true) {
     write-host "Status at "@(date)"is:" -ForegroundColor Green
     $notDone = $false
-    foreach ($vmName in $vmNames) {
+    foreach ($vmName in $vmNameArray) {
         $jobName=$vmName + "-drone-job"
         $job = get-job $jobName
         $jobState = $job.State
@@ -239,7 +241,7 @@ Write-Host "All jobs have completed.  Checking results..."
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $cred = make_cred
 $sessionFailed = $false
-foreach ($vmName in $vmNames) {
+foreach ($vmName in $vmNameArray) {
     $newVMName = $vmName + $newSuffix
     $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
