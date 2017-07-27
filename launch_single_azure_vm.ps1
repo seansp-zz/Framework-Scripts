@@ -62,9 +62,11 @@ $sg = Get-AzureRmNetworkSecurityGroup -Name SmokeNSG -ResourceGroupName $resourc
 $VNIC.NetworkSecurityGroup = $sg
 Set-AzureRmNetworkInterface -NetworkInterface $VNIC
 
+$cred=make_cred
+$vm | Add-AzureProvisioningConfig -Windows -AdminUsername $cred.Username -Password $cred.GetNetworkCredential().Passwor
+
 echo "Adding the network interface"  
 Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
-
 
 $blobURIRaw="https://$storageAccount.blob.core.windows.net/$containerName/" + $vmName + ".vhd"
 
