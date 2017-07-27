@@ -28,7 +28,7 @@ if ($vmNameArray.Length -ne $blobURNs.Length) {
     Write-Host "There are $vmNameArray.Length left..."
 }
 $vmName = $vmNames[0]
-Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmNames[0].log
+Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
