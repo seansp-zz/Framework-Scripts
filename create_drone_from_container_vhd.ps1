@@ -39,7 +39,7 @@ Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Length
 
 $vmName = $vmNameArray[0]
-if ($makeDronesFromAll -eq $false -and ($vmNames.Count -eq 1  -and $vmNames[0] -eq "Unset")) {
+if ($makeDronesFromAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
     exit 1
@@ -84,14 +84,14 @@ foreach ($oneblob in $copyblobs) {
     write-host  "Adding sourceName $sourceName"
     $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
     write-host  "Adding VM name $vmName"
-    $vmNames.Add($vmName)
+    $vmNameArray.Add($vmName)
 }
 
 write-host "Copying blobs..."
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                         -destSA $destSA -destRG $destRG -destContainer $destContainer `
                                         -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
-                                        -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNames
+                                        -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNameArray
 
 
 $scriptBlockString = 
