@@ -25,7 +25,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
     
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA > $null
 
-    $pipName=$vmName + "-pip"
+    $pipName=$vmName + "PublicIP"
 
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
 
