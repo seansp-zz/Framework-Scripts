@@ -17,10 +17,12 @@ $vmNameArray = $vmNames.Split(",")
 $blobURNArray = $blobURNs.Split(",")
 
 Write-Host "Names array: " $vmNameArray
+$numNames = $vmNameArray.Length
 Write-Host "blobs array: " $blobURNArray
+$numBlobs = $blobURNs.Length
 
 if ($vmNameArray.Length -ne $blobURNs.Length) {
-    Write-Host "Please provide the same number of names and URNs."
+    Write-Host "Please provide the same number of names and URNs. You have $numNames names and $numBlobs blobs"
     exit 1
 } else {
     Write-Host "There are $vmNameArray.Length left..."
