@@ -80,9 +80,11 @@ while ($i -lt $vmNameArray.Length) {
     Write-Host "Password is $TEST_USER_ACCOUNT_PAS2"
     $diskName=$vmName + $suffix
     write-host "Creating machine $vmName"
+    $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
+    [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password `'$TEST_USER_ACCOUNT_PAS2`' --admin-username $TEST_USER_ACCOUNT_NAME `
-       --authentication-type "password"
+       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' `
+       --admin-username "mstest" --authentication-type password
 
     if ($? -eq $false) {
         Write-Error "Failed to create VM.  Details follow..."
