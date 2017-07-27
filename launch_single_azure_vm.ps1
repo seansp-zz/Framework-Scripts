@@ -8,7 +8,7 @@
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
     [Parameter(Mandatory=$true)] [string] $NSG="SmokeNSG",
 
-    [Parameter(Mandatory=$true)] [string] $addAdminUser=$false,
+    [Parameter(Mandatory=$true)] [string] $addAdminUser="",
     [Parameter(Mandatory=$true)] [string] $adminUser="",
     [Parameter(Mandatory=$true)] [string] $adminPW=""
 )
@@ -73,11 +73,10 @@ $blobURIRaw = $c.CloudBlobContainer.Uri.ToString() + "/" + $blobName
 echo "Setting the OS disk to interface $blobURIRaw" 
 Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -Linux
 
-if ($addAdminUser -eq $true) {
-    $pw = convertto-securestring -AsPlainText -force -string "P@ssW0rd-1_K6"
-    $cred = new-object -typename system.management.automation.pscredential -argumentlist "mstest",$pw
-
-    Set-AzureRmVMAccessExtension -UserName "mstest" -Password "P@ssW0rd-1_K6" -ResourceGroupName $resourceGroup -VMName $vmName 
+if ([string]::IsNullOrWhiteSpace( $addAdminUser )) {
+    write-host "?????????????????????????? NO ADMIN USER!!!!!" -ForegroundColor Red
+} else {
+    Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
 }
 
 try {
