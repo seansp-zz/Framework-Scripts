@@ -239,6 +239,8 @@ foreach ($vmName in $vmNames) {
     }
 }
 
+get-job | Receive-Job
+
 Stop-Transcript
 
 if ($sessionFailed -eq $true) {    
