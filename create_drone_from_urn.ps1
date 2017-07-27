@@ -41,7 +41,7 @@ $vnetSubnetAddressPrefix = "10.0.0.0/24"
 $vmSize = "Standard_D2"
 
 $osDiskName = $vmName + "-osDisk"
-$blobURIRaw="https://jplintakestorageacct.blob.core.windows.net/$bvtContainer/" + $vnName + "-JPL-1.vhd"
+$blobURIRaw="https://jplintakestorageacct.blob.core.windows.net/$bvtContainer/" + $vmName + "-JPL-1.vhd"
 Write-Host "Clearing any old images..." -ForegroundColor Green
 Get-AzureStorageBlob -Container $bvtContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $bvtContainer}
 $destUri = $blobURIRaw.Replace($bvtContainer,$cleanContainer)

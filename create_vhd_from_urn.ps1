@@ -46,6 +46,7 @@ Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object 
 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 Write-Host "User is $TEST_USER_ACCOUNT_NAME"
+Write-Host "Password is $TEST_USER_ACCOUNT_PAS2"
 $diskName=$vmName + $suffix
 az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
    --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' --admin-username $TEST_USER_ACCOUNT_NAME `
