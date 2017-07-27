@@ -84,7 +84,7 @@ while ($i -lt $vmNameArray.Length) {
     [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
        --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' `
-       --admin-username "mstest" --authentication-type password
+       --admin-username mstest --authentication-type password
 
     if ($? -eq $false) {
         Write-Error "Failed to create VM.  Details follow..."
