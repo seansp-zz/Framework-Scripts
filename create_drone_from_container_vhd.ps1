@@ -66,7 +66,7 @@ if ($makeDronesFromAll -eq $true) {
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName*$suffix" -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             Write-Host "Adding blob for $vmName to the list..."
-            $copyblobs.add($singleBlob)
+            $copyblobs.add($vmName)
         } else {
             Write-Host "Blob for machine $vmName was not found.  This machine cannot be processed."
         }
@@ -80,7 +80,7 @@ if ($copyblobs.Count -eq 0) {
 }
 
 foreach ($oneblob in $copyblobs) {
-    $sourceName=$oneblob.Name
+    $sourceName=$oneblob
     write-host  "Adding sourceName $sourceName"
     $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
     write-host  "Adding VM name $vmName"
