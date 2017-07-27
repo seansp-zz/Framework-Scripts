@@ -23,7 +23,7 @@ $vmNameArray = $vmNames.Split(",")
 $vmNameArray
 
 if ($vmNames.Count -ne $blobURNs.Count) {
-    Write-Host "Please procvide the same number of names and URNs."
+    Write-Host "Please provide the same number of names and URNs."
     exit 1
 } else {
     Write-Host "There are $vmNames.Count() left..."

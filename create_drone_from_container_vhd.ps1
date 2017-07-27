@@ -26,16 +26,16 @@ Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcrip
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
-$copyblobs_array=@()
-$copyblobs = {$copyblobs_array}.Invoke()
-
 $vmNames_array=@()
-$vmNames = {$vmNames_array}.Invoke()
-foreach($vmName in $requestedNames) {
-    $vmNames.Add($vmName)
-}
+$vmNameArray = {$vmNamess_array}.Invoke()
+$vmNameArray.Clear()
+$vmNameArray = $requestedNames.Split(',')
 
-if ($makeDronesFromAll -eq $false -and ($requestedNames.Count -eq 1  -and $requestedNames[0] -eq "Unset")) {
+Write-Host "Names array: " $vmNameArray
+$numNames = $vmNameArray.Length
+
+$vmName = $vmNameArray[0]
+if ($makeDronesFromAll -eq $false -and ($vmNames.Count -eq 1  -and $vmNames[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
     exit 1
@@ -47,13 +47,6 @@ get-job | Stop-Job
 get-job | Remove-Job
 
 login_azure $destRG $destSA
-
-$vmNames_array=@()
-$vmNames = {$vmNamess_array}.Invoke()
-$vmNames.Clear()
-
-$blobs_array=@()
-$blobs = {$blobs_array}.Invoke()
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA
 if ($makeDronesFromAll -eq $true) {
