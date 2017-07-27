@@ -8,9 +8,9 @@
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
     [Parameter(Mandatory=$true)] [string] $NSG="SmokeNSG",
 
-    [Parameter(Mandatory=$true)] [string] $addAdminUser="",
-    [Parameter(Mandatory=$true)] [string] $adminUser="",
-    [Parameter(Mandatory=$true)] [string] $adminPW=""
+    [Parameter(Mandatory=$false)] [string] $addAdminUser="",
+    [Parameter(Mandatory=$false)] [string] $adminUser="",
+    [Parameter(Mandatory=$false)] [string] $adminPW=""
 )
 
 . "C:\Framework-Scripts\secrets.ps1"
@@ -65,28 +65,22 @@ Set-AzureRmNetworkInterface -NetworkInterface $VNIC
 echo "Adding the network interface"  
 Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
-echo "Getting the source disk URI" 
-$c = Get-AzureStorageContainer -Name $containerName
-$blobName=$vmName + ".vhd"
-$blobURIRaw = $c.CloudBlobContainer.Uri.ToString() + "/" + $blobName
-
-echo "Setting the OS disk to interface $blobURIRaw" 
-Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption "Attach" -Linux
-
-if ([string]::IsNullOrWhiteSpace( $addAdminUser )) {
-    write-host "?????????????????????????? NO ADMIN USER!!!!!" -ForegroundColor Red
-} else {
-    Write-Host "Setting the admin uer to $adminUser and password to $adminPW"
-    Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
-}
-
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption attach -Linux
+ 
 try {
     echo "Starting the VM"  
-    $NEWVM = New-AzureRmVM -ResourceGroupName $resourceGroup -Location westus -VM $vm
+    $NEWVM = New-AzureRmVM -ResourceGroupName $resourceGroup -Location $location -VM $vm -Verbose -Debug
     if ($NEWVM -eq $null) {
         echo "FAILED TO CREATE VM!!" 
     } else {
-        echo "VM $vmName started successfully..."             
+        echo "VM $vmName started successfully..."   
+        
+        if ([string]::IsNullOrWhiteSpace( $addAdminUser )) {
+            write-host "?????????????????????????? NO ADMIN USER!!!!!" -ForegroundColor Red
+        } else {
+            Write-Host "Setting the admin uer to $adminUser and password to $adminPW"
+            Set-AzureRmVMAccessExtension -UserName $adminUser -Password $adminPW -ResourceGroupName $resourceGroup -VMName $vmName 
+        }          
     }
 }
 Catch

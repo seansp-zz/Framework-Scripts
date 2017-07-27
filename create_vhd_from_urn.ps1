@@ -47,7 +47,7 @@ Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object 
 Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
 $diskName=$vmName + $suffix
 az vm create -n $diskName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 --admin-username $TEST_USER_ACCOUNT_NAME `
+   --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' --admin-username $TEST_USER_ACCOUNT_NAME `
    --authentication-type "password"
 
 if ($? -eq $false) {
@@ -59,7 +59,7 @@ Write-Host "VM Created successfully.  Stopping it now..."
 Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 # Write-Host "Deleting the VM so we can harvest the VHD..."
-Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+#Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
 Write-Host "Machine is ready for assimilation..."
 Stop-Transcript
