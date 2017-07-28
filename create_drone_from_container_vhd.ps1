@@ -83,8 +83,6 @@ foreach ($oneblob in $copyblobs) {
     $sourceName=$oneblob
     write-host  "Adding sourceName $sourceName"
     $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
-    write-host  "Adding VM name $vmName"
-    $vmNameArray += $vmName
 }
 
 write-host "Copying blobs..."
