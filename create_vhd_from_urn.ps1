@@ -96,7 +96,7 @@ while ($i -lt $vmNameArray.Length) {
         exit 1
     }
     Write-Host "VM Created successfully.  Stopping it now..."
-    Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
 
     # Write-Host "Deleting the VM so we can harvest the VHD..."
     # Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
