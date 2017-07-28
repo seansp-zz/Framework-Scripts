@@ -95,6 +95,43 @@ while ($i -lt $vmNameArray.Length) {
         Stop-Transcript
         exit 1
     }
+
+    #
+    #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
+    $pipName = $newVMName + "PublicIP"
+    $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
+    $password="$TEST_USER_ACCOUNT_PAS2"
+    $port=22
+    $username="$TEST_USER_ACCOUNT_NAME"
+
+    $disableCommand1="systemctl disable cloud-config.service"
+    $disableCommand2="systemctl disable cloud-final.service"
+    $disableCommand3="systemctl disable cloud-init-local.service"
+    $disableCommand4="systemctl disable cloud-init.service"
+
+    $runDisableCommand1="`"echo $password | sudo -S bash -c `'$disableCommand1`'`""
+    $runDisableCommand2="`"echo $password | sudo -S bash -c `'$disableCommand2`'`""
+    $runDisableCommand3="`"echo $password | sudo -S bash -c `'$disableCommand3`'`""
+    $runDisableCommand4="`"echo $password | sudo -S bash -c `'$disableCommand4`'`""
+
+    #
+    #  Eat the prompt and get the host into .known_hosts
+    echo "y" | C:\azure-linux-automation\tools\pscp C:\Frameword-Scripts\README.md $username@$ip`:/tmp
+
+    #
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand1
+
+    #
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand2
+
+    #
+    #  Now run make_drone
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand3
+
+    #
+    #  Now run make_drone
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand4
+    
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
 

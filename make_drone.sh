@@ -348,12 +348,3 @@ cat << "MOTD_EOF" > /etc/motd
    Welcome to the Twilight Zone.                                      Let's Rock.
 *************************************************************************************
 MOTD_EOF
-
-#
-#  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
-systemctl disable cloud-config.service 
-systemctl disable cloud-final.service 
-systemctl disable cloud-init-local.service
-systemctl disable cloud-init.service
-
-    

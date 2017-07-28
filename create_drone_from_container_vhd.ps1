@@ -160,7 +160,6 @@ $scriptBlockString =
     #
     #  The first one gets the machine added to known_hosts
     Write-Host "Copying make_drone to the target.." -ForegroundColor Green
-    echo "y" | C:\azure-linux-automation\tools\pscp C:\temp\nix_files\make_drone.sh $username@$ip`:/tmp
 
     #
     #  Now transfer the files
