@@ -72,6 +72,9 @@ while ($i -lt $vmNameArray.Length) {
     Write-Host "Stopping any running VMs" -ForegroundColor Green
     Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
 
+    echo "Deleting any existing VM"
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
     Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
 
