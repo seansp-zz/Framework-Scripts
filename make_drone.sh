@@ -10,6 +10,21 @@
 source /tmp/secrets.sh
 
 #
+#  Perform redhat subscription manager stuff.
+#
+if [ -f /sbin/subscription-manager ] ;
+  then
+  echo "RedHat specific configuration."
+  echo " -- configuring subscription-manager."
+  echo " -- $REDHAT_SUBSCRIPTION_ID:$REDHAT_SUBSCRIPTION_PW"
+
+  subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
+  subscription-manager repos --enable rhel-7-server-optional-rpms 
+  subscription-manager repos --enable rhel-7-server-extras-rpms;
+fi;
+
+
+#
 #  Add the test user
 #
 
@@ -107,24 +122,7 @@ if [ -f /tmp/secrets.sh ] ;
 fi;
 
 #
-# Specific platform steps.
-#
-case $FAMILY in 
-  RedHat) 
-  echo "RedHat specific configuration."
-  echo " -- configuring subscription-manager."
-  echo " -- $REDHAT_SUBSCRIPTION_ID:$REDHAT_SUBSCRIPTION_PW"
-
-  subscription-manager register --username $REDHAT_SUBSCRIPTION_ID --password $REDHAT_SUBSCRIPTION_PW --auto-attach
-  subscription-manager repos --enable rhel-7-server-optional-rpms 
-  subscription-manager repos --enable rhel-7-server-extras-rpms
-  ;;  
-esac
-
-## -- Legacy follows. ##
-
-#
-#  Do the setup for that system
+#  Legacy Main steps...
 #
 if [ $is_rpm == 0 ]
   then
