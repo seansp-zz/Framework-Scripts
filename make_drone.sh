@@ -68,6 +68,7 @@ PASSWD_END
     rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
     yum -y install puppet
     yum -y install git
+    # Adding in Epel
     wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
     rpm -i -y epel-release-latest-7.noarch.rpm 
     yum install -y epel-release  
@@ -119,10 +120,6 @@ case $FAMILY in
   subscription-manager repos --enable rhel-7-server-extras-rpms
   ;;  
 esac
-
-wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
-rpm -i -y epel-release-latest-7.noarch.rpm 
-yum install -y epel-release  
 
 ## -- Legacy follows. ##
 
