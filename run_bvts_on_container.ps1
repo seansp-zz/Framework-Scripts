@@ -224,6 +224,7 @@ while ($completed_machines -lt $launched_machines) {
         $jobName=$sourceName + "_BVT_Runner"
 
         $logFileName = "c:\temp\transcripts\" + $sourceName + "_transcript.log"
+        echo "Starting BVT job $jobName" | Out-File $logFileName -Force
 
         $jobStatus=get-job -Name $jobName
         if ($? -eq $true) {
@@ -232,17 +233,18 @@ while ($completed_machines -lt $launched_machines) {
             {
                 $completed_machines += 1
                 $failed_machines += 1
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Force
+                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 Write-Host " >>>> BVT job $jobName exited with FAILED state!" -ForegroundColor red
             }
             elseif ($jobState -eq "Completed")
             {
                 $completed_machines += 1
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Force
+                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
             }
             elseif ($jobState -eq "Running")
             {
+                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 $running_machines += 1
                 if ($logThisOne -eq $true) {
                     Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green                

@@ -1,7 +1,7 @@
 ﻿
 param (
-    [Parameter(Mandatory=$false)] [string] $resourceGroup="jpl_intake_rg",
-    [Parameter(Mandatory=$false)] [string] $storageAccount="jplintakestorageacct"
+    [Parameter(Mandatory=$false)] [string] $resourceGroup="smoke_bvts_resource_group",
+    [Parameter(Mandatory=$false)] [string] $storageAccount="smokebvtstorageaccount"
 )
 
 . "C:\Framework-Scripts\secrets.ps1" 
@@ -20,4 +20,7 @@ foreach ($container in $containers) {
     if ($container.Name -like "bootdiag*") { 
         Remove-AzureStorageContainer -Force -Name $container.Name  
     }
- }       
+ }
+
+ Get-AzureRmNetworkInterface -ResourceGroupName $resourceGroup | Remove-AzureRmNetworkInterface -ResourceGroupName $resourceGroup -force
+ Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup | Remove-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -force

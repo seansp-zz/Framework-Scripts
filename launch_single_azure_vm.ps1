@@ -64,7 +64,8 @@ if ($? -eq $false) {
 $sg = Get-AzureRmNetworkSecurityGroup -Name SmokeNSG -ResourceGroupName $resourceGroup
 $VNIC.NetworkSecurityGroup = $sg
 Set-AzureRmNetworkInterface -NetworkInterface $VNIC
-$pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
+
+$pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PAS2" 
 $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 
 echo "Adding the network interface"  
@@ -72,7 +73,7 @@ Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
 $blobURIRaw="https://$storageAccount.blob.core.windows.net/$containerName/" + $vmName + ".vhd"
 
-$vm = Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption attach -Linux
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption attach
  
 try {
     echo "Starting the VM"  

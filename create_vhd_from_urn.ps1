@@ -96,7 +96,7 @@ while ($i -lt $vmNameArray.Length) {
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     # Write-Host "Deleting the VM so we can harvest the VHD..."
-    Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    # Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     Write-Host "Machine $vmName is ready for assimilation..."
 }
