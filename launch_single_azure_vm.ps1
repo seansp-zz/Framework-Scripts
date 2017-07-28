@@ -73,7 +73,7 @@ Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
 
 $blobURIRaw="https://$storageAccount.blob.core.windows.net/$containerName/" + $vmName + ".vhd"
 
-$vm = Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption attach
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $vmName -VhdUri $blobURIRaw -CreateOption attach -Linux
  
 try {
     echo "Starting the VM"  
