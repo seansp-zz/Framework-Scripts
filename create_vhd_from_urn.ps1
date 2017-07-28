@@ -98,6 +98,7 @@ while ($i -lt $vmNameArray.Length) {
 
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
+    sleep(120)
     $pipName = $vmName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     $password="$TEST_USER_ACCOUNT_PAS2"
