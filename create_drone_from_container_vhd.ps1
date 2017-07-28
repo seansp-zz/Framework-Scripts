@@ -139,8 +139,9 @@ $scriptBlockString =
     }
 
     #
-    #  Just because it's up doesn't mean it's accepting connections yet.  Wait 1 minute, then try to connect
-    sleep(60)
+    #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
+    #  but kept getting timeouts on the Ubuntu machines.
+    sleep(120)
 
     $currentDir="C:\Framework-Scripts"
     $username="$TEST_USER_ACCOUNT_NAME"
@@ -201,6 +202,9 @@ $droneJobs.clear()
 
 write-host "Setting up the drone jobs..."
 
+get-job | Stop-Job
+get-job | Remove-Job
+
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 foreach ($vmName in $vmNameArray) { 
     $jobName=$vmName + "-drone-job"
@@ -253,7 +257,21 @@ foreach ($vmName in $vmNameArray) {
     }
 }
 
-get-job | Receive-Job
+if ($sessionFailed -eq $true) {  
+    Write-Host "Errors found in this job, so adding the job output to the log..."
+    
+    $jobs = get-job
+    foreach ($job in $jobs) {
+        Write-Host ""
+        Write-Host "------------------------------------------------------------------------------------------------------"
+        Write-Host "                             JOB LOG FOR JOB $job.Name"   
+        Write-Host "------------------------------------------------------------------------------------------------------"
+        Write-Host ""
+        $job | receive-job
+    }
+}
+
+get-job | remove-job
 
 # Stop-Transcript
 
