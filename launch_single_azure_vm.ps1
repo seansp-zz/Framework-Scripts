@@ -54,7 +54,7 @@ if ($? -eq $false) {
 
 echo "Assigning the network interface"  
 $nicName=$vmName + "VMNic"
-$VNIC = Get-AzureRmNetworkInterface -Name $vmName -ResourceGroupName $resourceGroup -ErrorAction SilentlyContinue
+$VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $resourceGroup -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     Write-Host "Creating new network interface"
     New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $resourceGroup -Location westus -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
