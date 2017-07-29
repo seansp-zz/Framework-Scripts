@@ -119,7 +119,7 @@ while ($i -lt $vmNameArray.Length) {
 
     #
     #  Eat the prompt and get the host into .known_hosts
-    echo "y" | C:\azure-linux-automation\tools\pscp C:\Frameword-Scripts\README.md $username@$ip`:/tmp
+    echo "y" | C:\azure-linux-automation\tools\pscp C:\C:\Framework-Scripts\README.md\README.md $username@$ip`:/tmp
 
     #
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand1
