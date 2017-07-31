@@ -105,11 +105,18 @@ while ($i -lt $vmNameArray.Length) {
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
-    $disableCommand1="systemctl enable cloud-config.service"
-    $disableCommand2="systemctl enable cloud-final.service"
-    $disableCommand3="systemctl enable cloud-init-local.service"
-    $disableCommand4="systemctl enable cloud-init.service"
+    $disableCommand1="systemctl disable cloud-config.service"
+    $disableCommand2="systemctl disable cloud-final.service"
+    $disableCommand3="systemctl disable cloud-init-local.service"
+    $disableCommand4="systemctl disable cloud-init.service"
 
+    #
+    #  Put SELinux into permissive mode
+    $disableCommand0="setenforce 0"
+    $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
+
+    #
+    #  These may or may not be there
     $runDisableCommand1="`"echo `'$password`' | sudo -S bash -c `'$disableCommand1`'`""
     $runDisableCommand2="`"echo `'$password`' | sudo -S bash -c `'$disableCommand2`'`""
     $runDisableCommand3="`"echo `'$password`' | sudo -S bash -c `'$disableCommand3`'`""
@@ -117,13 +124,13 @@ while ($i -lt $vmNameArray.Length) {
 
     #
     #  Eat the prompt and get the host into .known_hosts
-    $remoteAddress = $userName + '@' + $ip
+    $remoteAddress = $ip
     $remoteTmp=$remoteAddress + ":/tmp"
     Write-Host "Attempting to contact remote macnhine using $remoteAddress"
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $remoteTmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
         echo "SSL Rreply is $sslReply"
-        if ($sslReply -match "password:" ) {
+        if ($sslReply -match "README" ) {
             Write-Host "Got a key request"
             break
         } else {
@@ -131,15 +138,16 @@ while ($i -lt $vmNameArray.Length) {
             sleep(10)
         }
     }
-    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
+    $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
+    #
+    #  Disable cloud-init beause of a known Azure bug
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
-
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
-
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip$runDisableCommand3
-
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4
+
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand0
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
