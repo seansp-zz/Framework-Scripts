@@ -159,7 +159,7 @@ $scriptBlockString =
     while ($true) {
         $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
         echo "SSL Rreply is $sslReply"
-        if (($sslReply -match "mstest") -and ($sslReply -match "password:" )) {
+        if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
             break
         } else {
