@@ -102,7 +102,7 @@ while ($i -lt $vmNameArray.Length) {
     write-host "Attempting to contact the machine..."
     $pipName = $vmName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
-    $password="$TEST_USER_ACCOUNT_PAS2"
+    $password='P@ssW0rd-1_K6'
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
