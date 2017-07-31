@@ -99,7 +99,6 @@ while ($i -lt $vmNameArray.Length) {
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
     Write-Host "Sleeping for 3 minutes to allow the machine to come up.."
-    sleep(180)
     write-host "Attempting to contact the machine..."
     $pipName = $vmName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
@@ -122,7 +121,7 @@ while ($i -lt $vmNameArray.Length) {
     while ($true) {
         $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
         echo "SSL Rreply is $sslReply"
-        if (($sslReply -match "mstest") -and ($sslReply -match "password:" )) {
+        if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
             break
         } else {
