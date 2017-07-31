@@ -117,8 +117,9 @@ while ($i -lt $vmNameArray.Length) {
 
     #
     #  Eat the prompt and get the host into .known_hosts
+    $remoteAddress = $userName + '@' + $ip
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$username@$ip"`:/tmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$remoteAddress"`:/tmp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
