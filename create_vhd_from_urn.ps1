@@ -118,8 +118,10 @@ while ($i -lt $vmNameArray.Length) {
     #
     #  Eat the prompt and get the host into .known_hosts
     $remoteAddress = $userName + '@' + $ip
+    $remoteTmp=$remoteAddress + ":/tmp"
+    Write-Host "Attempting to contact remote macnhine using $remoteAddress"
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$remoteAddress"`:/tmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $remoteTmp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
@@ -129,17 +131,17 @@ while ($i -lt $vmNameArray.Length) {
             sleep(10)
         }
     }
-    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
     #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand1
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress $runDisableCommand1
 
     #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand2
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress $runDisableCommand2
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand3
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress $runDisableCommand3
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand4
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress` $runDisableCommand4
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
