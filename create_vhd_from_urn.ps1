@@ -114,7 +114,7 @@ while ($i -lt $vmNameArray.Length) {
     #  Put SELinux into permissive mode
     
     $disableCommand0="setenforce 0"
-    $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
+    $runDisableCommand0="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
 
     #
     #  These may or may not be there
