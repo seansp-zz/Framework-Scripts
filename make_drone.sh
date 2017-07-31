@@ -36,7 +36,6 @@ if [ -f /usr/bin/dpkg ] ;
 $TEST_USER_ACCOUNT_PASS
 $TEST_USER_ACCOUNT_PASS
 PASSWD_END
-    export is_rpm=0;
 else
     echo "This is an RPM-based machine"
     #
@@ -72,10 +71,17 @@ fi
 # Retrieve our depot.
 #
 framework_scripts_path="/root/Framework-Scripts"
-if ! [ -d $framework_scripts_path ]; then
+#if ! [ -d $framework_scripts_path ]; then
   git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
-fi;
-git clone http://github.com/FawcettJohnW/Framework-Scripts.git
+#fi;
+#
+# REVISED: I don't believe the following line is really necessary.
+#   The check above determines if we have already pulled the depot, if this is the case, we don't get new code
+#   to -that- location, but the following line just clones to our relative path.  When we later -use- the scripts,
+#   we always assume the $framework_scripts_path ... so the following -might- be cloned but won't be cloned where
+#   want it.
+#
+#git clone http://github.com/FawcettJohnW/Framework-Scripts.git
 
 #
 # Copy existing secrets files.
@@ -289,10 +295,17 @@ yum -y install python-paramiko
     /opt/omi/bin/omiserver -d
 fi
 
+#
+# TODO: Is this needed for ALL pipelines?
+#
 if [ -f /etc/motd ] 
   then
     mv /etc/motd /etc/motd_before_ms_kernel
 fi
+
+#
+# TODO: Do we need this password reset?
+#
 
 passwd mstest << PASSWD_END
 $TEST_USER_ACCOUNT_PASS
