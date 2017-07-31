@@ -31,11 +31,12 @@ fi;
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
-    useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
-    passwd mstest << PASSWD_END
+    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
+    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
 $TEST_USER_ACCOUNT_PASS
 $TEST_USER_ACCOUNT_PASS
 PASSWD_END
+    export is_rpm=0;
 else
     echo "This is an RPM-based machine"
     #
@@ -53,35 +54,12 @@ fi;
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
-    useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
-    passwd mstest << PASSWD_END
-$TEST_USER_ACCOUNT_PASS
-$TEST_USER_ACCOUNT_PASS
-PASSWD_END
-
+    apt-get -y install git
     #  Let's grab the dpkg puppet installer.
     #  TODO: do i really need wget here?
-    apt-get -y install wget   # We use the wget to get the installer.
-    wget http://apt.puppetlabs.com/puppetlabs-release-trusty.deb
-    dpkg -i puppetlabs-release-trusty.deb
-    apt-get -y install puppet
-    apt-get -y install git
     export is_rpm=0;
 else
     echo "This is an RPM-based machine"
-    #
-    #  Add the test user
-    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G wheel -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS 
-    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
-$TEST_USER_ACCOUNT_PASS
-$TEST_USER_ACCOUNT_PASS
-PASSWD_END
-
-
-    # Let's grab the rpm puppet installer.
-    yum -y install wget #parity.
-    rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
-    yum -y install puppet
     yum -y install git
     # Adding in Epel
     wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
@@ -89,13 +67,6 @@ PASSWD_END
     yum install -y epel-release  
     export is_rpm=1;
 fi
-
-FAMILY="$(facter operatingsystem)"
-FAMILYVER="$(facter operatingsystemrelease)"
-FLAVOR="$FAMILY [$FAMILYVER]"
-IPADDRESS="$(facter ipaddress)"
-
-echo "$FLAVOR -- IP Address = $IPADDRESS"
 
 # 
 # Retrieve our depot.
@@ -348,3 +319,13 @@ cat << "MOTD_EOF" > /etc/motd
    Welcome to the Twilight Zone.                                      Let's Rock.
 *************************************************************************************
 MOTD_EOF
+
+#
+#  Perform redhat subscription manager stuff.
+#
+if [ -f /sbin/subscription-manager ] ;
+  then
+  echo "RedHat specific configuration."
+  echo " -- Removing configuration for subscription-manager."
+  subscription-manager remove --all
+fi;
