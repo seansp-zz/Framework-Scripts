@@ -31,7 +31,34 @@ foreach ($vm in $runningVMs) {
 
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
     if ($? -eq $true -and $session -ne $null) {
-        Write-Host "    PSRP Connection to machine $vm_name established; deprovisioning and shutting down" -ForegroundColor Green
+        Write-Host "    PSRP Connection to machine $vm_name established." -ForegroundColor Green
+        
+        Write-Host "    Turning the CloudInit stuff back on..."
+        $password="$TEST_USER_ACCOUNT_PASS"
+        $port=22
+        $username="$TEST_USER_ACCOUNT_NAME"
+
+        $enableCommand1="systemctl enable cloud-config.service"
+        $enableCommand2="systemctl enable cloud-final.service"
+        $enableCommand3="systemctl enable cloud-init-local.service"
+        $ensableCommand4="systemctl enable cloud-init.service"
+
+        $runEnableCommand1="`"echo $password | sudo -S bash -c `'$enableCommand1`'`""
+        $runEnableCommand2="`"echo $password | sudo -S bash -c `'$enableCommand2`'`""
+        $runEnableCommand3="`"echo $password | sudo -S bash -c `'$enableCommand3`'`""
+        $runEnableCommand4="`"echo $password | sudo -S bash -c `'$enableCommand4`'`""
+
+        $eanbleBlock1=[scriptblock]::Create($runEnableCommand1)
+        $eanbleBlock2=[scriptblock]::Create($runEnableCommand2)
+        $eanbleBlock3=[scriptblock]::Create($runEnableCommand3)
+        $eanbleBlock4=[scriptblock]::Create($runEnableCommand4)
+
+        invoke-command -session $session -ScriptBlock $eanbleBlock1
+        invoke-command -session $session -ScriptBlock $eanbleBlock2
+        invoke-command -session $session -ScriptBlock $eanbleBlock3
+        invoke-command -session $session -ScriptBlock $eanbleBlock4
+        
+        Write-Host "    Deprovisioning and shutting down" -ForegroundColor Green
         $deprovisionString = "echo $password | sudo -S bash -c `"/sbin/waagent -deprovision -force`""
         $deprovisionBlock=[scriptblock]::Create($deprovisionString)
         invoke-command -session $session -ScriptBlock $deprovisionBlock
