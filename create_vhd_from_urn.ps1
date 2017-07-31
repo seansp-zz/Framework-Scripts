@@ -112,6 +112,7 @@ while ($i -lt $vmNameArray.Length) {
 
     #
     #  Put SELinux into permissive mode
+    
     $disableCommand0="setenforce 0"
     $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
 
@@ -140,10 +141,12 @@ while ($i -lt $vmNameArray.Length) {
     }
     $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
+    Write-Host "Setting SELinux into permissive mode"
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand0
 
     #
     #  Disable cloud-init beause of a known Azure bug
+    Write-Host "Disabling cloud-init, if present"
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
