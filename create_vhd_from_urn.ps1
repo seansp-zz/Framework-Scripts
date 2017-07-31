@@ -110,10 +110,10 @@ while ($i -lt $vmNameArray.Length) {
     $disableCommand3="systemctl enable cloud-init-local.service"
     $disableCommand4="systemctl enable cloud-init.service"
 
-    $runDisableCommand1="`"echo $password | sudo -S bash -c `'$disableCommand1`'`""
-    $runDisableCommand2="`"echo $password | sudo -S bash -c `'$disableCommand2`'`""
-    $runDisableCommand3="`"echo $password | sudo -S bash -c `'$disableCommand3`'`""
-    $runDisableCommand4="`"echo $password | sudo -S bash -c `'$disableCommand4`'`""
+    $runDisableCommand1="`"echo `'$password`' | sudo -S bash -c `'$disableCommand1`'`""
+    $runDisableCommand2="`"echo `'$password`' | sudo -S bash -c `'$disableCommand2`'`""
+    $runDisableCommand3="`"echo `'$password`' | sudo -S bash -c `'$disableCommand3`'`""
+    $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand4`'`""
 
     #
     #  Eat the prompt and get the host into .known_hosts
@@ -133,15 +133,13 @@ while ($i -lt $vmNameArray.Length) {
     }
     $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
-    #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand1
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
 
-    #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand2
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand3
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip$runDisableCommand3
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand4
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force

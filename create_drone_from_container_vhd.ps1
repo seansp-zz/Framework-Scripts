@@ -157,7 +157,7 @@ $scriptBlockString =
     #
     #  Eat the prompt and get the host into .known_hosts
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$username@$ip"`:/tmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh  $ipTemp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
@@ -167,7 +167,7 @@ $scriptBlockString =
             sleep(10)
         }
     }
-    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$username@$ip"`:/tmp)
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh  $ipTemp)
 
     #
     #  Send make_drone to the new machine
@@ -177,12 +177,14 @@ $scriptBlockString =
 
     #
     #  Now transfer the files
+    $ipTemp = $ip + ":/tmp"
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\nix_files\secrets.ps1
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\make_drone.sh "$username@$ip"`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.sh "$username@$ip"`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.ps1 "$username@$ip"`:/tmp
+    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh  $ipTemp
+    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh $ipTemp
+    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\secrets.sh $ipTemp
+    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\secrets.ps1 $ipTemp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
