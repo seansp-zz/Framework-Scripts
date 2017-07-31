@@ -111,10 +111,10 @@ while ($i -lt $vmNameArray.Length) {
     $disableCommand3="systemctl disable cloud-init-local.service"
     $disableCommand4="systemctl disable cloud-init.service"
 
-    $runDisableCommand1="`"echo $password | sudo -S bash -c `'$disableCommand1`'`""
-    $runDisableCommand2="`"echo $password | sudo -S bash -c `'$disableCommand2`'`""
-    $runDisableCommand3="`"echo $password | sudo -S bash -c `'$disableCommand3`'`""
-    $runDisableCommand4="`"echo $password | sudo -S bash -c `'$disableCommand4`'`""
+    $runDisableCommand1="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand1`'`""
+    $runDisableCommand2="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand2`'`""
+    $runDisableCommand3="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand3`'`""
+    $runDisableCommand4="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand4`'`""
 
     #
     #  Eat the prompt and get the host into .known_hosts
