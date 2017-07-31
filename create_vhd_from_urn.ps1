@@ -140,6 +140,8 @@ while ($i -lt $vmNameArray.Length) {
     }
     $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand0
+
     #
     #  Disable cloud-init beause of a known Azure bug
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
@@ -147,7 +149,7 @@ while ($i -lt $vmNameArray.Length) {
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand0
+    
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
