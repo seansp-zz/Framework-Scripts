@@ -59,6 +59,7 @@ if [ -f /usr/bin/dpkg ] ;
     export is_rpm=0;
 else
     echo "This is an RPM-based machine"
+    yum -y install wget
     yum -y install git
     # Adding in Epel
     wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
