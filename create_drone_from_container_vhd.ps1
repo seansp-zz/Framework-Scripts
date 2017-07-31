@@ -177,6 +177,19 @@ $scriptBlockString =
 
     #
     #  Now transfer the files
+    while ($true) {
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
+        echo "SSL Rreply is $sslReply"
+        if ($sslReply -match "README" ) {
+            Write-Host "Got a key request"
+            break
+        } else {
+            Write-Host "No match"
+            sleep(10)
+        }
+    }
+    $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
+
     $ipTemp = $ip + ":/tmp"
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
