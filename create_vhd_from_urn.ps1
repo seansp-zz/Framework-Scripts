@@ -134,14 +134,14 @@ while ($i -lt $vmNameArray.Length) {
     $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
     #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress $runDisableCommand1
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand1
 
     #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress $runDisableCommand2
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand2
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress $runDisableCommand3
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand3
 
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $remoteAddress` $runDisableCommand4
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$remoteAddress" $runDisableCommand4
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
