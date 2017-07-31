@@ -199,12 +199,12 @@ $scriptBlockString =
     Write-Host "Using plink to chmod the script"
     #
     #  chmod the thing
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $linuxChmodCommand
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $linuxChmodCommand
 
     #
     #  Now run make_drone
     Write-Host "And now running..."
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $linuxDroneCommand
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $linuxDroneCommand
 
     Stop-Transcript
 }
