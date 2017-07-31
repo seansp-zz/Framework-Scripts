@@ -141,7 +141,6 @@ $scriptBlockString =
     #
     #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
     #  but kept getting timeouts on the Ubuntu machines.
-    sleep(120)
 
     $currentDir="C:\Framework-Scripts"
     $username="$TEST_USER_ACCOUNT_NAME"
@@ -154,6 +153,21 @@ $scriptBlockString =
         Stop-Transcript
         exit 1
     }
+
+    #
+    #  Eat the prompt and get the host into .known_hosts
+    while ($true) {
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
+        echo "SSL Rreply is $sslReply"
+        if (($sslReply -match "mstest") -and ($sslReply -match "password:" )) {
+            Write-Host "Got a key request"
+            break
+        } else {
+            Write-Host "No match"
+            sleep(10)
+        }
+    }
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
 
     #
     #  Send make_drone to the new machine
