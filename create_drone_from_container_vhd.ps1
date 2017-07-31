@@ -157,7 +157,7 @@ $scriptBlockString =
     #
     #  Eat the prompt and get the host into .known_hosts
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$username@$ip"`:/tmp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
@@ -167,7 +167,7 @@ $scriptBlockString =
             sleep(10)
         }
     }
-    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$username@$ip"`:/tmp)
 
     #
     #  Send make_drone to the new machine
@@ -180,9 +180,9 @@ $scriptBlockString =
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\nix_files\secrets.ps1
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\make_drone.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.ps1 $username@$ip`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\make_drone.sh "$username@$ip"`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.sh "$username@$ip"`:/tmp
+    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.ps1 "$username@$ip"`:/tmp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
@@ -197,12 +197,12 @@ $scriptBlockString =
     Write-Host "Using plink to chmod the script"
     #
     #  chmod the thing
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxChmodCommand
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $linuxChmodCommand
 
     #
     #  Now run make_drone
     Write-Host "And now running..."
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxDroneCommand
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $linuxDroneCommand
 
     Stop-Transcript
 }

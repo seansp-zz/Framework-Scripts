@@ -98,7 +98,6 @@ while ($i -lt $vmNameArray.Length) {
 
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
-    Write-Host "Sleeping for 3 minutes to allow the machine to come up.."
     write-host "Attempting to contact the machine..."
     $pipName = $vmName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
@@ -106,20 +105,20 @@ while ($i -lt $vmNameArray.Length) {
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
-    $disableCommand1="systemctl disable cloud-config.service"
-    $disableCommand2="systemctl disable cloud-final.service"
-    $disableCommand3="systemctl disable cloud-init-local.service"
-    $disableCommand4="systemctl disable cloud-init.service"
+    $disableCommand1="systemctl enable cloud-config.service"
+    $disableCommand2="systemctl enable cloud-final.service"
+    $disableCommand3="systemctl enable cloud-init-local.service"
+    $disableCommand4="systemctl enable cloud-init.service"
 
-    $runDisableCommand1="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand1`'`""
-    $runDisableCommand2="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand2`'`""
-    $runDisableCommand3="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand3`'`""
-    $runDisableCommand4="`"echo 'P@ssW0rd-1_K6' | sudo -S bash -c `'$disableCommand4`'`""
+    $runDisableCommand1="`"echo $password | sudo -S bash -c `'$disableCommand1`'`""
+    $runDisableCommand2="`"echo $password | sudo -S bash -c `'$disableCommand2`'`""
+    $runDisableCommand3="`"echo $password | sudo -S bash -c `'$disableCommand3`'`""
+    $runDisableCommand4="`"echo $password | sudo -S bash -c `'$disableCommand4`'`""
 
     #
     #  Eat the prompt and get the host into .known_hosts
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md "$username@$ip"`:/tmp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "password:" ) {
             Write-Host "Got a key request"
@@ -132,18 +131,14 @@ while ($i -lt $vmNameArray.Length) {
     $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp C:\Framework-Scripts\README.md $username@$ip`:/tmp)
 
     #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand1
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand1
 
     #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand2
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand2
 
-    #
-    #  Now run make_drone
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand3
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand3
 
-    #
-    #  Now run make_drone
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand4
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port "$username@$ip" $runDisableCommand4
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
