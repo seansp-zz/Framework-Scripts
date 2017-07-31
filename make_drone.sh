@@ -197,10 +197,11 @@ NEW_SOURCES
     
     #
     #  Tell cron to run the runonce at reboot
-#    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
     apt-get install -y ufw
     ufw allow 443
     ufw allow 5986
+    /opt/omi/bin/omiserver -d
 else
     echo "RPM-based system"
 wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
