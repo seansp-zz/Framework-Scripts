@@ -155,21 +155,6 @@ $scriptBlockString =
     }
 
     #
-    #  Eat the prompt and get the host into .known_hosts
-    while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh  $ipTemp)
-        echo "SSL Rreply is $sslReply"
-        if ($sslReply -match "password:" ) {
-            Write-Host "Got a key request"
-            break
-        } else {
-            Write-Host "No match"
-            sleep(10)
-        }
-    }
-    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh  $ipTemp)
-
-    #
     #  Send make_drone to the new machine
     #
     #  The first one gets the machine added to known_hosts
@@ -177,8 +162,9 @@ $scriptBlockString =
 
     #
     #  Now transfer the files
+    $ipTemp = $ip + ":/tmp"
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "README" ) {
             Write-Host "Got a key request"
@@ -188,13 +174,12 @@ $scriptBlockString =
             sleep(10)
         }
     }
-    $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
 
-    $ipTemp = $ip + ":/tmp"
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\nix_files\secrets.ps1
-    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh  $ipTemp
+    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh $ipTemp
     C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh $ipTemp
     C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\secrets.sh $ipTemp
     C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\secrets.ps1 $ipTemp

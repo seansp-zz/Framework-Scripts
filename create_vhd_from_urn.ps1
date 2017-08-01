@@ -150,9 +150,7 @@ while ($i -lt $vmNameArray.Length) {
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4
-
-    
+    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4    
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
@@ -162,4 +160,8 @@ while ($i -lt $vmNameArray.Length) {
 
     Write-Host "Machine $vmName is ready for assimilation..."
 }
+
+#
+#  Exit with error if we failed to create the VM.  THe setup may have failed, but we can't tell that right ow
 Stop-Transcript
+exit 0
