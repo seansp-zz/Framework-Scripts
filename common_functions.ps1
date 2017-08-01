@@ -47,7 +47,7 @@ function remove_machines_from_group([string[]] $runningVMs,
 
     $allDone = $false
     while ($allDone -eq $false) {
-        $allDone = true
+        $allDone = $true
         foreach ($vm_name in $runningVMs) {
             $vmJobName = $vm_name + "-Src"
             $jobStat = Get-Job -Name $vmJobName
@@ -84,7 +84,7 @@ function deallocate_machines_in_group([string[]] $runningVMs,
 
     $allDone = $false
     while ($allDone -eq $false) {
-        $allDone = true
+        $allDone = $true
         foreach ($vm_name in $runningVMs) {
             $vmJobName = $vm_name + "-Src"
             $jobStat = Get-Job -Name $vmJobName
