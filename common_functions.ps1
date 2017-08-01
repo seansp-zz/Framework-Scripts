@@ -40,7 +40,8 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
 function remove_machines_from_group([string[]] $runningVMs,
                                     [string] $destRG)
 {
-    foreach ($vm_name in $runningVMs) {
+    foreach ($singleVM in $runningVMs) {
+        $vm_name = $singleVM.Name
         $vmJobName = $vm_name + "-Src"
         write-host "Starting job to stop VM $vm_name"
         Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $vm_name,$destRG
@@ -49,7 +50,8 @@ function remove_machines_from_group([string[]] $runningVMs,
     $allDone = $false
     while ($allDone -eq $false) {
         $allDone = $true
-        foreach ($vm_name in $runningVMs) {
+        foreach ($singleVM in $runningVMs) {
+            $vm_name = $singleVM.Name
             $vmJobName = $vm_name + "-Src"
             $jobStat = Get-Job -Name $vmJobName
             $jobState = $job.State
@@ -68,7 +70,8 @@ function remove_machines_from_group([string[]] $runningVMs,
 function deallocate_machines_in_group([string[]] $runningVMs,
                                       [string] $destRG)
 {
-    foreach ($vm_name in $runningVMs) {
+    foreach ($singleVM in $runningVMs) {
+        $vm_name = $singleVM.Name
         $vmJobName = $vm_name + "-Src"
         write-host "Starting job to deprovision VM $vm_name"
         Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $vm_name,$destRG
@@ -76,7 +79,8 @@ function deallocate_machines_in_group([string[]] $runningVMs,
 
     $allDone = $false
 
-    foreach ($vm_name in $runningVMsDest) {
+    foreach ($singleVM in $runningVMs) {
+        $vm_name = $singleVM.Name
         $vmJobName = $vm_name + "-Dest"
         $jobStat = Get-Job -Name $vmJobName
         $jobState = $job.State
