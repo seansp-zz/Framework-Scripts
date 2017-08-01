@@ -117,6 +117,11 @@ $scriptBlockString =
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
+    $stopCommand1="systemctl stop cloud-config.service"
+    $stopCommand2="systemctl stop cloud-final.service"
+    $stopCommand3="systemctl stop cloud-init-local.service"
+    $stopCommand4="systemctl stop cloud-init.service"
+
     $disableCommand1="systemctl disable cloud-config.service"
     $disableCommand2="systemctl disable cloud-final.service"
     $disableCommand3="systemctl disable cloud-init-local.service"
@@ -125,15 +130,20 @@ $scriptBlockString =
     #
     #  Put SELinux into permissive mode
     
-    $disableCommand0="setenforce 0"
+    $disableCommand0="mv /usr/bin/cloud-init /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS"
     $runDisableCommand0="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
 
     #
     #  These may or may not be there
-    $runDisableCommand1="`"echo `'$password`' | sudo -S bash -c `'$disableCommand1`'`""
-    $runDisableCommand2="`"echo `'$password`' | sudo -S bash -c `'$disableCommand2`'`""
-    $runDisableCommand3="`"echo `'$password`' | sudo -S bash -c `'$disableCommand3`'`""
-    $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand4`'`""
+    # $runStopCommand1="`"echo `'$password`' | sudo -S bash -c `'$stopCommand1`'`""
+    # $runStopCommand2="`"echo `'$password`' | sudo -S bash -c `'$stopCommand2`'`""
+    # $runStopCommand3="`"echo `'$password`' | sudo -S bash -c `'$stopCommand3`'`""
+    # $runStopCommand4="`"echo `'$password`' | sudo -S bash -c `'$stopCommand4`'`""
+
+    # $runDisableCommand1="`"echo `'$password`' | sudo -S bash -c `'$disableCommand1`'`""
+    # $runDisableCommand2="`"echo `'$password`' | sudo -S bash -c `'$disableCommand2`'`""
+    # $runDisableCommand3="`"echo `'$password`' | sudo -S bash -c `'$disableCommand3`'`""
+    # $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand4`'`""
 
     #
     #  Eat the prompt and get the host into .known_hosts
@@ -159,10 +169,14 @@ $scriptBlockString =
     #
     #  Disable cloud-init beause of a known Azure bug
     Write-Host "Disabling cloud-init, if present"
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4    
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand1
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand2
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand3
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand4  
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
+    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4    
     
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
