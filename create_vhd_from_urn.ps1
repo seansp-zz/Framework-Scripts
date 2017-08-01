@@ -101,12 +101,14 @@ $scriptBlockString =
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
        --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 `
        --admin-username mstest --authentication-type password
-
     if ($? -eq $false) {
         Write-Error "Failed to create VM.  Details follow..."
         Stop-Transcript
         exit 1
     }
+
+    $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
+    Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
 
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
@@ -117,33 +119,10 @@ $scriptBlockString =
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
-    $stopCommand1="systemctl stop cloud-config.service"
-    $stopCommand2="systemctl stop cloud-final.service"
-    $stopCommand3="systemctl stop cloud-init-local.service"
-    $stopCommand4="systemctl stop cloud-init.service"
-
-    $disableCommand1="systemctl disable cloud-config.service"
-    $disableCommand2="systemctl disable cloud-final.service"
-    $disableCommand3="systemctl disable cloud-init-local.service"
-    $disableCommand4="systemctl disable cloud-init.service"
-
     #
-    #  Put SELinux into permissive mode
-    
+    # Disable cloud-init
     $disableCommand0="mv /usr/bin/cloud-init /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS"
     $runDisableCommand0="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
-
-    #
-    #  These may or may not be there
-    # $runStopCommand1="`"echo `'$password`' | sudo -S bash -c `'$stopCommand1`'`""
-    # $runStopCommand2="`"echo `'$password`' | sudo -S bash -c `'$stopCommand2`'`""
-    # $runStopCommand3="`"echo `'$password`' | sudo -S bash -c `'$stopCommand3`'`""
-    # $runStopCommand4="`"echo `'$password`' | sudo -S bash -c `'$stopCommand4`'`""
-
-    # $runDisableCommand1="`"echo `'$password`' | sudo -S bash -c `'$disableCommand1`'`""
-    # $runDisableCommand2="`"echo `'$password`' | sudo -S bash -c `'$disableCommand2`'`""
-    # $runDisableCommand3="`"echo `'$password`' | sudo -S bash -c `'$disableCommand3`'`""
-    # $runDisableCommand4="`"echo `'$password`' | sudo -S bash -c `'$disableCommand4`'`""
 
     #
     #  Eat the prompt and get the host into .known_hosts
@@ -166,23 +145,11 @@ $scriptBlockString =
     Write-Host "Setting SELinux into permissive mode"
     C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand0
 
-    #
-    #  Disable cloud-init beause of a known Azure bug
-    Write-Host "Disabling cloud-init, if present"
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand1
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand2
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand3
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runStopCommand4  
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand1
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand2
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand3
-    # C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $runDisableCommand4    
-    
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
 
     # Write-Host "Deleting the VM so we can harvest the VHD..."
-    # Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     Write-Host "Machine $vmName is ready for assimilation..."
 

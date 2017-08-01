@@ -12,14 +12,14 @@
 param (
     [Parameter(Mandatory=$false)] [string] $getAll=$false,
     [Parameter(Mandatory=$false)] [string] $replaceVHD=$false,
-    [Parameter(Mandatory=$false)] [string[]] $requestedVMs
+    [Parameter(Mandatory=$false)] [string[]] $requestedVMs,
+
+    [Parameter(Mandatory=$false)] [string] $rg="smoke_source_resource_group",
+    [Parameter(Mandatory=$false)] [string] $nm="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $srcContainer="clean-vhds"
 )
 
 . "C:\Framework-Scripts\secrets.ps1"
-
-$rg="smoke_source_resource_group"
-$nm="smokesourcestorageacct"
-$srcContainer="clean-vhds"
 
 write-host "Importing the context...." -ForegroundColor green
 Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
