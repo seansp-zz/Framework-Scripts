@@ -47,7 +47,7 @@ login_azure $destRG $destSA
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 get-job | Stop-Job
-get-job | remove0job
+get-job | remove-job
 if ($makeDronesFromAll -eq $false) {
     foreach ($vmName in $vmNames) {
         $runningVMsSource = Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running"
