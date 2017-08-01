@@ -35,7 +35,6 @@ if ($vmNameArray.Length -ne $blobURNArray.Length) {
     Write-Host "There are $vmNameArray.Length left..."
 }
 $vmName = $vmNameArray[0]
-Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
@@ -43,45 +42,58 @@ Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 Write-Host "Working with RG $destRG and SA $destSA"
 login_azure $destRG $destSA
 
-# Global
-$location = "westus"
+$scriptBlockString = 
+{
+    param ($vmName,
+            $blobURN,
+            $destRG,
+            $destSA,
+            $destContainer,
+            $location,
+            $suffix,
+            $NSG,
+            $vnetName,
+            $subnetName
+            )
 
-## Storage
-$storageType = "Standard_D2"
+    Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log -Force
 
-## Network
-$nicname = $vmName + "VMNic"
+    . "C:\Framework-Scripts\common_functions.ps1"
+    . C:\Framework-Scripts\secrets.ps1
 
-$vnetAddressPrefix = "10.0.0.0/16"
-$vnetSubnetAddressPrefix = "10.0.0.0/24"
+    login_azure $destRG $destSA
 
-## Compute
+    # Global
+    $location = "westus"
 
-$vmSize = "Standard_A2"
+    ## Storage
+    $storageType = "Standard_D2"
 
-#
-#  Yes, these are done sequentially, not in parallel.  I will figure that out later :)
-#
-$i = 0
-while ($i -lt $vmNameArray.Length) {
-    $vmName = $vmNameArray[$i]
-    $blobURN = $blobURNArray[$i]
-    $i++
-    Write-Host "Preparing machine $vmName for service as a drone..."
+    ## Network
+    $nicname = $vmName + "VMNic"
+
+    $vnetAddressPrefix = "10.0.0.0/16"
+    $vnetSubnetAddressPrefix = "10.0.0.0/24"
+
+    ## Compute
+
+    $vmSize = "Standard_A2"
+
 
     Write-Host "Stopping any running VMs" -ForegroundColor Green
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force -ErrorAction Continue
 
     echo "Deleting any existing VM"
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
 
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
+    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue
 
     Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
     Write-Host "User is $TEST_USER_ACCOUNT_NAME"
     Write-Host "Password is $TEST_USER_ACCOUNT_PAS2"
-    $diskName=$vmName + $suffix
+    $vmName = $vmName + $suffix
+    $diskName=$vmName
     write-host "Creating machine $vmName"
     $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
     [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
@@ -159,9 +171,47 @@ while ($i -lt $vmNameArray.Length) {
     # Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     Write-Host "Machine $vmName is ready for assimilation..."
+
+    Stop-Transcript
+}
+
+$scriptBlock = [scriptblock]::Create($scriptBlockString)
+
+$i = 0
+foreach ($vmName in $vmNameArray) {
+    $blobURN = $blobURNArray[$i]
+    $i++
+    Write-Host "Preparing machine $vmName for service as a drone..."
+
+    $jobName=$vmName + "-intake-job"
+    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
+                                                                      $destContainer,$location,$Suffix,$NSG,`
+                                                                      $vnetName,$subnetName
+    if ($? -ne $true) {
+        Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
+
+    Write-Host "Just launched job $jobName"
+}
+
+$notDone = $true
+while ($notDone -eq $true) {
+    write-host "Status at "@(date)"is:" -ForegroundColor Green
+    $notDone = $false
+    foreach ($vmName in $vmNameArray) {
+        $jobName=$vmName + "-intake-job"
+        $job = get-job $jobName
+        $jobState = $job.State
+        write-host "    Job $jobName is in state $jobState" -ForegroundColor Yellow
+        if ($jobState -eq "Running") {
+            $notDone = $true
+        }
+    }
+    sleep 10
 }
 
 #
 #  Exit with error if we failed to create the VM.  THe setup may have failed, but we can't tell that right ow
-Stop-Transcript
 exit 0
