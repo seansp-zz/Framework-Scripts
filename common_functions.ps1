@@ -42,7 +42,7 @@ function remove_machines_from_group([string[]] $runningVMs,
 {
     foreach ($vm_name in $runningVMs) {
         $vmJobName = $vm_name + "-Src"
-        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force}
+        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $runningVMs,$destRG
     }
 
     $allDone = $false
@@ -79,7 +79,7 @@ function deallocate_machines_in_group([string[]] $runningVMs,
 {
     foreach ($vm_name in $runningVMs) {
         $vmJobName = $vm_name + "-Src"
-        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force}
+        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $runningVMs,$destRG
     }
 
     $allDone = $false
