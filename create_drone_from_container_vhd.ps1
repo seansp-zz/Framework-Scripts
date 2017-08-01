@@ -21,7 +21,7 @@
     [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed.vhd"
 )
 
-# Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
+Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"view source
@@ -109,7 +109,7 @@ $scriptBlockString =
             $subnet
             )
             write-host "Checkpoint 1" -ForegroundColor Cyan
-    Start-Transcript C:\temp\transcripts\scriptblock.log -Force
+    Start-Transcript C:\temp\transcripts\$vmName-scriptblock.log -Force
     write-host "Checkpoint 2" -ForegroundColor Cyan
     . "C:\Framework-Scripts\common_functions.ps1"
     . "C:\Framework-Scripts\secrets.ps1"
@@ -286,7 +286,7 @@ if ($sessionFailed -eq $true) {
 
 get-job | remove-job
 
-# Stop-Transcript
+Stop-Transcript
 
 if ($sessionFailed -eq $true) {    
     exit 1
