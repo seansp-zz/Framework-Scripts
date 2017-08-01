@@ -99,7 +99,7 @@ $scriptBlockString =
     [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' `
+       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 `
        --admin-username mstest --authentication-type password
 
     if ($? -eq $false) {
@@ -113,7 +113,7 @@ $scriptBlockString =
     write-host "Attempting to contact the machine..."
     $pipName = $vmName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
-    $password='P@ssW0rd-1_K6'
+    $password=$TEST_USER_ACCOUNT_PAS2
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
