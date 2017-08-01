@@ -53,7 +53,7 @@ function remove_machines_from_group([Microsoft.Azure.Commands.Compute.Models.PSV
         foreach ($singleVM in $runningVMs) {
             $vm_name = $singleVM.Name
             $vmJobName = $vm_name + "-Src"
-            $jobStat = Get-Job -Name $vmJobName
+            $job = Get-Job -Name $vmJobName
             $jobState = $job.State
             write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
             if ($jobState -eq "Running") {
@@ -82,7 +82,7 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
     foreach ($singleVM in $runningVMs) {
         $vm_name = $singleVM.Name
         $vmJobName = $vm_name + "-Dest"
-        $jobStat = Get-Job -Name $vmJobName
+        $job = Get-Job -Name $vmJobName
         $jobState = $job.State
         write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
         if ($jobState -eq "Running") {
