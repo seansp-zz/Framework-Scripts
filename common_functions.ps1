@@ -37,7 +37,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
     new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
 }
 
-function remove_machines_from_group([string[]] $runningVMs,
+function remove_machines_from_group([Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine[]] $runningVMs,
                                     [string] $destRG)
 {
     foreach ($singleVM in $runningVMs) {
@@ -67,7 +67,7 @@ function remove_machines_from_group([string[]] $runningVMs,
     }
 }
 
-function deallocate_machines_in_group([string[]] $runningVMs,
+function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine[]] $runningVMs,
                                       [string] $destRG)
 {
     foreach ($singleVM in $runningVMs) {
