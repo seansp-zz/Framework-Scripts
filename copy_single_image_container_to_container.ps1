@@ -58,7 +58,7 @@ if ($makeDronesFromAll -eq $false) {
     }
 }
 
-remove_machines_from_group $runningVMsSource $destRG
+remove_machines_from_group $runningVMsSource $sourceRG
 remove_machines_from_group $runningVMsDest $destRG
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
