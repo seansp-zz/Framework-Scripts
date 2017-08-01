@@ -135,7 +135,7 @@ function copy_azure_machines {
         Write-Host "Preparing the individual machines..." -ForegroundColor green
         foreach ($oneblob in $blobs) {
             $sourceName=$oneblob.Name
-            $targetName = $sourceName | % { $_ -replace "RunOnce-Primed.vhd", "BORG.vhd" }
+            $targetName = $sourceName | % { $_ -replace "-RunOnce-Primed.vhd", "-BORG.vhd" }
 
             $vmName = $targetName.Replace(".vhd","")
             $global:neededVMs.Add($vmName)

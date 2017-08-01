@@ -1,7 +1,7 @@
 ﻿
 param (
-    [Parameter(Mandatory=$false)] [string] $resourceGroup="jpl_intake_rg",
-    [Parameter(Mandatory=$false)] [string] $storageAccount="jplintakestorageacct"
+    [Parameter(Mandatory=$false)] [string] $resourceGroup="smoke_source_resource_group",
+    [Parameter(Mandatory=$false)] [string] $storageAccount="smokesourcestorageacct"
 )
 
 . "C:\Framework-Scripts\secrets.ps1" 
