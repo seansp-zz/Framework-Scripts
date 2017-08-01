@@ -22,5 +22,5 @@ foreach ($container in $containers) {
     }
  }
 
- Get-AzureRmNetworkInterface -ResourceGroupName $resourceGroup | Remove-AzureRmNetworkInterface -ResourceGroupName $resourceGroup -force
- Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup | Remove-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -force
+# Get-AzureRmNetworkInterface -ResourceGroupName $resourceGroup | Remove-AzureRmNetworkInterface -ResourceGroupName $resourceGroup -force
+# Get-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup | Remove-AzureRmPublicIpAddress -ResourceGroupName $resourceGroup -force

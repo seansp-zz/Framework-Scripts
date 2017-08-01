@@ -81,10 +81,12 @@ $scriptBlockString =
 
 
     Write-Host "Stopping any running VMs" -ForegroundColor Green
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force -ErrorAction Continue
+    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running"
+    remove_machines_from_group $runningVMs $destRG
 
     echo "Deleting any existing VM"
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
+    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
+    deallocate_machines_in_group $runningVMs $destRG
 
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
     Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue
