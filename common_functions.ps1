@@ -42,7 +42,8 @@ function remove_machines_from_group([string[]] $runningVMs,
 {
     foreach ($vm_name in $runningVMs) {
         $vmJobName = $vm_name + "-Src"
-        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $runningVMs,$destRG
+        write-host "Starting job to stop VM $vm_name"
+        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $vm_name,$destRG
     }
 
     $allDone = $false
@@ -50,16 +51,6 @@ function remove_machines_from_group([string[]] $runningVMs,
         $allDone = $true
         foreach ($vm_name in $runningVMs) {
             $vmJobName = $vm_name + "-Src"
-            $jobStat = Get-Job -Name $vmJobName
-            $jobState = $job.State
-            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
-            if ($jobState -eq "Running") {
-                $allDone = $false
-            }
-        }
-
-        foreach ($vm_name in $runningVMsDest) {
-            $vmJobName = $vm_name + "-Dest"
             $jobStat = Get-Job -Name $vmJobName
             $jobState = $job.State
             write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
@@ -79,35 +70,24 @@ function deallocate_machines_in_group([string[]] $runningVMs,
 {
     foreach ($vm_name in $runningVMs) {
         $vmJobName = $vm_name + "-Src"
-        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $runningVMs,$destRG
+        write-host "Starting job to deprovision VM $vm_name"
+        Start-Job -Name $vmJobName -ScriptBlock {Stop-AzureRmVM -Name $args[0] -ResourceGroupName $args[1] -Force} -ArgumentList $vm_name,$destRG
     }
 
     $allDone = $false
-    while ($allDone -eq $false) {
-        $allDone = $true
-        foreach ($vm_name in $runningVMs) {
-            $vmJobName = $vm_name + "-Src"
-            $jobStat = Get-Job -Name $vmJobName
-            $jobState = $job.State
-            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
-            if ($jobState -eq "Running") {
-                $allDone = $false
-            }
-        }
 
-        foreach ($vm_name in $runningVMsDest) {
-            $vmJobName = $vm_name + "-Dest"
-            $jobStat = Get-Job -Name $vmJobName
-            $jobState = $job.State
-            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
-            if ($jobState -eq "Running") {
-                $allDone = $false
-            }
+    foreach ($vm_name in $runningVMsDest) {
+        $vmJobName = $vm_name + "-Dest"
+        $jobStat = Get-Job -Name $vmJobName
+        $jobState = $job.State
+        write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
+        if ($jobState -eq "Running") {
+            $allDone = $false
         }
+    }
 
-        if ($allDone -eq $false) {
-            sleep(10)
-        }
+    if ($allDone -eq $false) {
+        sleep(10)
     }
 }
 
