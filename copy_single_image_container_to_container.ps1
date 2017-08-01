@@ -50,13 +50,13 @@ get-job | Stop-Job
 get-job | remove-job
 if ($makeDronesFromAll -eq $false) {
     foreach ($vmName in $vmNames) {
-        $runningVMsSource = Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running"
-        $runningVMsDest = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
-    } else {
-        $runningVMsSource = Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-        $runningVMsDest = Get-AzureRmVm -ResourceGroupName $destRG -status | Remove-AzureRmVM -Force
-    }
-}
+        $runningVMsSource += (Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running")
+        $runningVMsDest += (Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*")
+    } 
+ } else {
+        $runningVMsSource = (Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM running")
+        $runningVMsDest = (Get-AzureRmVm -ResourceGroupName $destRG -status)
+ }
 
 remove_machines_from_group $runningVMsSource $sourceRG
 remove_machines_from_group $runningVMsDest $destRG
