@@ -29,19 +29,16 @@ $cred = make_cred
 login_azure $DestRG $DestSA
 $error = $false
 $suffix = $suffix.Replace(".vhd","")
-Write-Host "New suffix is $suffix"
+
+$scriptCommand= { param($script) copy-item $script /root/runonce.d } 
+$runCommand = "echo $password | sudo -S bash -c `'cp /root/Framework-Scripts/$scriptName /root/runonce.d`'"
+$commandBLock=[scriptblock]::Create($runCommand)
 
 foreach ($baseName in $vmNameArray) {
     
     $vm_name = $baseName + $suffix
     $password="$TEST_USER_ACCOUNT_PASS"
-    write-host "VM Name is $vm_name"
-
-    $scriptCommand= { param($script) copy-item $script /root/runonce.d } 
-
-    $runCommand = "echo $password | sudo -S bash -c `'cp /root/Framework-Scripts/$scriptName /root/runonce.d`'"
-
-    $commandBLock=[scriptblock]::Create($runCommand)
+    write-host "Placing script $script in runonce.d on machine $vm_name"
 
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o
     if ($? -eq $true -and $session -ne $null) {
