@@ -104,7 +104,7 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
         . C:\Framework-Scripts\secrets.ps1
 
         login_azure $destRG $destSA
-        Write-Host "Stopping machine $vm_name in RG $destRG"
+        Write-Host "Deallocating machine $vm_name in RG $destRG"
         Remove-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
     }
 
