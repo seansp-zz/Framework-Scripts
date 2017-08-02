@@ -105,6 +105,8 @@ $scriptBlockString =
         exit 1
     }
 
+    az vm boot-diagnostics enable --storage "http://$destSA.blob.core.windows.net/" -n $vmName -g $destRG
+
     $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
     Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
 
