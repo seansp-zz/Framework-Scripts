@@ -186,6 +186,8 @@ while ($notDone -eq $true) {
         write-host "    Job $jobName is in state $jobState" -ForegroundColor Yellow
         if ($jobState -eq "Running") {
             $notDone = $true
+        } else {
+            get-job $jobName | Receive-Job
         }
     }
     sleep 10

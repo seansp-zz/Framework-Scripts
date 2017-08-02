@@ -270,12 +270,15 @@ while ($completed_machines -lt $launched_machines) {
 
         if ($failed_machines -gt 0) {
             Write-Host "There were $failed_machines failures out of $launched_machines attempts.  BVTs have failed." -ForegroundColor Red
+            c:\framework-Scripts\clear_smoke_bvt_resource_groups
             exit 1
         } elseif ($completed_machines -eq $launched_machines) {
             Write-Host "All BVTs have passed! " -ForegroundColor Green
+            c:\framework-Scripts\clear_smoke_bvt_resource_groups
             exit 0
         } else {
             write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor Red
+            c:\framework-Scripts\clear_smoke_bvt_resource_groups
             exit 1
         }
     }

@@ -27,21 +27,24 @@ $cred = make_cred
 
 login_azure $DestRG $DestSA
 $error = $false
+$suffix = $suffix.Replace(".vhd","")
 
-Write-Host "Locating the running machines..."  -ForegroundColor green
+$password="$TEST_USER_ACCOUNT_PASS"
+
+$scriptCommand= { param($cmd) $cmd } 
+
+if ($asRoot -ne $false) {
+    $runCommand = "echo $password | sudo -S bash -c `'$command`'"
+} else {
+    $runCommand = $command
+}
+
+$commandBLock=[scriptblock]::Create($runCommand)
+
 foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName + $suffix
-    $password="$TEST_USER_ACCOUNT_PASS"
 
-    $scriptCommand= { param($cmd) $cmd } 
-
-    if ($asRoot -ne $false) {
-        $runCommand = "echo $password | sudo -S bash -c `'$command`'"
-    } else {
-        $runCommand = $command
-    }
-
-    $commandBLock=[scriptblock]::Create($runCommand)
+    write-host "Executing remote command on machine $vm_name"
 
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o
     if ($? -eq $true -and $session -ne $null) {

@@ -28,11 +28,14 @@ $cred = make_cred
 
 login_azure $DestRG $DestSA
 $error = $false
+$suffix = $suffix.Replace(".vhd","")
+Write-Host "New suffix is $suffix"
 
-Write-Host "Locating the running machines..."  -ForegroundColor green
 foreach ($baseName in $vmNameArray) {
+    
     $vm_name = $baseName + $suffix
     $password="$TEST_USER_ACCOUNT_PASS"
+    write-host "VM Name is $vm_name"
 
     $scriptCommand= { param($script) copy-item $script /root/runonce.d } 
 
