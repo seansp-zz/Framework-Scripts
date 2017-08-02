@@ -39,28 +39,15 @@ foreach ($vm in $runningVMs) {
         $username="$TEST_USER_ACCOUNT_NAME"
 
         $enableCommand1="/bin/mv /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS /usr/bin/cloud-init"
-        # $enableCommand2="systemctl enable cloud-final.service"
-        # $enableCommand3="systemctl enable cloud-init-local.service"
-        # $ensableCommand4="systemctl enable cloud-init.service"
-
         $runEnableCommand1="`"echo $password | sudo -S bash -c `'$enableCommand1`'`""
-        # $runEnableCommand2="`"echo $password | sudo -S bash -c `'$enableCommand2`'`""
-        # $runEnableCommand3="`"echo $password | sudo -S bash -c `'$enableCommand3`'`""
-        # $runEnableCommand4="`"echo $password | sudo -S bash -c `'$enableCommand4`'`""
-
         $eanbleBlock1=[scriptblock]::Create($runEnableCommand1)
-        # $eanbleBlock2=[scriptblock]::Create($runEnableCommand2)
-        # $eanbleBlock3=[scriptblock]::Create($runEnableCommand3)
-        # $eanbleBlock4=[scriptblock]::Create($runEnableCommand4)
 
         invoke-command -session $session -ScriptBlock $eanbleBlock1
-        # invoke-command -session $session -ScriptBlock $eanbleBlock2
-        # invoke-command -session $session -ScriptBlock $eanbleBlock3
-        # invoke-command -session $session -ScriptBlock $eanbleBlock4
         
         Write-Host "    Deprovisioning and shutting down" -ForegroundColor Green
         $deprovisionString = "echo $password | sudo -S bash -c `"/sbin/waagent -deprovision -force`""
         $deprovisionBlock=[scriptblock]::Create($deprovisionString)
+
         invoke-command -session $session -ScriptBlock $deprovisionBlock
 
         $stopBlockString = "echo $password | sudo -S bash -c shutdown"

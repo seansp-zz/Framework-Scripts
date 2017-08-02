@@ -21,7 +21,7 @@ function make_cred () {
 function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
                              [System.Management.Automation.PSCredential] $cred,
                              [System.Management.Automation.Remoting.PSSessionOption] $o)
- {
+{
     
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA > $null
 
