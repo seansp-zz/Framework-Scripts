@@ -23,7 +23,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
                              [System.Management.Automation.Remoting.PSSessionOption] $o)
 {
     
-    Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA > $null
+    Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA
 
     $pipName=$vmName + "PublicIP"
 
