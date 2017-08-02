@@ -58,8 +58,8 @@ if ($makeDronesFromAll -eq $false) {
         $runningVMsDest = (Get-AzureRmVm -ResourceGroupName $destRG -status)
  }
 
-remove_machines_from_group $runningVMsSource $sourceRG
-remove_machines_from_group $runningVMsDest $destRG
+remove_machines_from_group $runningVMsSource $sourceRG $sourceSA
+remove_machines_from_group $runningVMsDest $destRG $destSA
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
 

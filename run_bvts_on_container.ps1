@@ -53,7 +53,7 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountN
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG -status |  where-object -Property PowerState -eq -value "VM running"
-remove_machines_from_group $runningVMs $sourceRG
+remove_machines_from_group $runningVMs $sourceRG $sourceSA
 
 Write-Host "Copying the test VMs packages to BVT resource group"
 $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $destRG -Name $destSA

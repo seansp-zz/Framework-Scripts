@@ -32,11 +32,11 @@ login_azure $resourceGroup $storageAccount
 
 echo "Making sure the VM is stopped..."  
 $runningVMs = Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running"
-remove_machines_from_group $runningVMs $resourceGroup
+remove_machines_from_group $runningVMs $resourceGroup $storageAccount
 
 echo "Deleting any existing VM"
 $runningVMs = Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
-deallocate_machines_in_group $runningVMs $resourceGroup
+deallocate_machines_in_group $runningVMs $resourceGroup $storageAccount
 
 echo "Creating a new VM config..."   
 $vm=New-AzureRmVMConfig -vmName $vmName -vmSize 'Standard_D2' 

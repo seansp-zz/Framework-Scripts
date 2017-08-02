@@ -113,7 +113,7 @@ function copy_azure_machines {
 
         Write-Host "Stopping any currently running machines in the source resource group..."  -ForegroundColor green
         $runningVMs = Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM running"
-        remove_machines_from_group $runningVMs $global:sourceResourceGroupName   
+        remove_machines_from_group $runningVMs $global:sourceResourceGroupName $global:sourceStorageAccountName
 
         $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:sourceResourceGroupName -Name $global:sourceStorageAccountName
         $sourceContext=New-AzureStorageContext -StorageAccountName $global:sourceStorageAccountName -StorageAccountKey $sourceKey[0].Value
