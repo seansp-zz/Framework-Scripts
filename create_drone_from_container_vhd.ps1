@@ -118,10 +118,6 @@ $scriptBlockString =
     
     login_azure $destRG $destSA
 
-    write-host "Stopping VM $vmName, if running"
-    $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running"
-    remove_machines_from_group $runningMachines $destRG $destSA
-
     Write-Host "Deallocating machine $vmName, if it is up"
     $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
     deallocate_machines_in_group $runningMachines $destRG $destSA

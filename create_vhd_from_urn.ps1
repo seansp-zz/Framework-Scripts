@@ -80,10 +80,6 @@ $scriptBlockString =
     $vmSize = "Standard_A2"
 
 
-    Write-Host "Stopping any running VMs" -ForegroundColor Green
-    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running"
-    remove_machines_from_group $runningVMs $destRG $destSA
-
     echo "Deleting any existing VM"
     $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
     deallocate_machines_in_group $runningVMs $destRG $destSA

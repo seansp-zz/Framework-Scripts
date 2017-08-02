@@ -85,8 +85,6 @@ $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $global:pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
 $global:cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$global:pw
 
-
-
 class MonitoredMachine {
     [string] $name="unknown"
     [string] $status="Unitialized"
@@ -112,8 +110,8 @@ function copy_azure_machines {
         Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName > $null
 
         Write-Host "Stopping any currently running machines in the source resource group..."  -ForegroundColor green
-        $runningVMs = Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM running"
-        remove_machines_from_group $runningVMs $global:sourceResourceGroupName $global:sourceStorageAccountName
+        $runningVMs = Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName
+        deallocate_machines_in_group $runningVMs $global:sourceResourceGroupName $global:sourceStorageAccountName
 
         $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:sourceResourceGroupName -Name $global:sourceStorageAccountName
         $sourceContext=New-AzureStorageContext -StorageAccountName $global:sourceStorageAccountName -StorageAccountKey $sourceKey[0].Value
@@ -125,7 +123,8 @@ function copy_azure_machines {
         Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName –StorageAccountName $global:workingStorageAccountName > $null
 
         Write-Host "Stopping and deleting any currently running machines in the target resource group..."  -ForegroundColor green
-        Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName | Remove-AzureRmVM -Force > $null
+        $runningVMs = Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupNam
+        deallocate_machines_in_group $runningVMs $global:workingResourceGroupNam $global:workingStorageAccountName
 
         Write-Host "Clearing VHDs in the working storage container $global:workingContainerName..."  -ForegroundColor green
         Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName } > $null
