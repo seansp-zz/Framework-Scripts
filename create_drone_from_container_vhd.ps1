@@ -272,24 +272,9 @@ while ($notDone -eq $true) {
 Write-Host "All jobs have completed.  Checking results..."
 #
 #  Get the results of that
-$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$cred = make_cred
-$sessionFailed = $false
-foreach ($vmName in $vmNameArray) {
-    $newVMName = $vmName + $newSuffix
-    $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
+$status = c:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $destSA -destRG $destRG -suffix $newSuffix -command "/bin/uname -a"
 
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $newVMName $destRG $destSA $cred $o
-    if ($session -ne $NULL) {
-        invoke-command -session $session -ScriptBlock {/bin/uname -a}
-        Remove-PSSession $session
-    } else {
-        Write-Host "FAILED to create PSRP session to $newVMName"
-        $sessionFailed = $true
-    }
-}
-
-if ($sessionFailed -eq $true) {  
+if ($status -contains "FAILED to establish PSRP connection") {
     Write-Host "Errors found in this job, so adding the job output to the log..."
     
     $jobs = get-job
