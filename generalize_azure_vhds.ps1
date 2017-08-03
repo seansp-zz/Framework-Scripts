@@ -40,6 +40,7 @@ if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[
         $requestedNames = $requestedNames + $vm_name + ","
     }
     $requestedNames = $requestedNames -replace ".$"
+    $suffix = ""
 }
 
 Write-Host "Replacing cloud-init..."
