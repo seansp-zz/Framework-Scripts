@@ -21,7 +21,7 @@ param (
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-if ($requestedNames[0] -ne "") {
+if ($requestedNames -ne "") {
     $vmNameArray = $requestedNames.Split(',')
 }
 
