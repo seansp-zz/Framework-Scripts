@@ -27,6 +27,8 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
 
     $pipName=$vmName + "PublicIP"
 
+    Write-Host "Attempting to get IP for RG $rg"
+
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
 
     if ($ipAddress.IpAddress -eq "Not Assigned") {

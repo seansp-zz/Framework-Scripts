@@ -66,9 +66,11 @@ if ($? -eq $false) {
 foreach ($vm in $runningVMs) {
     $vm_name=$vm.Name
 
-    Write-Host "Now deallocating the machine..."
+    Write-Host "Now deallocating machine $vm_name..."
     az vm deallocate --resource-group $sourceRG --name $vm_name
 
-    Write-Host "And finally generalizing the machine..."
+    Write-Host "And finally generalizing machine $vm_name..."
     az vm generalize --resource-group $sourceRG --name $vm_name
+
+    Write-Host "Generalization of machine $vm_name complete."
 }

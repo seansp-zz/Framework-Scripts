@@ -34,6 +34,9 @@ param (
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
+Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -force
+Stop-Transcript
+
 Start-Transcript C:\temp\transcripts\run_borg_azure.log -Force
 
 Set-StrictMode -Version 2.0
@@ -275,7 +278,7 @@ function launch_azure_vms {
 }
 
 $action={
-    Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Force
+    Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Append
 
     . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1

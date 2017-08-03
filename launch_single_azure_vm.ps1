@@ -8,12 +8,14 @@
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
     [Parameter(Mandatory=$true)] [string] $NSG="SmokeNSG",
 
+    [Parameter(Mandatory=$true)] [string] $location="westus",
+
     [Parameter(Mandatory=$false)] [string] $addAdminUser="",
     [Parameter(Mandatory=$false)] [string] $adminUser="",
     [Parameter(Mandatory=$false)] [string] $adminPW=""
 )
-
-. "C:\Framework-Scripts\secrets.ps1"
+. C:\Framework-Scripts\common_functions.ps1
+. C:\Framework-Scripts\secrets.ps1
 
 if( [string]::IsNullOrWhiteSpace( $adminUser ) )
 {
@@ -25,8 +27,6 @@ if( [string]::IsNullOrWhiteSpace( $adminPW ) )
 }
 
 Start-Transcript -path C:\temp\transcripts\launch_single_azure_vm_$vmName.log -Force
-
-. "C:\Framework-Scripts\common_functions.ps1"
 
 login_azure $resourceGroup $storageAccount
 
