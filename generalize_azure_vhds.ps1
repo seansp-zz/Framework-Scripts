@@ -9,7 +9,7 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds_under_test",
 
-    [Parameter(Mandatory=$false)] [string[]] $requestedNames,
+    [Parameter(Mandatory=$false)] [string] $requestedNames,
     [Parameter(Mandatory=$false)] [string] $generalizeAll,
 
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd"
@@ -21,9 +21,11 @@ param (
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-if ($requestedNames -ne "") {
+if ($requestedNames -ne "unset") {
     $vmNameArray = $requestedNames.Split(',')
 }
+
+login_azure $sourceRG $sourceSA
 
 $vmName = $vmNameArray[0]
 if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
