@@ -18,7 +18,7 @@ $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
 $vmNameArray = $requestedNames.Split(',')
 
-write-host "Creating VMs for $vmNameArray "
+write-host "Copying file $file to $vmNameArray "
 
 #
 #  Session stuff
@@ -26,19 +26,19 @@ write-host "Creating VMs for $vmNameArray "
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $cred = make_cred
 
-login_azure $DestRG $DestSA
-$error = $false
-$suffix = $suffix.Replace(".vhd","")
+$password="$TEST_USER_ACCOUNT_PASS"
 
-$scriptCommand= { param($script) copy-item $script /root/runonce.d } 
-$runCommand = "echo $password | sudo -S bash -c `'cp /root/Framework-Scripts/$scriptName /root/runonce.d`'"
+$scriptCommand= { param($cmd) $cmd } 
+
+$command="cp -f /root/Framework-Scripts/" + $scriptName + " /root/runonce.d"
+$runCommand = "echo $password | sudo -S bash -c `'$command`'"
+
 $commandBLock=[scriptblock]::Create($runCommand)
 
 foreach ($baseName in $vmNameArray) {
-    
     $vm_name = $baseName + $suffix
-    $password="$TEST_USER_ACCOUNT_PASS"
-    write-host "Placing script $script in runonce.d on machine $vm_name"
+
+    write-host "Executing remote command on machine $vm_name"
 
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o
     if ($? -eq $true -and $session -ne $null) {

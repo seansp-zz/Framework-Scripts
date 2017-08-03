@@ -5,7 +5,7 @@
     Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 
     if ($rg -ne "" -and $sa -ne "") {
-        Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa > $null
+        $out = Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa 2>&1
     }
 }
 
@@ -22,8 +22,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
                              [System.Management.Automation.PSCredential] $cred,
                              [System.Management.Automation.Remoting.PSSessionOption] $o)
 {
-    
-    Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $SA
+    login_azure $rg $sa > $null
 
     $pipName=$vmName + "PublicIP"
 
@@ -171,7 +170,7 @@ function try_pscp([string] $file,
 }
 
 function try_plink([string] $ip,
-                  [string] $command)
+                   [string] $command)
 {
     . C:\Framework-Scripts\secrets.ps1
 
