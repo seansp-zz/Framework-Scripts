@@ -155,7 +155,7 @@ $scriptBlockString =
     #  Send make_drone to the new machine
     #
     #  The first one gets the machine added to known_hosts
-    Write-Host "Copying make_drone to the target.." -ForegroundColor Green
+    Write-Host "Copying make_drone to target $ip.." -ForegroundColor Green
 
     #
     #  Now transfer the files

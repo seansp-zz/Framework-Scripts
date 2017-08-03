@@ -37,6 +37,7 @@ $commandBLock=[scriptblock]::Create($runCommand)
 
 foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName + $suffix
+    $vm_name = $vm_name | % { $_ -replace ".vhd", "" }
 
     write-host "Executing remote command on machine $vm_name"
 

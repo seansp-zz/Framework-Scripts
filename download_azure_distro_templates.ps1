@@ -31,7 +31,7 @@ $neededVms_array=@()
 $neededVms = {$neededVms_array}.Invoke()
 
 Write-Host "Getting the list of disks..."
-$blobs=get-AzureStorageBlob -Container $srcContainer -Blob "*-Smoke-1.vhd"
+$blobs=get-AzureStorageBlob -Container $srcContainer -Blob "*-RunOnce-Primed.vhd"
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
     $targetName = $sourceName
