@@ -140,3 +140,64 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
     }
 }
 
+function try_pscp([string] $file,
+                  [string] $ipTemp)
+{
+    . C:\Framework-Scripts\secrets.ps1
+    
+    $try_again = $true
+    while ($try_again -eq $true) {
+        $try_again = $false
+        try {
+            $out = C:\azure-linux-automation\tools\pscp -pw $TEST_USER_ACCOUNT_PASS -l $TEST_USER_ACCOUNT_NAME $file $ipTemp
+        }
+        catch {
+                Write-Host "pscp Exception caught -- trying again"
+                $try_again = $true
+        }
+
+        if ($? -eq $false -and $out -contains "connection timed out")
+        {
+            Write-Host "Timeout on pscp of $file"
+            $try_again = $true
+        } elseif ($? -eq $false) {
+            write-host "General error copying file..."
+            return 1
+        } else {
+            Write-Host "Successful copy"
+            return 0
+        }
+    }
+}
+
+function try_plink([string] $ip,
+                  [string] $command)
+{
+    . C:\Framework-Scripts\secrets.ps1
+
+    $port=22
+    
+    $try_again = $true
+    while ($try_again -eq $true) {
+        $try_again = $false
+        try {
+            $out = C:\azure-linux-automation\tools\plink.exe -C -v -pw $TEST_USER_ACCOUNT_PASS -P $port -l $TEST_USER_ACCOUNT_NAME $ip $command
+        }
+        catch {
+                Write-Host "plink Exception caught -- trying again"
+                $try_again = $true
+        }
+
+        if ($? -eq $false -and $out -contains "connection timed out")
+        {
+            Write-Host "Timeout on plink of $command"
+            $try_again = $true
+        } elseif ($? -eq $false) {
+            write-host "General error executing command..."
+            return 1
+        } else {
+            Write-Host "Successful command execution"
+            return 0
+        }
+    }
+}

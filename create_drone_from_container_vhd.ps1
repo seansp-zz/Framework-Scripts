@@ -176,12 +176,24 @@ $scriptBlockString =
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\nix_files\secrets.ps1
-    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh $ipTemp
-    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\make_drone.sh $ipTemp
-    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\secrets.sh $ipTemp
-    C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\temp\nix_files\secrets.ps1 $ipTemp
+
+    try_pscp  C:\temp\nix_files\make_drone.sh $ipTemp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
+
+    try_pscp C:\temp\nix_files\secrets.sh $ipTemp
+    if ($? -ne $true) {
+        Write-Host "Error copying secrets.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
+
+    try_pscp C:\temp\nix_files\secrets.ps1 $ipTemp
+    if ($? -ne $true) {
+        Write-Host "Error copying secrets.ps1 to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
         exit 1
     }
@@ -194,12 +206,22 @@ $scriptBlockString =
     Write-Host "Using plink to chmod the script"
     #
     #  chmod the thing
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $linuxChmodCommand
+    try_plink $ip $linuxChmodCommand
+    if ($? -ne $true) {
+        Write-Host "Error running chmod command.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
 
     #
     #  Now run make_drone
     Write-Host "And now running..."
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port -l $userName $ip $linuxDroneCommand
+    try_plink $ip $linuxDroneCommand
+    if ($? -ne $true) {
+        Write-Host "Error running make_drone command.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
 
     Stop-Transcript
 }
