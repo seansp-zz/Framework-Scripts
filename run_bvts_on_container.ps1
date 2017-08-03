@@ -220,9 +220,6 @@ while ($completed_machines -lt $launched_machines) {
         $sourceName=$oneblob.Name
         $jobName=$sourceName + "_BVT_Runner"
 
-        $logFileName = "c:\temp\transcripts\" + $sourceName + "_transcript.log"
-        echo "Starting BVT job $jobName" | Out-File $logFileName -Force
-
         $jobStatus=get-job -Name $jobName
         if ($? -eq $true) {
             $jobState = $jobStatus.State
