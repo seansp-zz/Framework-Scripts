@@ -195,8 +195,8 @@ NEW_SOURCES
    
     #
     #  Set up runonce and copy in the right script
-    if ! [ -d "runonce.d" ]; then
-        mkdir runonce.d runonce.d/ran
+    if ! [ -d "/root/runonce.d" ]; then
+        mkdir /root/runonce.d /root/runonce.d/ran
     fi
 ## Unhooking the runonce.d so that we can place other things there in the future.
 ## to use, simply connect in and copy as shown below.
@@ -276,7 +276,7 @@ yum -y install python-paramiko
 
     #
     #  Set up runonce
-    mkdir runonce.d runonce.d/ran
+    mkdir /root/runonce.d /root/runonce.d/ran
 
 ## Unhooking the runonce.d so that we can place other things there in the future.
 ## to use, simply connect in and copy as shown below.
