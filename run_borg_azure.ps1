@@ -318,17 +318,22 @@ $action={
             }
         }
 
-        $localMachine.session = $localSession
-        try {            
-            $installed_vers=invoke-command -session $localSession -ScriptBlock {/bin/uname -r}
-            # Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
-        }
-        Catch
-        {
-            # Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
-            $installed_vers="Unknown"
-            Remove-PSSession -Session $localSession > $null
-            $localMachine.session = $null
+        if ($machineIsUp -eq $true) {
+            $localMachine.session = $localSession
+            try {            
+                $installed_vers=invoke-command -session $localSession -ScriptBlock {/bin/uname -r}
+                # Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
+            }
+            Catch
+            {
+                # Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
+                $installed_vers="Unknown"
+                Remove-PSSession -Session $localSession > $null
+                $localMachine.session = $null
+            }
+        } else {
+            Write-Host "Machine $machineName is not up yet, as far as we know..."
+            continue
         }
 
         #
