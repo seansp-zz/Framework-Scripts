@@ -5,6 +5,10 @@
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
+
+$logFileName = "c:\temp\transcripts\" + $sourceName + "_transcript.log"
+Start-Transcript $logFileName -Force
+
 . "C:\Framework-Scripts\secrets.ps1"
 
 #
@@ -20,6 +24,8 @@ C:\azure-linux-automation\AzureAutomationManager.ps1 -xmlConfigFile $configFileN
 if ($? -ne $true) {
     $tests_failed = $true
 }
+
+Stop-Transcript
 
 if ($tests_failed -eq $true) {
     exit 1

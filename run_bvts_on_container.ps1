@@ -22,7 +22,8 @@ param (
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
-. "C:\Framework-Scripts\secrets.ps1"
+. C:\Framework-Scripts\common_functions.ps1
+. C:\Framework-Scripts\secrets.ps1
 
 #
 #  This is a required location
@@ -44,12 +45,7 @@ get-job | Remove-Job
 cd C:\azure-linux-automation
 git pull
 
-Write-Host "Importing the context...." -ForegroundColor Green
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
-
-Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" 
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
+login_azure $destRG $destSA
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
@@ -234,18 +230,15 @@ while ($completed_machines -lt $launched_machines) {
             {
                 $completed_machines += 1
                 $failed_machines += 1
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 Write-Host " >>>> BVT job $jobName exited with FAILED state!" -ForegroundColor red
             }
             elseif ($jobState -eq "Completed")
             {
                 $completed_machines += 1
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
             }
             elseif ($jobState -eq "Running")
             {
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 $running_machines += 1
                 if ($logThisOne -eq $true) {
                     Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green                
