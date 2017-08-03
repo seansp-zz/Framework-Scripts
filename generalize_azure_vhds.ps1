@@ -62,3 +62,13 @@ if ($? -eq $false) {
     Write-Host "FAILED to stop machines" -ForegroundColor Red
     exit 1
 }
+
+foreach ($vm in $runningVMs) {
+    $vm_name=$vm.Name
+
+    Write-Host "Now deallocating the machine..."
+    az vm deallocate --resource-group $sourceRG --name $vm_name
+
+    Write-Host "And finally generalizing the machine..."
+    az vm generalize --resource-group $sourceRG --name $vm_name
+}

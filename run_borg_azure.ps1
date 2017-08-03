@@ -277,6 +277,9 @@ function launch_azure_vms {
 $action={
     Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Force
 
+    . C:\Framework-Scripts\common_functions.ps1
+    . C:\Framework-Scripts\secrets.ps1
+
     function checkMachine ([MonitoredMachine]$machine) {
         $machineName=$machine.name
         $machineStatus=$machine.status
