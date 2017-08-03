@@ -78,12 +78,6 @@ if ($copyblobs.Count -eq 0) {
     exit 1
 }
 
-foreach ($oneblob in $copyblobs) {
-    $sourceName=$oneblob
-    write-host  "Adding sourceName $sourceName"
-    $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
-}
-
 write-host "Copying blobs..."
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                        -destSA $destSA -destRG $destRG -destContainer $destContainer `
@@ -270,6 +264,7 @@ while ($notDone -eq $true) {
 }
 
 Write-Host "All jobs have completed.  Checking results..."
+
 #
 #  Get the results of that
 $status = c:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $destSA -destRG $destRG -suffix $newSuffix -command "/bin/uname -a"
