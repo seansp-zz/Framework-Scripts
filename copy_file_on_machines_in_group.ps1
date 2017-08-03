@@ -6,7 +6,7 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd",
 
-    [Parameter(Mandatory=$false)] [string] $scriptName="unset"
+    [Parameter(Mandatory=$false)] [string] $scriptName="unset" 
 )
     
     
@@ -16,7 +16,9 @@
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-$vmNameArray = $requestedNames.Split(',')
+if ($requestedNames[0] -ne "") {
+    $vmNameArray = $requestedNames.Split(',')
+}
 
 write-host "Copying file $file to $vmNameArray "
 

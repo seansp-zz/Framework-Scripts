@@ -17,7 +17,9 @@
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-$vmNameArray = $requestedNames.Split(',')
+if ($requestedNames[0] -ne "") {
+    $vmNameArray = $requestedNames.Split(',')
+}
 
 #
 #  Session stuff

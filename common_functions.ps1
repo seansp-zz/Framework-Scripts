@@ -20,7 +20,8 @@ function make_cred () {
 
 function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
                              [System.Management.Automation.PSCredential] $cred,
-                             [System.Management.Automation.Remoting.PSSessionOption] $o)
+                             [System.Management.Automation.Remoting.PSSessionOption] $o,
+                             [switch] $retryOnTimeout)
 {
     login_azure $rg $sa > $null
 

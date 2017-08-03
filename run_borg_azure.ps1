@@ -35,7 +35,8 @@ param (
 )
 Set-StrictMode -Version 2.0
 
-. "C:\Framework-Scripts\secrets.ps1"
+. C:\Framework-Scripts\common_functions.ps1
+. C:\Framework-Scripts\secrets.ps1
 
 $global:sourceResourceGroupName=$sourceResourceGroupName
 $global:sourceStorageAccountName=$sourceStorageAccountName
@@ -296,34 +297,19 @@ $action={
             [MonitoredMachine]$monitoredMachine=$localMachine
 
             if ($localMachine.Name -eq $machineName) {
-                $haveAddress = $false
-                while ($haveAddress -eq $false) {
-                    $ip=Get-AzureRmPublicIpAddress -ResourceGroupName $global:workingResourceGroupName -Name $localMachine.Name
-                    if ($? -eq $false) {
-                        sleep 10
-                        Write-Host "Waiting for machine $machineName to accept connections..."
-                    } else {
-                        $haveAddress = $true
-                    }
-                }
-                $ipAddress=$ip.IpAddress
-                $localMachine.ipAddress = $ipAddress
+                $localSession = create_psrp_session($machineName, $global:workingResourceGroupName, $global:workingStorageAccountName,
+                             [System.Management.Automation.PSCredential] $cred,
+                             [System.Management.Automation.Remoting.PSSessionOption] $o)
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
-                if ($localMachine.session -eq $null) {
-                    $localMachine.session=new-PSSession -computername $localMachine.ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
-                
-                    if ($? -eq $true) {
-                        $machineIsUp = $true
-                    } else {
-                        return 0
-                    }
+                if ($localSession -ne $null) {
+                    $machineIsUp = $true
                 }
                 break
             }
         }
 
-        $localSession = $localMachine.session
+        $localMachine.session = $localSession
         try {            
             $installed_vers=invoke-command -session $localSession -ScriptBlock {/bin/uname -r}
             # Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
