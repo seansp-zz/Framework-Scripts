@@ -10,7 +10,7 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds_under_test",
 
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
-    [Parameter(Mandatory=$false)] [string[]] $generalizeAll,
+    [Parameter(Mandatory=$false)] [string] $generalizeAll,
 
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd"
 )
