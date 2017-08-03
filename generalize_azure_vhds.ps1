@@ -49,7 +49,7 @@ C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $reque
 
 Write-Host "Deprovisioning..."
 C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $sourceSA -destRG $sourceRG `
-                                                          -suffix $suffix -command "echo $TEST_USER_ACCOUNT_PASS | sudo -S bash -c `"/sbin/waagent -deprovision -force`""
+                                                          -suffix $suffix -command "echo $TEST_USER_ACCOUNT_PASS | sudo -S bash -c `"waagent -deprovision -force`""
  if ($? -eq $false) {
     Write-Host "FAILED to deprovision machines" -ForegroundColor Red
     exit 1
