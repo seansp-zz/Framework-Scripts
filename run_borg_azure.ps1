@@ -33,6 +33,9 @@ param (
     #  Our location
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
+
+Start-Transcript C:\temp\transcripts\run_borg_azure.log -Force
+
 Set-StrictMode -Version 2.0
 
 . C:\Framework-Scripts\common_functions.ps1
@@ -272,6 +275,8 @@ function launch_azure_vms {
 }
 
 $action={
+    Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Force
+
     function checkMachine ([MonitoredMachine]$machine) {
         $machineName=$machine.name
         $machineStatus=$machine.status
@@ -279,6 +284,7 @@ $action={
 
         if ($machineStatus -eq "Completed" -or $global:num_remaining -eq 0) {
             Write-Host "    **** Machine $machineName is in state $machineStatus, which is complete, or there are no remaining machines" -ForegroundColor green
+            Stop-Transcript
             return 0
         }
 
@@ -508,6 +514,7 @@ $action={
         }
     }
     [Console]::Out.Flush() 
+    Stop-Transcript
 }
 
 unregister-event AzureBORGTimer -ErrorAction SilentlyContinue
@@ -533,12 +540,7 @@ Write-Host "                                BORG CUBE is initialized"           
 Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRONES)" -ForegroundColor yellow
 Write-Host "    "
 
-Write-Host "Importing the context...." -ForegroundColor Green
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
-
-Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:sourceResourceGroupName –StorageAccountName $global:sourceStorageAccountName > $null
+login_azure $global:sourceResourceGroupName $global:sourceStorageAccountName
 
 #
 #  Copy the virtual machines to the staging container
@@ -554,7 +556,7 @@ write-host "$global:num_remaining machines have been launched.  Waiting for comp
 #
 #  Wait for the machines to report back
 #    
-unregister-event AzureBORGTimer -ErrorAction SilentlyContinue     > $null       
+unregister-event AzureBORGTimer -ErrorAction SilentlyContinue       
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
 Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBORGTimer -Action $action > $null
 $global:timer_is_running=1
@@ -612,6 +614,8 @@ if ($global:num_remaining -eq 0) {
     }
 
 Write-Host ""
+
+Stop-Transcript
 
 if ($global:failed -eq 0) {    
     Write-Host "                                    BORG is Exiting with success.  Thanks for Playing" -ForegroundColor green

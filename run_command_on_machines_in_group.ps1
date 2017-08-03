@@ -55,6 +55,6 @@ foreach ($baseName in $vmNameArray) {
         Exit-PSSession
 
     } else {
-        Write-Host "    FAILED to establish PSRP connection to machine $vm_name." -ForegroundColor Red
+        echo "    FAILED to establish PSRP connection to machine $vm_name." -ForegroundColor Red
     }
 }
