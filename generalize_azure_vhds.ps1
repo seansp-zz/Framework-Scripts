@@ -21,7 +21,9 @@ param (
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-$vmNameArray = $requestedNames.Split(',')
+if ($requestedNames[0] -ne "") {
+    $vmNameArray = $requestedNames.Split(',')
+}
 
 $vmName = $vmNameArray[0]
 if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
