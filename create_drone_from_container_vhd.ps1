@@ -219,18 +219,19 @@ get-job | Remove-Job
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 foreach ($vmName in $vmNameArray) { 
     $jobName=$vmName + "-drone-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
-                                                                      $destContainer,$location,$currentSuffix,$newSuffix,$NSG,`
-                                                                      $network,$subnet
-    if ($? -ne $true) {
-        Write-Host "Error starting make_drone job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
-        Stop-Transcript
-        exit 1
-    }
+    # $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
+      #                                                                 $destContainer,$location,$currentSuffix,$newSuffix,$NSG,`
+        #                                                              $network,$subnet
+    #if ($? -ne $true) {
+     #   Write-Host "Error starting make_drone job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
+      #  Stop-Transcript
+       # exit 1
+    #}
 
     Write-Host "Just launched job $jobName"
 }
 
+<#
 write-host "Checking make_drone jobs..."
 $notDone = $true
 while ($notDone -eq $true) {
@@ -247,6 +248,7 @@ while ($notDone -eq $true) {
     }
     sleep 10
 }
+#>
 
 Write-Host "All jobs have completed.  Checking results..."
 #

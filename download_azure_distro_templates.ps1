@@ -16,22 +16,13 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $rg="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $nm="smokesourcestorageacct",
-    [Parameter(Mandatory=$false)] [string] $srcContainer="clean-vhds"
+    [Parameter(Mandatory=$false)] [string] $srcContainer="safe-templates"
 )
 
-. "C:\Framework-Scripts\secrets.ps1"
+. C:\Framework-Scripts\common_functions.ps1
+. C:\Framework-Scripts\secrets.ps1
 
-write-host "Importing the context...." -ForegroundColor green
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx'
-
-$requestedVMs
-
-write-host "Selecting the Azure subscription..." -ForegroundColor green
-Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID"
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $nm
-
-$sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $rg -Name $nm
-$sourceContext=New-AzureStorageContext -StorageAccountName $nm -StorageAccountKey $sourceKey[0].Value
+login_azure $rg $nm
 
 $uri_front="https://"
 $uri_middle="smokesourcestorageacct.blob.core.windows.net/"
@@ -40,10 +31,10 @@ $neededVms_array=@()
 $neededVms = {$neededVms_array}.Invoke()
 
 Write-Host "Getting the list of disks..."
-$blobs=get-AzureStorageBlob -Container $srcContainer -Blob "*-Smoke-1*.vhd"
+$blobs=get-AzureStorageBlob -Container $srcContainer -Blob "*-Smoke-1.vhd"
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
-    $targetName = $sourceName | % { $_ -replace "Smoke-1.*.vhd", "Smoke-1.vhd" }
+    $targetName = $sourceName
 
     if ((Test-Path D:\azure_images\$targetName) -eq $true -and $replaceVHD -eq $true) {
             Write-Host "Machine $targetName is being deleted from the disk and will be downloaded again..." -ForegroundColor green
