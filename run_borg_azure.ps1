@@ -244,7 +244,7 @@ function launch_azure_vms {
         $storageAccount="smokeworkingstorageacct"
         $containerName="vhds-under-test"
 
-        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] -vmName $args[3] -network "SmokeVNet" -subnet "SmokeSubnet-1" -NSG "SmokeNSG"} -ArgumentList @($resourceGroup),@($storageAccount),@($containerName),@($vmName)
+        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] -vmName $args[3] -network "SmokeVNet" -subnet "SmokeSubnet-1" -NSG "SmokeNSG" -location "westus"} -ArgumentList @($resourceGroup),@($storageAccount),@($containerName),@($vmName)
     }
 
     foreach ($machineLog in $global:machineLogs) {
@@ -374,11 +374,12 @@ $action={
     }
 
     if ($global:timer_is_running -eq 0) {
+        Write-Host "Timer is not running -- exiting"
         return
     }
 
     $global:elapsed=$global:elapsed+$global:interval
-    # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
+    Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
 
     if ($global:elapsed -ge $global:boot_timeout_intervals) {
         Write-Host "Elapsed is $global:elapsed"
@@ -528,7 +529,7 @@ $action={
     Stop-Transcript
 }
 
-unregister-event AzureBORGTimer -ErrorAction SilentlyContinue
+Get-EventSubscriber -SourceIdentifier "AzureBORGTimer" | Unregister-Event
 
 Write-Host "    " -ForegroundColor green
 Write-Host "                 **********************************************" -ForegroundColor yellow
@@ -553,6 +554,14 @@ Write-Host "    "
 
 login_azure $global:sourceResourceGroupName $global:sourceStorageAccountName
 
+$date1 = Get-Date -Date "01/01/1970"
+$date2 = Get-Date
+$seconds = (New-TimeSpan -Start $date1 -End $date2).TotalSeconds
+
+$timerName="AzureBORGTimer-" + $seconds
+Write-Host "Using timer name $timerName"
+
+
 #
 #  Copy the virtual machines to the staging container
 #                
@@ -567,9 +576,9 @@ write-host "$global:num_remaining machines have been launched.  Waiting for comp
 #
 #  Wait for the machines to report back
 #    
-unregister-event AzureBORGTimer -ErrorAction SilentlyContinue       
+Get-EventSubscriber -SourceIdentifier $timerName | Unregister-Event     
 Write-Host "                          Initiating temporal evaluation loop (Starting the timer)" -ForegroundColor yellow
-Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier AzureBORGTimer -Action $action > $null
+Register-ObjectEvent -InputObject $timer -EventName elapsed –SourceIdentifier $timerName -Action $action
 $global:timer_is_running=1
 $timer.Interval = 1000
 $timer.Enabled = $true
@@ -585,7 +594,7 @@ Write-Host "                         Exiting Temporal Evaluation Loop (Unregiste
 Write-Host ""
 $global:timer_is_running=0
 $timer.stop()
-unregister-event AzureBORGTimer > $null
+Get-EventSubscriber -SourceIdentifier $timerName | Unregister-Event
 
 if ($global:num_remaining -eq 0) {
     Write-Host "                          All machines have come back up.  Checking results." -ForegroundColor green

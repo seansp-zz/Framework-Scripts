@@ -247,9 +247,11 @@ while ($completed_machines -lt $launched_machines) {
                 Write-Host "????? BVT job $jobName is in state $jobState." -ForegroundColor Yellow
             }
         }
-        if ($logThisOne -eq $true) {
-            write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor green
-        }
+        
+    }
+
+    if ($logThisOne -eq $true) {
+       write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor green
     }
 
     $sleep_count += 1
