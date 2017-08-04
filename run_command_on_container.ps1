@@ -50,6 +50,8 @@ foreach ($blob in $blobs) {
 
             $password="$TEST_USER_ACCOUNT_PASS"
 
+            write-host "run_command_on_container creating PSRP for RG $sourceRG"
+
             [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
             if ($? -eq $true -and $session -ne $null) {
                 Write-Host "    PSRP Connection established; executing remote command" -ForegroundColor Green

@@ -31,7 +31,7 @@ Start-Transcript -path C:\temp\transcripts\launch_single_azure_vm_$vmName.log -F
 login_azure $resourceGroup $storageAccount
 
 echo "Deleting any existing VM"
-$runningVMs = Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+$runningVMs = Get-AzureRmVm -ResourceGroupName $resourceGroup -status | Where-Object -Property Name -Like "$vmName*"
 deallocate_machines_in_group $runningVMs $resourceGroup $storageAccount
 
 echo "Creating a new VM config..."   

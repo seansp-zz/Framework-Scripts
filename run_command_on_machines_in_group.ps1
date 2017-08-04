@@ -47,14 +47,14 @@ foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName + $suffix
     $vm_name = $vm_name | % { $_ -replace ".vhd", "" }
 
-    write-host "Executing remote command on machine $vm_name"
+    write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
 
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o
+    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o $false
     if ($? -eq $true -and $session -ne $null) {
         invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $command
         Exit-PSSession
 
     } else {
-        echo "    FAILED to establish PSRP connection to machine $vm_name." -ForegroundColor Red
+        echo "    FAILED to establish PSRP connection to machine $vm_name."
     }
 }

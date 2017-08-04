@@ -60,6 +60,8 @@ $global:workingContainerName=$workingContainerName
 
 $global:useSourceURI=[string]::IsNullOrEmpty($global:sourceURI)
 
+Write-Host "GLobal working RG is $global:workingResourceGroupName"
+
 #
 #  The machines we're working with
 $global:neededVms_array=@()
@@ -280,6 +282,8 @@ function launch_azure_vms {
 $action={
     Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Append
 
+    Write-Host "GLobal working RG is $global:workingResourceGroupName"
+
     . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1
 
@@ -309,9 +313,11 @@ $action={
             [MonitoredMachine]$monitoredMachine=$localMachine
 
             if ($localMachine.Name -eq $machineName) {
-                $localSession = create_psrp_session($machineName, $global:workingResourceGroupName, $global:workingStorageAccountName,
-                             [System.Management.Automation.PSCredential] $cred,
-                             [System.Management.Automation.Remoting.PSSessionOption] $o)
+                Write-Host "Creating a new PSRP session to machine $machineName, RG $global:workingResourceGroupName, SA $global:workingStorageAccountName"
+
+                $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
+                             [System.Management.Automation.PSCredential] $global:cred `
+                             [System.Management.Automation.Remoting.PSSessionOption] $global:o $false
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
                 if ($localSession -ne $null) {
@@ -379,7 +385,7 @@ $action={
     }
 
     $global:elapsed=$global:elapsed+$global:interval
-    Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
+    # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
 
     if ($global:elapsed -ge $global:boot_timeout_intervals) {
         Write-Host "Elapsed is $global:elapsed"
@@ -476,10 +482,15 @@ $action={
                                 $calledIt = $true
                             } else {
                                 Write-Host "     ----- Testing of machine $monitoredMachineName is in progress..." -ForegroundColor Yellow
+
                                 if ($monitoredMachine.session -eq $null) {
-                                    $monitoredMachine.session=new-PSSession -computername $monitoredMachine.ipAddress -credential $global:cred -authentication Basic -UseSSL -Port 443 -SessionOption $global:o -ErrorAction SilentlyContinue
-                
-                                    if ($? -eq $true) {
+
+                                    $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
+                                                                         [System.Management.Automation.PSCredential]$cred `
+                                                                         [System.Management.Automation.Remoting.PSSessionOption]$o $false
+                                    
+                                    if ($localSession -ne $null) {
+                                        $monitoredMachine.session = $localSession
                                         $machineIsUp = $true
                                     } else {
                                         $monitoredMachine.session = $null
@@ -490,7 +501,7 @@ $action={
                                     $localSession = $localMachine.session
                                     Write-Host "          Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta   
                                     try {             
-                                        $last_lines=invoke-command -session $localSession -ScriptBlock { get-content /opt/microsoft/borg_progress.log  | Select-Object -last 3 }
+                                        $last_lines=invoke-command -session $localSession -ScriptBlock { get-content /opt/microsoft/borg_progress.log -tail 3 }
                                         if ($? -eq $true) {
                                             $last_lines | write-host -ForegroundColor Magenta
                                         } else {

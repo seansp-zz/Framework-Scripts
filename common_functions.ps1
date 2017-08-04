@@ -1,6 +1,8 @@
 ﻿function login_azure([string] $rg, [string] $sa) {
     . "C:\Framework-Scripts\secrets.ps1"
 
+    write-host "Logging in with RG = $rg"
+
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
     Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 
@@ -23,6 +25,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
                              [System.Management.Automation.Remoting.PSSessionOption] $o,
                              [switch] $retryOnTimeout)
 {
+    Write-Host "Request to create PSRP session for RG $rg"
     login_azure $rg $sa > $null
 
     $pipName=$vmName + "PublicIP"
@@ -121,12 +124,22 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
     $allDone = $false
     while ($allDone -eq $false) {
         $allDone = $true
+        $timeNow = get-date
+        write-host "Checking jobs at time $timeNow :" -ForegroundColor Yellow
         foreach ($singleVM in $runningVMs) {
             $vm_name = $singleVM.Name
             $vmJobName = $vm_name + "-Deprov"
             $job = Get-Job -Name $vmJobName
             $jobState = $job.State
-            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
+            $useColor = "Yellow"
+            if ($jobState -eq "Completed") {
+                $useColor="green"
+            } elseif ($jobState -eq "Failed") {
+                $useColor = "Red"
+            } elseif ($jobState -eq "Blocked") {
+                $useColor = "Magenta"
+            }
+            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor $useColor
             if ($jobState -eq "Running") {
                 $allDone = $false
             }
