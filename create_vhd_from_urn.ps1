@@ -183,14 +183,18 @@ while ($notDone -eq $true) {
         $jobName=$vmName + "-intake-job"
         $job = get-job $jobName
         $jobState = $job.State
-        write-host "    Job $jobName is in state $jobState" -ForegroundColor Yellow
         if ($jobState -eq "Running") {
             $notDone = $true
-        } elseif ($jobState -eq "Blocked" {
-            get-job $jobName | Receive-Job
-        } else {
-            get-job $jobName | Receive-Job
+            $useColor = "Yellow"
+        } elseif ($jobState -eq "Completed") {
+            $useColor="green"
+        } elseif ($jobState -eq "Failed") {
+            $useColor = "Red"
+        } elseif ($jobState -eq "Blocked") {
+            $useColor = "Magenta"
         }
+        write-host "    Job $jobName is in state $jobState" -ForegroundColor $useColor
+        
     }
     sleep 10
 }
