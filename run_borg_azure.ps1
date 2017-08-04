@@ -316,8 +316,7 @@ $action={
                 Write-Host "Creating a new PSRP session to machine $machineName, RG $global:workingResourceGroupName, SA $global:workingStorageAccountName"
 
                 $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                             [System.Management.Automation.PSCredential] $global:cred `
-                             [System.Management.Automation.Remoting.PSSessionOption] $global:o $false
+                                                    $global:cred $global:o $false
 
                 # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
                 if ($localSession -ne $null) {
@@ -486,8 +485,7 @@ $action={
                                 if ($monitoredMachine.session -eq $null) {
 
                                     $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                                                                         [System.Management.Automation.PSCredential]$cred `
-                                                                         [System.Management.Automation.Remoting.PSSessionOption]$o $false
+                                                                        $cred $o $false
                                     
                                     if ($localSession -ne $null) {
                                         $monitoredMachine.session = $localSession
