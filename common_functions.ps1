@@ -1,8 +1,6 @@
 ﻿function login_azure([string] $rg, [string] $sa) {
     . "C:\Framework-Scripts\secrets.ps1"
 
-    write-host "Logging in with RG = $rg"
-
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
     Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 
@@ -25,21 +23,22 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
                              [System.Management.Automation.Remoting.PSSessionOption] $o,
                              [switch] $retryOnTimeout)
 {
-    Write-Host "Request to create PSRP session for RG $rg"
     login_azure $rg $sa > $null
 
     $pipName=$vmName + "PublicIP"
 
-    Write-Host "Attempting to get IP for RG $rg"
+    try {
+        $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
 
-    $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
+        if ($ipAddress.IpAddress -eq "Not Assigned") {
+            Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
+            return $null
+        }
 
-    if ($ipAddress.IpAddress -eq "Not Assigned") {
-        Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
+        new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+    } catch {
         return $null
     }
-
-    new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
 }
 
 function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine[]] $runningVMs,

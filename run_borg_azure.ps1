@@ -60,8 +60,6 @@ $global:workingContainerName=$workingContainerName
 
 $global:useSourceURI=[string]::IsNullOrEmpty($global:sourceURI)
 
-Write-Host "GLobal working RG is $global:workingResourceGroupName"
-
 #
 #  The machines we're working with
 $global:neededVms_array=@()
@@ -282,8 +280,6 @@ function launch_azure_vms {
 $action={
     Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Append
 
-    Write-Host "GLobal working RG is $global:workingResourceGroupName"
-
     . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1
 
@@ -309,72 +305,89 @@ $action={
         #  Attempt to create the PowerShell PSRP session
         #
         $machineIsUp = $false
+        $expected_vers = "Not-Set"
+        $installed_vers = "Not-Detected"
         foreach ($localMachine in $global:monitoredMachines) {
             [MonitoredMachine]$monitoredMachine=$localMachine
 
             if ($localMachine.Name -eq $machineName) {
-                Write-Host "Creating a new PSRP session to machine $machineName, RG $global:workingResourceGroupName, SA $global:workingStorageAccountName"
+                if ($localMachine.session -eq $null) {
+                    $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
+                                                        $global:cred $global:o $false
 
-                $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                                                    $global:cred $global:o $false
-
-                # Write-Host "Creating PowerShell Remoting session to machine at IP $ipAddress"  -ForegroundColor green
-                if ($localSession -ne $null) {
+                    Write-Host "Creating PowerShell Remoting session to machine $machineName"  -ForegroundColor green
+                    if ($localSession -ne $null) {
+                        $machineIsUp = $true
+                        $localMachine.session = $localSession
+                    }
+                } else {
+                    Write-Host "Re-using old session"
                     $machineIsUp = $true
+                    $localSession = $localMachine.session
                 }
                 break
             }
         }
 
         if ($machineIsUp -eq $true) {
-            $localMachine.session = $localSession
+            $exceptionCaught = $false
             try {            
                 $installed_vers=invoke-command -session $localSession -ScriptBlock {/bin/uname -r}
-                # Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
+                Write-Host "$machineName installed version retrieved as $installed_vers" -ForegroundColor Cyan
+                      
+                #
+                #  This must be done as root
+                $command = "/usr/bin/powershell get-content /root/expected_version"
+                $password=$TEST_USER_ACCOUNT_PASS
+                $runCommand = "echo $password | sudo -S bash -c `'$command`'"
+                $commandBLock=[scriptblock]::Create($runCommand)
+                $expected_vers = invoke-command -session $localSession -ScriptBlock $commandBLock -ArgumentList $command      
+                if ($? -eq $false) {
+                    $expected_vers = "Unknown"
+                }
+                Write-Host "$machineName Expected version retrieved as $expected_vers" -ForegroundColor Cyan
+                
             }
             Catch
             {
-                # Write-Host "Caught exception attempting to verify Azure installed kernel version.  Aborting..." -ForegroundColor red
-                $installed_vers="Unknown"
+                Write-Host "Caught exception attempting to verify Azure installed kernel version.  Ignoring..." -ForegroundColor red
+                $installed_vers="Not Detected"
+                $expected_vers = "Communication Failure"
                 Remove-PSSession -Session $localSession > $null
                 $localMachine.session = $null
+                $exceptionCaught = $true
+
+                Remove-PSSession -Session $localSession
+                $localMachine.session = $null
             }
-        } else {
-            Write-Host "Machine $machineName is not up yet, as far as we know..."
-            continue
-        }
-
-        #
-        #  Now, check for success
-        #
-        $expected_verDeb=Get-Content C:\temp\expected_version_deb -ErrorAction SilentlyContinue
-        $expected_verCent=Get-Content C:\temp\expected_version_centos -ErrorAction SilentlyContinue
-
-        $global:booted_version = $expected_verDeb
-        if ($expected_verDeb -eq "") {
-            if ($expected_verCent -eq "") {
-                $global:booted_version = "Unknown"
+        
+            # Write-Host "Looking for version $expected_verDeb or $expected_verCent"
+            if ($exceptionCaught -eq $false) {
+                if ($expected_vers.CompareTo($installed_vers) -ne 0) {
+                    if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
+                        Write-Host "     Machine $machineName reports up, but the kernel version is $installed_vers when we expected" -ForegroundColor Cyan
+                        Write-Host "             $expected_vers.  Waiting to see if it reboots." -ForegroundColor Cyan
+                        Write-Host ""
+                    }
+                    # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
+                    # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
+                } else {
+                    Write-Host "    *** Machine $machineName came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
+                    $localMachine.Status = "Completed"
+                    $global:num_remaining -= 1
+                }
             } else {
-                $global:booted_version = $expected_verCent
+                if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
+                        Write-Host "     Machine $machineName reports up, but we caught an exception when attempting to contact it." -ForegroundColor Magenta
+                        Write-Host "             Waiting to see if it reboots." -ForegroundColor Magenta
+                        Write-Host ""
+                    }
             }
         } else {
-            $global:booted_version = $expected_verDeb
-        }
-
-        # Write-Host "Looking for version $expected_verDeb or $expected_verCent"
-
-        if (($expected_verDeb.CompareTo($installed_vers) -ne 0) -and ($expected_verCent.CompareTo($installed_vers) -ne 0)) {
             if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
-                Write-Host "     Machine $machineName is up, but the kernel version is $installed_vers when we expected" -ForegroundColor Cyan
-                Write-Host "             something like $expected_verCent or $expected_verDeb.  Waiting to see if it reboots." -ForegroundColor Cyan
-                Write-Host ""
+                Write-Host "Machine $machineName is not up yet, as far as we know..." -ForegroundColor yellow
             }
-            # Write-Host "(let's see if there is anything running with the name Kernel on the remote machine)"
-            # invoke-command -session $localMachine.session -ScriptBlock {ps -efa | grep -i linux}
-        } else {
-            Write-Host "    *** Machine $machineName came back up as expected.  kernel version is $installed_vers" -ForegroundColor green
-            $localMachine.Status = "Completed"
-            $global:num_remaining -= 1
+            
         }
     }
 
@@ -477,7 +490,7 @@ $action={
                     if ($jobStatus -eq "Completed" -or $jobStatus -eq "Failed") {
                         if ($jobStatus -eq "Completed") {
                            if ($monitoredMachineStatus -eq "Completed") {
-                                Write-Host "    *** Machine $monitoredMachineName has completed..." -ForegroundColor green
+                                Write-Host "    ***** Machine $monitoredMachineName has completed..." -ForegroundColor green
                                 $calledIt = $true
                             } else {
                                 Write-Host "     ----- Testing of machine $monitoredMachineName is in progress..." -ForegroundColor Yellow
@@ -499,16 +512,16 @@ $action={
                                     $localSession = $localMachine.session
                                     Write-Host "          Last three lines of the log file for machine $monitoredMachineName ..." -ForegroundColor Magenta   
                                     try {             
-                                        $last_lines=invoke-command -session $localSession -ScriptBlock { get-content /opt/microsoft/borg_progress.log -tail 3 }
+                                        $last_lines=invoke-command -session $localSession -ScriptBlock { get-content /opt/microsoft/borg_progress.log }
                                         if ($? -eq $true) {
                                             $last_lines | write-host -ForegroundColor Magenta
                                         } else {
-                                            Write-Host "       += 1+ Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
+                                            Write-Host "       +++++ Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
                                         }
                                     }
                                     catch
                                     {
-                                        Write-Host "     += 1+ Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
+                                        Write-Host "     +++++ Error when attempting to retrieve the log file from the remote host.  It may be rebooting..." -ForegroundColor Yellow
                                     }
                                 }
                                 $calledIt = $true

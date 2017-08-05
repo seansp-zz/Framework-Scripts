@@ -284,6 +284,7 @@ if ($status -contains "FAILED to establish PSRP connection") {
     }
 }
 
+get-job | stop-job
 get-job | remove-job
 
 Stop-Transcript

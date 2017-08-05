@@ -5,16 +5,25 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 param (
-    [Parameter(Mandatory=$true) ] [string] $Command="logout",
-    [Parameter(Mandatory=$true) ] [string] $StartMachines="False",
-
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokeworkingstorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
-    [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test"
+    [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
+    
+    [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd",
+
+    [Parameter(Mandatory=$false)] [string] $command="unset",
+    [Parameter(Mandatory=$false)] [string] $asRoot="False",
+    [Parameter(Mandatory=$true) ] [string] $StartMachines="False",
+
+    [Parameter(Mandatory=$false)] [string] $network="smokeVNet",
+    [Parameter(Mandatory=$false)] [string] $subnet="SmokeSubnet-1",
+    [Parameter(Mandatory=$false)] [string] $NSG="SmokeNSG",
+    [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
+
 
 #
 #  Session stuff
@@ -26,54 +35,107 @@ login_azure $sourceRG $sourceSA
 
 $blobs = Get-AzureStorageBlob -Container $sourceContainer
 
-Write-Host "Executing command on all running machines in resource group $sourceRG..."  -ForegroundColor green
-$runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
+# Write-Host "Executing command on all running machines in resource group $sourceRG..."  -ForegroundColor green
+
 $failed = $false
+
+$comandScript = {
+    param (
+        $blobName,
+        $startMachines,
+        $sourceRG,
+        $sourceSA,
+        $sourceContainer,
+        $network,
+        $subnet,
+        $NSG)
+
+    Start-Transcript C:\temp\transcripts\run_command_on_container_$blobName.log -Force
+    . C:\Framework-Scripts\common_functions.ps1
+    . C:\Framework-Scripts\secrets.ps1
+
+    login_azure $sourceRG $sourceSA
+    
+    $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
+    if ($runningVMs.Name -contains $blobName) {
+        write-host "VM $blobName is running"
+    } else {
+        Write-Host "VM $blobName is not running."
+
+        if ($StartMachines -ne $false) {
+            Write-Host "Starting VM for VHD $blobName..."
+            .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA -containerName $sourceContainer -network $network -subnet $subnet -NSG $NSG
+        } else {
+            Write-Host "StartMachine was not set.  VM $blobName will not be started or used."
+            $failed = $true
+        }
+    }
+
+    Stop-Transcript
+
+    if ($failed -eq $true) {
+        exit 1
+    }
+
+    exit 0
+}
+
+$scriptBlock = [scriptblock]::Create($comandScript)
+
+[System.Collections.ArrayList]$copyblobs_array
+$copyblobs = {$copyblobs_array}.Invoke()
+$copyblobs.clear()
 
 foreach ($blob in $blobs) {
     $blobName = ($blob.Name).replace(".vhd","")
+    $copyblobs += $blobName
+
+    $vmJobName = "start_" + $blobName
+
+    Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $blobName, $startMachines, $sourceRG, $sourceSA, $sourceContainer, `                                                                           $network, $subnet, $NSG
+}
+
+$allDone = $false
+while ($allDone -eq $false) {
+    $allDone = $true
+    $numNeeded = $vmNameArray.Count
+    $vmsFinished = 0
 
     foreach ($blob in $blobs) {
-        $blobName = ($blob.Name).Replace(".vhd","")
-        if ($runningVMs.Name -contains $blobName) {
-            write-host "VM $blobName is running"
+        $blobName = ($blob.Name).replace(".vhd","")
+
+        $vmJobName = "start_" + $blobName
+        $job = Get-Job -Name $vmJobName
+        $jobState = $job.State
+
+        # write-host "    Job $job_name is in state $jobState" -ForegroundColor Yellow
+        if ($jobState -eq "Running") {
+            $allDone = $false
+        } elseif ($jobState -eq "Failed") {
+            write-host "**********************  JOB ON HOST MACHINE $vmJobName HAS FAILED TO START." -ForegroundColor Red
+            $jobFailed = $true
+            $vmsFinished = $vmsFinished + 1
+            $Failed = $true
+        } elseif ($jobState -eq "Blocked") {
+            write-host "**********************  HOST MACHINE $vmJobName IS BLOCKED WAITING INPUT.  COMMAND WILL NEVER COMPLETE!!" -ForegroundColor Red
+            $jobBlocked = $true
+            $vmsFinished = $vmsFinished + 1
+            $Failed = $true
         } else {
-            Write-Host "VM $blobName is not running."
-
-            if ($StartMachines -ne $false) {
-                Write-Host "Starting VM for VHD $blobName..."
-                .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA -containerName $sourceContainer -network SmokeVNet -subnet SmokeSubnet-1
-            } else {
-                Write-Host "StartMachine was not set.  VM $blobName will not be started or used."
-                continue
-            }
-
-            $password="$TEST_USER_ACCOUNT_PASS"
-
-            write-host "run_command_on_container creating PSRP for RG $sourceRG"
-
-            [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $sourceRG $sourceSA $cred $o
-            if ($? -eq $true -and $session -ne $null) {
-                Write-Host "    PSRP Connection established; executing remote command" -ForegroundColor Green
-                invoke-command -session $session -ScriptBlock {$Command}
-                if ($? -eq $false) {
-                    $Failed = $true
-                }
-            } else {
-                Write-Host "    UNABLE TO PSRP TO MACHINE!  COULD NOT DEPROVISION" -ForegroundColor Red
-                continue
-            }
-    
-            if ($session -ne $null) {
-                Remove-PSSession $session
-            }
+            $vmsFinished = $vmsFinished + 1
         }
+    }
+
+    if ($allDone -eq $false) {
+        sleep(10)
+    } elseif ($vmsFinished -eq $numNeeded) {
+        break
     }
 }
 
 if ($Failed -eq $true) {
-    Write-Host "Remote command execution failed!" -ForegroundColor Red
+    Write-Host "Remote command execution failed because we could not !" -ForegroundColor Red
     exit 1
-} else {
-    exit 0
-}
+} 
+
+C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $copyBlobs -destSA $sourceSA -destRG $sourceRG -suffix $suffix -command $command -asRoot $asRoot
