@@ -22,7 +22,8 @@ param (
     [Parameter(Mandatory=$true)] [string] $testCycle="BVT"
 )
 
-. "C:\Framework-Scripts\secrets.ps1"
+. C:\Framework-Scripts\common_functions.ps1
+. C:\Framework-Scripts\secrets.ps1
 
 #
 #  This is a required location
@@ -44,15 +45,11 @@ get-job | Remove-Job
 cd C:\azure-linux-automation
 git pull
 
-Write-Host "Importing the context...." -ForegroundColor Green
-Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' 
-
-Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
-Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" 
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
+login_azure $destRG $destSA
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
-Get-AzureRmVm -ResourceGroupName $sourceRG -status |  where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+$runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
+deallocate_machines_in_group $runningVMs $sourceRG $sourceSA
 
 Write-Host "Copying the test VMs packages to BVT resource group"
 $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $destRG -Name $destSA
@@ -223,9 +220,6 @@ while ($completed_machines -lt $launched_machines) {
         $sourceName=$oneblob.Name
         $jobName=$sourceName + "_BVT_Runner"
 
-        $logFileName = "c:\temp\transcripts\" + $sourceName + "_transcript.log"
-        echo "Starting BVT job $jobName" | Out-File $logFileName -Force
-
         $jobStatus=get-job -Name $jobName
         if ($? -eq $true) {
             $jobState = $jobStatus.State
@@ -233,18 +227,15 @@ while ($completed_machines -lt $launched_machines) {
             {
                 $completed_machines += 1
                 $failed_machines += 1
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 Write-Host " >>>> BVT job $jobName exited with FAILED state!" -ForegroundColor red
             }
             elseif ($jobState -eq "Completed")
             {
                 $completed_machines += 1
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 Write-Host "***** BVT job $jobName completed successfully." -ForegroundColor green
             }
             elseif ($jobState -eq "Running")
             {
-                get-job -Name $jobName | Receive-Job | Out-File $logFileName -Append
                 $running_machines += 1
                 if ($logThisOne -eq $true) {
                     Write-Host "      BVT job $jobName is still in progress." -ForegroundColor green                
@@ -256,9 +247,11 @@ while ($completed_machines -lt $launched_machines) {
                 Write-Host "????? BVT job $jobName is in state $jobState." -ForegroundColor Yellow
             }
         }
-        if ($logThisOne -eq $true) {
-            write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor green
-        }
+        
+    }
+
+    if ($logThisOne -eq $true) {
+       write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor green
     }
 
     $sleep_count += 1
@@ -269,12 +262,15 @@ while ($completed_machines -lt $launched_machines) {
 
         if ($failed_machines -gt 0) {
             Write-Host "There were $failed_machines failures out of $launched_machines attempts.  BVTs have failed." -ForegroundColor Red
+            c:\framework-Scripts\clear_smoke_bvt_resource_groups
             exit 1
         } elseif ($completed_machines -eq $launched_machines) {
             Write-Host "All BVTs have passed! " -ForegroundColor Green
+            c:\framework-Scripts\clear_smoke_bvt_resource_groups
             exit 0
         } else {
             write-host "$launched_machines BVT jobs were launched.  Of those: completed = $completed_machines, Running = $running_machines, Failed = $failed_machines, and unknown = $other_machines" -ForegroundColor Red
+            c:\framework-Scripts\clear_smoke_bvt_resource_groups
             exit 1
         }
     }

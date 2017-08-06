@@ -21,7 +21,7 @@
     [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed.vhd"
 )
 
-# Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
+Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"view source
@@ -52,7 +52,6 @@ get-job | Remove-Job
 
 login_azure $destRG $destSA
 
-Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA
 if ($makeDronesFromAll -eq $true) {
     Write-Host "Looking at all images in container $sourceContainer"
     $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix"
@@ -79,17 +78,11 @@ if ($copyblobs.Count -eq 0) {
     exit 1
 }
 
-foreach ($oneblob in $copyblobs) {
-    $sourceName=$oneblob
-    write-host  "Adding sourceName $sourceName"
-    $vmName=$sourceName | % { $_ -replace "$currentSuffix", "" }
-}
-
 write-host "Copying blobs..."
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
-                                        -destSA $destSA -destRG $destRG -destContainer $destContainer `
-                                        -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
-                                        -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNameArray
+                                       -destSA $destSA -destRG $destRG -destContainer $destContainer `
+                                       -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
+                                       -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNameArray
 
 
 $scriptBlockString = 
@@ -109,7 +102,7 @@ $scriptBlockString =
             $subnet
             )
             write-host "Checkpoint 1" -ForegroundColor Cyan
-    Start-Transcript C:\temp\transcripts\scriptblock.log -Force
+    Start-Transcript C:\temp\transcripts\$vmName-scriptblock.log -Force
     write-host "Checkpoint 2" -ForegroundColor Cyan
     . "C:\Framework-Scripts\common_functions.ps1"
     . "C:\Framework-Scripts\secrets.ps1"
@@ -118,11 +111,9 @@ $scriptBlockString =
     
     login_azure $destRG $destSA
 
-    write-host "Stopping VM $vmName, if running"
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-
     Write-Host "Deallocating machine $vmName, if it is up"
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+    $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
+    deallocate_machines_in_group $runningMachines $destRG $destSA
 
     $newVMName = $vmName + $newSuffix
     $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
@@ -141,7 +132,6 @@ $scriptBlockString =
     #
     #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
     #  but kept getting timeouts on the Ubuntu machines.
-    sleep(120)
 
     $currentDir="C:\Framework-Scripts"
     $username="$TEST_USER_ACCOUNT_NAME"
@@ -159,18 +149,45 @@ $scriptBlockString =
     #  Send make_drone to the new machine
     #
     #  The first one gets the machine added to known_hosts
-    Write-Host "Copying make_drone to the target.." -ForegroundColor Green
+    Write-Host "Copying make_drone to target $ip.." -ForegroundColor Green
 
     #
     #  Now transfer the files
+    $ipTemp = $ip + ":/tmp"
+    while ($true) {
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
+        echo "SSL Rreply is $sslReply"
+        if ($sslReply -match "README" ) {
+            Write-Host "Got a key request"
+            break
+        } else {
+            Write-Host "No match"
+            sleep(10)
+        }
+    }
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
+
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.ps1 c:\temp\nix_files\secrets.ps1
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\make_drone.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.sh $username@$ip`:/tmp
-    echo $password | C:\azure-linux-automation\tools\pscp  C:\temp\nix_files\secrets.ps1 $username@$ip`:/tmp
+
+    try_pscp  C:\temp\nix_files\make_drone.sh $ipTemp
     if ($? -ne $true) {
         Write-Host "Error copying make_drone.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
+
+    try_pscp C:\temp\nix_files\secrets.sh $ipTemp
+    if ($? -ne $true) {
+        Write-Host "Error copying secrets.sh to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
+
+    try_pscp C:\temp\nix_files\secrets.ps1 $ipTemp
+    if ($? -ne $true) {
+        Write-Host "Error copying secrets.ps1 to $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
         exit 1
     }
@@ -183,12 +200,22 @@ $scriptBlockString =
     Write-Host "Using plink to chmod the script"
     #
     #  chmod the thing
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxChmodCommand
+    try_plink $ip $linuxChmodCommand
+    if ($? -ne $true) {
+        Write-Host "Error running chmod command.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
 
     #
     #  Now run make_drone
     Write-Host "And now running..."
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $linuxDroneCommand
+    try_plink $ip $linuxDroneCommand
+    if ($? -ne $true) {
+        Write-Host "Error running make_drone command.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
 
     Stop-Transcript
 }
@@ -236,27 +263,14 @@ while ($notDone -eq $true) {
     sleep 10
 }
 
-Write-Host "All jobs have completed.  Checking results..."
+Write-Host "All jobs have completed.  Checking results (this will take a moment...)"
+
 #
 #  Get the results of that
-$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$cred = make_cred
-$sessionFailed = $false
-foreach ($vmName in $vmNameArray) {
-    $newVMName = $vmName + $newSuffix
-    $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
+$status = c:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $destSA -destRG $destRG -suffix $newSuffix -command "/bin/uname -a"
+$status
 
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $newVMName $destRG $destSA $cred $o
-    if ($session -ne $NULL) {
-        invoke-command -session $session -ScriptBlock {/bin/uname -a}
-        Remove-PSSession $session
-    } else {
-        Write-Host "FAILED to create PSRP session to $newVMName"
-        $sessionFailed = $true
-    }
-}
-
-if ($sessionFailed -eq $true) {  
+if ($status -contains "FAILED to establish PSRP connection") {
     Write-Host "Errors found in this job, so adding the job output to the log..."
     
     $jobs = get-job
@@ -272,7 +286,7 @@ if ($sessionFailed -eq $true) {
 
 get-job | remove-job
 
-# Stop-Transcript
+Stop-Transcript
 
 if ($sessionFailed -eq $true) {    
     exit 1

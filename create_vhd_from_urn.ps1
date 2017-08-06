@@ -35,7 +35,6 @@ if ($vmNameArray.Length -ne $blobURNArray.Length) {
     Write-Host "There are $vmNameArray.Length left..."
 }
 $vmName = $vmNameArray[0]
-Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
@@ -43,104 +42,163 @@ Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log
 Write-Host "Working with RG $destRG and SA $destSA"
 login_azure $destRG $destSA
 
-# Global
-$location = "westus"
+$scriptBlockString = 
+{
+    param ($vmName,
+            $blobURN,
+            $destRG,
+            $destSA,
+            $destContainer,
+            $location,
+            $suffix,
+            $NSG,
+            $vnetName,
+            $subnetName
+            )
 
-## Storage
-$storageType = "Standard_D2"
+    Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log -Force
 
-## Network
-$nicname = $vmName + "VMNic"
+    . "C:\Framework-Scripts\common_functions.ps1"
+    . C:\Framework-Scripts\secrets.ps1
 
-$vnetAddressPrefix = "10.0.0.0/16"
-$vnetSubnetAddressPrefix = "10.0.0.0/24"
+    login_azure $destRG $destSA
 
-## Compute
+    # Global
+    $location = "westus"
 
-$vmSize = "Standard_A2"
+    ## Storage
+    $storageType = "Standard_D2"
 
-#
-#  Yes, these are done sequentially, not in parallel.  I will figure that out later :)
-#
-$i = 0
-while ($i -lt $vmNameArray.Length) {
-    $vmName = $vmNameArray[$i]
-    $blobURN = $blobURNArray[$i]
-    $i++
-    Write-Host "Preparing machine $vmName for service as a drone..."
+    ## Network
+    $nicname = $vmName + "VMNic"
 
-    Write-Host "Stopping any running VMs" -ForegroundColor Green
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
+    $vnetAddressPrefix = "10.0.0.0/16"
+    $vnetSubnetAddressPrefix = "10.0.0.0/24"
+
+    ## Compute
+
+    $vmSize = "Standard_A2"
+
 
     echo "Deleting any existing VM"
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
+    deallocate_machines_in_group $runningVMs $destRG $destSA
 
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}
+    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue
 
     Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
     Write-Host "User is $TEST_USER_ACCOUNT_NAME"
     Write-Host "Password is $TEST_USER_ACCOUNT_PAS2"
-    $diskName=$vmName + $suffix
+    $vmName = $vmName + $suffix
+    $diskName=$vmName
     write-host "Creating machine $vmName"
     $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
     [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
 
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password 'P@ssW0rd-1_K6' `
+       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 `
        --admin-username mstest --authentication-type password
-
     if ($? -eq $false) {
         Write-Error "Failed to create VM.  Details follow..."
         Stop-Transcript
         exit 1
     }
 
+    $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
+    # Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
+
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
-    Write-Host "Sleeping for 3 minutes to allow the machine to come up.."
-    sleep(180)
     write-host "Attempting to contact the machine..."
     $pipName = $vmName + "PublicIP"
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
-    $password="$TEST_USER_ACCOUNT_PAS2"
+    $password=$TEST_USER_ACCOUNT_PAS2
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
-    $disableCommand1="systemctl disable cloud-config.service"
-    $disableCommand2="systemctl disable cloud-final.service"
-    $disableCommand3="systemctl disable cloud-init-local.service"
-    $disableCommand4="systemctl disable cloud-init.service"
-
-    $runDisableCommand1="`"echo $password | sudo -S bash -c `'$disableCommand1`'`""
-    $runDisableCommand2="`"echo $password | sudo -S bash -c `'$disableCommand2`'`""
-    $runDisableCommand3="`"echo $password | sudo -S bash -c `'$disableCommand3`'`""
-    $runDisableCommand4="`"echo $password | sudo -S bash -c `'$disableCommand4`'`""
+    #
+    # Disable cloud-init
+    $disableCommand0="mv /usr/bin/cloud-init /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS"
+    $runDisableCommand0="`"echo `'$password`' | sudo -S bash -c `'$disableCommand0`'`""
 
     #
     #  Eat the prompt and get the host into .known_hosts
-    echo "y" | C:\azure-linux-automation\tools\pscp C:\C:\Framework-Scripts\README.md\README.md $username@$ip`:/tmp
+    $remoteAddress = $ip
+    $remoteTmp=$remoteAddress + ":/tmp"
+    Write-Host "Attempting to contact remote macnhine using $remoteAddress"
+    while ($true) {
+        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
+        echo "SSL Rreply is $sslReply"
+        if ($sslReply -match "README" ) {
+            Write-Host "Got a key request"
+            break
+        } else {
+            Write-Host "No match"
+            sleep(10)
+        }
+    }
+    $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
-    #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand1
+    Write-Host "Setting SELinux into permissive mode"
+    try_plink $ip $runDisableCommand0
 
-    #
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand2
-
-    #
-    #  Now run make_drone
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand3
-
-    #
-    #  Now run make_drone
-    C:\azure-linux-automation\tools\plink.exe -C -v -pw $password -P $port $username@$ip $runDisableCommand4
-    
     Write-Host "VM Created successfully.  Stopping it now..."
     Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
 
     # Write-Host "Deleting the VM so we can harvest the VHD..."
-    # Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
 
     Write-Host "Machine $vmName is ready for assimilation..."
+
+    Stop-Transcript
 }
-Stop-Transcript
+
+$scriptBlock = [scriptblock]::Create($scriptBlockString)
+
+$i = 0
+foreach ($vmName in $vmNameArray) {
+    $blobURN = $blobURNArray[$i]
+    $i++
+    Write-Host "Preparing machine $vmName for service as a drone..."
+
+    $jobName=$vmName + "-intake-job"
+    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
+                                                                      $destContainer,$location,$Suffix,$NSG,`
+                                                                      $vnetName,$subnetName
+    if ($? -ne $true) {
+        Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
+
+    Write-Host "Just launched job $jobName"
+}
+
+$notDone = $true
+while ($notDone -eq $true) {
+    write-host "Status at "@(date)"is:" -ForegroundColor Green
+    $notDone = $false
+    foreach ($vmName in $vmNameArray) {
+        $jobName=$vmName + "-intake-job"
+        $job = get-job $jobName
+        $jobState = $job.State
+        if ($jobState -eq "Running") {
+            $notDone = $true
+            $useColor = "Yellow"
+        } elseif ($jobState -eq "Completed") {
+            $useColor="green"
+        } elseif ($jobState -eq "Failed") {
+            $useColor = "Red"
+        } elseif ($jobState -eq "Blocked") {
+            $useColor = "Magenta"
+        }
+        write-host "    Job $jobName is in state $jobState" -ForegroundColor $useColor
+        
+    }
+    sleep 10
+}
+
+#
+#  Exit with error if we failed to create the VM.  THe setup may have failed, but we can't tell that right ow
+exit 0

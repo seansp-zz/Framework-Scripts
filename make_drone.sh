@@ -31,8 +31,8 @@ fi;
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
-    useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
-    passwd mstest << PASSWD_END
+    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
+    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
 $TEST_USER_ACCOUNT_PASS
 $TEST_USER_ACCOUNT_PASS
 PASSWD_END
@@ -53,35 +53,13 @@ fi;
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
-    useradd -d /home/mstest -s /bin/bash -G sudo -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS
-    passwd mstest << PASSWD_END
-$TEST_USER_ACCOUNT_PASS
-$TEST_USER_ACCOUNT_PASS
-PASSWD_END
-
+    apt-get -y install git
     #  Let's grab the dpkg puppet installer.
     #  TODO: do i really need wget here?
-    apt-get -y install wget   # We use the wget to get the installer.
-    wget http://apt.puppetlabs.com/puppetlabs-release-trusty.deb
-    dpkg -i puppetlabs-release-trusty.deb
-    apt-get -y install puppet
-    apt-get -y install git
     export is_rpm=0;
 else
     echo "This is an RPM-based machine"
-    #
-    #  Add the test user
-    useradd -d /home/$TEST_USER_ACCOUNT_NAME -s /bin/bash -G wheel -m $TEST_USER_ACCOUNT_NAME -p $TEST_USER_ACCOUNT_PASS 
-    passwd $TEST_USER_ACCOUNT_NAME << PASSWD_END
-$TEST_USER_ACCOUNT_PASS
-$TEST_USER_ACCOUNT_PASS
-PASSWD_END
-
-
-    # Let's grab the rpm puppet installer.
-    yum -y install wget #parity.
-    rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
-    yum -y install puppet
+    yum -y install wget
     yum -y install git
     # Adding in Epel
     wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
@@ -90,21 +68,21 @@ PASSWD_END
     export is_rpm=1;
 fi
 
-FAMILY="$(facter operatingsystem)"
-FAMILYVER="$(facter operatingsystemrelease)"
-FLAVOR="$FAMILY [$FAMILYVER]"
-IPADDRESS="$(facter ipaddress)"
-
-echo "$FLAVOR -- IP Address = $IPADDRESS"
-
 # 
 # Retrieve our depot.
 #
 framework_scripts_path="/root/Framework-Scripts"
-if ! [ -d $framework_scripts_path ]; then
+#if ! [ -d $framework_scripts_path ]; then
   git clone https://github.com/FawcettJohnW/Framework-Scripts.git $framework_scripts_path
-fi;
-git clone http://github.com/FawcettJohnW/Framework-Scripts.git
+#fi;
+#
+# REVISED: I don't believe the following line is really necessary.
+#   The check above determines if we have already pulled the depot, if this is the case, we don't get new code
+#   to -that- location, but the following line just clones to our relative path.  When we later -use- the scripts,
+#   we always assume the $framework_scripts_path ... so the following -might- be cloned but won't be cloned where
+#   want it.
+#
+#git clone http://github.com/FawcettJohnW/Framework-Scripts.git
 
 #
 # Copy existing secrets files.
@@ -217,8 +195,8 @@ NEW_SOURCES
    
     #
     #  Set up runonce and copy in the right script
-    if ! [ -d "runonce.d" ]; then
-        mkdir runonce.d runonce.d/ran
+    if ! [ -d "/root/runonce.d" ]; then
+        mkdir /root/runonce.d /root/runonce.d/ran
     fi
 ## Unhooking the runonce.d so that we can place other things there in the future.
 ## to use, simply connect in and copy as shown below.
@@ -226,10 +204,11 @@ NEW_SOURCES
     
     #
     #  Tell cron to run the runonce at reboot
-#    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
+    echo "@reboot root /root/Framework-Scripts/runonce.ps1" >> /etc/crontab
     apt-get install -y ufw
     ufw allow 443
     ufw allow 5986
+    /opt/omi/bin/omiserver -d
 else
     echo "RPM-based system"
 wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
@@ -297,7 +276,7 @@ yum -y install python-paramiko
 
     #
     #  Set up runonce
-    mkdir runonce.d runonce.d/ran
+    mkdir /root/runonce.d /root/runonce.d/ran
 
 ## Unhooking the runonce.d so that we can place other things there in the future.
 ## to use, simply connect in and copy as shown below.
@@ -317,10 +296,17 @@ yum -y install python-paramiko
     /opt/omi/bin/omiserver -d
 fi
 
+#
+# TODO: Is this needed for ALL pipelines?
+#
 if [ -f /etc/motd ] 
   then
     mv /etc/motd /etc/motd_before_ms_kernel
 fi
+
+#
+# TODO: Do we need this password reset?
+#
 
 passwd mstest << PASSWD_END
 $TEST_USER_ACCOUNT_PASS
@@ -348,3 +334,13 @@ cat << "MOTD_EOF" > /etc/motd
    Welcome to the Twilight Zone.                                      Let's Rock.
 *************************************************************************************
 MOTD_EOF
+
+#
+#  Perform redhat subscription manager stuff.
+#
+if [ -f /sbin/subscription-manager ] ;
+  then
+  echo "RedHat specific configuration."
+  echo " -- Removing configuration for subscription-manager."
+  subscription-manager remove --all
+fi;

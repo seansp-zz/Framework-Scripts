@@ -8,6 +8,8 @@
     [Parameter(Mandatory=$true)] [string] $subnet="SmokeSubnet-1",
     [Parameter(Mandatory=$true)] [string] $NSG="SmokeNSG",
 
+    [Parameter(Mandatory=$true)] [string] $location="westus",
+
     [Parameter(Mandatory=$false)] [string] $addAdminUser="",
     [Parameter(Mandatory=$false)] [string] $adminUser="",
     [Parameter(Mandatory=$false)] [string] $adminPW="",

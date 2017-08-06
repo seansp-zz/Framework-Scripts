@@ -46,15 +46,35 @@ foreach($vmName in $vmNamesIn) {
 login_azure $destRG $destSA
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
+get-job | Stop-Job
+get-job | remove-job
+$same_rg=$false
+if ($sourceRG -eq $destRG) {
+    $same_rg = $true
+}
+
 if ($makeDronesFromAll -eq $false) {
+    #
+    #  Build the list of VMs to stop/delete
     foreach ($vmName in $vmNames) {
-        Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-        Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force
+        if ($same_rg -eq $false) {
+            $runningVMsSource += (Get-AzureRmVm -ResourceGroupName $sourceRG -status | Where-Object -Property Name -Like "$vmName*" | where-object -Property PowerState -eq -value "VM running")
+        }
+
+        $runningVMsDest += (Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*")
     } 
 } else {
-    Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-    Get-AzureRmVm -ResourceGroupName $destRG -status | Remove-AzureRmVM -Force
+    if ($same_rg -eq $false) {
+        $runningVMsSource = (Get-AzureRmVm -ResourceGroupName $sourceRG -status | where-object -Property PowerState -eq -value "VM running")
+    }
+    $runningVMsDest = (Get-AzureRmVm -ResourceGroupName $destRG -status)
 }
+
+if ($same_rg -eq $false) {
+    deallocate_machines_in_group $runningVMsSource $sourceRG $sourceSA
+}
+
+deallocate_machines_in_group $runningVMsDest $destRG $destSA
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
 
