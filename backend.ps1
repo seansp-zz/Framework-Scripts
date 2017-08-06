@@ -94,17 +94,7 @@ class AzureBackend : Backend {
             throw "Secrets file does not exist."
         }
 
-        if (Test-Path $this.ProfilePath) {
-            Import-AzureRmContext -Path $this.ProfilePath | Out-Null
-        } else {
-            throw "Azure Profile file does not exist."
-        }
-        Select-AzureRmSubscription -SubscriptionId $env:AzureSubscriptionID | Out-Null
-
-        if ($this.ResourceGroupName -and $this.StorageAccountName) {
-            Set-AzureRmCurrentStorageAccount -ResourceGroupName $this.ResourceGroupName `
-                -StorageAccountName $this.StorageAccountName | Out-Null
-        }
+        login_azure $this.ResourceGroupName $this.StorageAccountName
     }
 
     [Instance] GetInstanceWrapper ($InstanceName) {
@@ -125,7 +115,6 @@ class AzureBackend : Backend {
             Write-Host ("VM $InstanceName does not exist") -ForegroundColor Yellow
             return
         }
-        $vm | Where-Object -Property PowerState -eq -Value "VM running" | Stop-AzureRmVM -Force
         Get-AzureRmVm -ResourceGroupName $this.ResourceGroupName -Status | `
             Where-Object -Property Name -eq $InstanceName | `
             Remove-AzureRmVM -Force
@@ -137,6 +126,9 @@ class AzureBackend : Backend {
         $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
         Write-Host "Assigning network and subnet config to new machine" `
             -ForegroundColor Yellow
+            
+        #
+        #  JWF -- TODO:  Add VNET and Subnet detection and creation just like we have for NIC and IP Address
         $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
         $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
 
@@ -162,13 +154,11 @@ class AzureBackend : Backend {
             $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName
         }
 
+        #
+        #  JWF -- TODO -- Can we make sure port 443 is enabled here?
         $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
         $VNIC.NetworkSecurityGroup = $sg
         Set-AzureRmNetworkInterface -NetworkInterface $VNIC
-
-        $pw = ConvertTo-SecureString -AsPlainText -Force -String $env:TEST_USER_ACCOUNT_PAS2
-        $cred = New-Object -Typename system.management.automation.pscredential `
-            -argumentlist $env:TEST_USER_ACCOUNT_NAME,$pw
 
         Write-Host "Adding the network interface" -ForegroundColor Yellow
         Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
