@@ -87,6 +87,18 @@ if ($? -eq $false) {
 }
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
+$gotContainer = Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName
+if ($? -eq $false) {
+    Write-Host "creating the BVT ready container" -ForegroundColor Yellow
+    New-AzureStorageContainer -Name "ready-for-bvt" -Permission Blob
+}
+
+$gotContainer = Get-AzureStorageBlob -Container "drones" -Prefix $vmName
+if ($? -eq $false) {
+    New-AzureStorageContainer -Name "drones" -Permission Blob
+    Write-Host "Complete." -ForegroundColor Green
+}
+
 #
 #  If the account does not exist, create it.
 
