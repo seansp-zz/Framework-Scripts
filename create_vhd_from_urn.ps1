@@ -39,7 +39,8 @@ $vmName = $vmNameArray[0]
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
-$env:DESTSA = $destSA + "-" + $location
+$regionSuffix = ("-" + $this.Location) -replace " ","-"
+$env:DESTSA = $destSA + $regionSuffix
 $destSA = $env:DESTSA
 Write-Host "Sa for region is $env:DESTSA"
 Write-Host "Working with RG $destRG and SA $destSA"
@@ -81,13 +82,21 @@ $scriptBlockString =
     . "C:\Framework-Scripts\common_functions.ps1"
     . C:\Framework-Scripts\secrets.ps1
 
+    $regionSuffix = ("-" + $location) -replace " ","-"
+    $destSA = $destSA + $regionSuffix
+    $NSG = $NSG + $regionSuffix
+    $subnetName =  $subnetName + $regionSuffix
+    $vnetName  = $vnetName  + $regionSuffix
+    $pipName = $vmName + "PublicIP" + $regionSuffix
+    $nicName = $vmName + "VMNic" + $regionSuffix
+
     login_azure $destRG $destSA $location
 
     ## Storage
     $storageType = "Standard_D2"
 
     ## Network
-    $nicname = $vmName + "VMNic"
+    $nicname = $vmName + "VMNic" + $regionSuffix
 
     $vnetAddressPrefix = "10.0.0.0/16"
     $vnetSubnetAddressPrefix = "10.0.0.0/24"
@@ -115,7 +124,7 @@ $scriptBlockString =
 
     az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
        --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 `
-       --admin-username mstest --authentication-type password
+       --admin-username mstest --authentication-type password --public-ip-address $pipName -nic $nicName
     if ($? -eq $false) {
         Write-Error "Failed to create VM.  Details follow..."
         Stop-Transcript
@@ -128,7 +137,7 @@ $scriptBlockString =
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
     write-host "Attempting to contact the machine..."
-    $pipName = $vmName + "PublicIP"
+    
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     $password=$TEST_USER_ACCOUNT_PAS2
     $port=22
@@ -180,7 +189,7 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Preparing machine $vmName for service as a drone..."
 
     $jobName=$vmName + "-intake-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
+    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,$location`
                                                                       $destContainer,$location,$Suffix,$NSG,`
                                                                       $vnetName,$subnetName
     if ($? -ne $true) {
