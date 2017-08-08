@@ -189,7 +189,7 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Preparing machine $vmName for service as a drone..."
 
     $jobName=$vmName + "-intake-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,$location`
+    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,$location,`
                                                                       $destContainer,$location,$Suffix,$NSG,`
                                                                       $vnetName,$subnetName
     if ($? -ne $true) {
