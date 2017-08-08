@@ -11,8 +11,13 @@
     [Parameter(Mandatory=$false)] [string] $subnetName = "SmokeSubnet-1",
     [Parameter(Mandatory=$false)] [string] $NSG = "SmokeNSG",
 
+    [Parameter(Mandatory=$false)] [String] $VMFlavor = "Standard_D2"
+    [Parameter(Mandatory=$false)] [String] $addressPrefix = "172.19.0.0/16"
+    [Parameter(Mandatory=$false)] [String] $subnetPrefix = "172.19.0.0/24"
+
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
+
 
 $vmNames_array=@()
 $vmNameArray = {$vmNamess_array}.Invoke()
