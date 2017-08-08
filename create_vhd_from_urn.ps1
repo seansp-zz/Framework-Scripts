@@ -50,7 +50,11 @@ login_azure "" "" ""
 #  Change the name of the SA to include the region, then Now see if the SA exists
 $existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA
 if ($? -eq $false) {
-    New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind BlobStorage
+    New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind BlobStorage -AccessTier Hot
+    Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
+
+    New-AzureStorageContainer -Name "ready-for-bvt" -Permission Blob
+    New-AzureStorageContainer -Name "drones" -Permission Blob
 }
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
