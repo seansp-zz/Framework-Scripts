@@ -66,6 +66,16 @@ $saSuffix = $location -replace " ",""
 $env:DESTSA = $destSA + "777" + $saSuffix.ToLower()
 $destSA = $env:DESTSA
 
+$saLength = $destSA.Length
+if ($saLength -gt 24) {
+    #
+    #  Truncate the name
+    $destSA = $destSA.Substring(0, 24)
+    $saLength = $destSA.Length
+}
+Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
+
+
 #
 #  Log in without changing to the RG or SA.  This is intentional
 login_azure
@@ -113,7 +123,8 @@ $scriptBlockString =
             [string] $suffix,
             [string] $NSG,
             [string] $vnetName,
-            [string] $subnetName
+            [string] $subnetName,
+            [bool]   $firstPass
             )    
     Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log -Force
 
@@ -131,7 +142,7 @@ $scriptBlockString =
     login_azure $destRG $destSA $location
 
     ## Storage
-    $storageType = "Standard_D2"
+    $storageType = "Standard_D2_v2"
 
     $vnetAddressPrefix = "10.0.0.0/16"
     $vnetSubnetAddressPrefix = "10.0.0.0/24"
@@ -164,11 +175,22 @@ $scriptBlockString =
 
     $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
     $azureInstance.Cleanup()
+
+    if ($firstPass -eq $true) {
+        Write-Host "FirstPass was TRUE -- Setting up Azure" -ForegroundColor Cyan
+        $ret = $azureInstance.SetupAzureRG()
+        Write-Host "Returned from FirstPass with "$ret
+    } else {
+        Write-Host "FirstPass was FALSE -- Setting up Azure" -ForegroundColor Cyan
+        $ret = $azureInstance.WaitForAzureRG()
+        Write-Host "Returned from FirstPass with "$ret
+    }
+    
     $azureInstance.CreateFromURN()
 
     $VM = $azureInstance.GetVM()
     # $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
-    # Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
+    Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
 
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
@@ -219,23 +241,30 @@ $scriptBlockString =
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
 $i = 0
+[bool]$firstPass = $true
 foreach ($vmName in $vmNameArray) {
     $blobURN = $blobURNArray[$i]
     $i++
     Write-Host "Preparing machine $vmName for (URN $blobURN) service as a drone..." -ForegroundColor Green
 
     $jobName=$vmName + "-intake-job"
+    if ($firstPass -eq $true) {
+        Write-Host "FIRST PASS JOB IS " $jobName -ForegroundColor Cyan
+    }
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$Suffix,$NSG,`
-                                                                      $vnetName,$subnetName
+                                                                      $vnetName,$subnetName, $firstPass
     if ($? -ne $true) {
         Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
         exit 1
     }
+    $firstPass = $false
 
     Write-Host "Just launched job $jobName" -ForegroundColor Green
 }
+
+sleep(10)
 
 $notDone = $true
 while ($notDone -eq $true) {

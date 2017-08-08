@@ -1,7 +1,6 @@
 ##### Install PowerShell 5 using https://github.com/DarwinJS/ChocoPackages/blob/master/PowerShell/v5.1/tools/ChocolateyInstall.ps1#L107-L173
 ##### For 2008 R2, run the .ps1 from: https://download.microsoft.com/download/6/F/5/6F5FF66C-6775-42B0-86C4-47D41F2DA187/Win7AndW2K8R2-KB3191566-x64.zip
 
-
 class Instance {
     [Backend] $Backend
     [String] $Name
@@ -46,7 +45,16 @@ class Instance {
     }
 
     [object] GetVM () {
-        return $this.Backend.GetVM()
+        return $this.Backend.GetVM($this.Name)
+    }
+
+    [String] SetupAzureRG() 
+    {
+        return $this.Backend.SetupAzureRG()
+    }
+
+    [string] WaitForAzureRG( ) {
+        return $this.Backend.WaitForAzureRG( )
     }
 }
 
@@ -111,6 +119,16 @@ class Backend {
         Write-Host ("Getting new Powershell Session on backend " + $this.Name) -ForegroundColor Green
         return $null
     }
+
+    [string] SetupAzureRG( ) {
+        Write-Host ("Setting up Azure Resource Groups " + $this.Name) -ForegroundColor Green
+        return $null
+    }
+
+    [string] WaitForAzureRG( ) {
+        Write-Host ("Waiting for Azure resource group setup " + $this.Name) -ForegroundColor Green
+        return $null
+    }
 }
 
 class AzureBackend : Backend {
@@ -122,7 +140,7 @@ class AzureBackend : Backend {
     [String] $StorageAccountName = "smokeworkingstorageacct"
     [String] $ContainerName = "vhds-under-test"
     [String] $Location = "westus"
-    [String] $VMFlavor = "Standard_D2"
+    [String] $VMFlavor = "Standard_D2_V2"
     [String] $NetworkName = "SmokeVNet"
     [String] $SubnetName = "SmokeSubnet"
     [String] $NetworkSecGroupName = "SmokeNSG"
@@ -161,6 +179,46 @@ class AzureBackend : Backend {
 
         $instance = [AzureInstance]::new($this, $InstanceName)
         return $instance
+    }
+
+    [string] SetupAzureRG( ) {
+        ([Backend]$this).SetupAzureRG()
+        #
+        #  Avoid potential race conditions
+        Write-Host "Getting the NSG"
+        $sg = $this.getNSG()
+
+        Write-Host "Getting the network"
+        $VMVNETObject = $this.getNetwork($sg)
+
+        Write-Host "Getting the subnet"
+        $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
+
+        return "Success"
+    }
+
+    [string] WaitForAzureRG( ) {
+        $azureIsReady = $false
+        while ($azureIsReady -eq $false) {
+            $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+            if (!$sg) {
+                sleep(10)
+            } else {
+                $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
+                if (!$VMVNETObject) {
+                    sleep(10)
+                } else {
+                    $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
+                    if (!$VMSubnetObject) {
+                        sleep(10)
+                    } else {
+                        $azureIsReady = $true
+                    }
+                }
+            }
+        }
+
+        return "Success"
     }
 
     [void] StopInstance ($InstanceName) {
@@ -373,22 +431,33 @@ class AzureBackend : Backend {
         $blobContainer = $this.ContainerName
         $osDiskVhdUri = "https://$blobSA.blob.core.windows.net/$blobContainer/"+$InstanceName+".vhd"
 
-        try {
-            Write-Host "Starting the VM" -ForegroundColor Yellow
-            $cred = make_cred_initial
-            $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $imageName -Credential $cred
-            $vm = Set-AzureRmVMSourceImage -VM $vm -PublisherName $blobParts[0] -Offer $blobParts[1] `
-                -Skus $blobParts[2] -Version $blobParts[3]
-            $vm = Set-AzureRmVMOSDisk -VM $vm -VhdUri $osDiskVhdUri -name $imageName -CreateOption fromImage -Caching ReadWrite
+        $trying = $true
+        $tries = 0
+        while ($trying -eq $true) {
+            $trying = $false
+            try {
+                Write-Host "Starting the VM" -ForegroundColor Yellow
+                $cred = make_cred_initial
+                $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $imageName -Credential $cred
+                $vm = Set-AzureRmVMSourceImage -VM $vm -PublisherName $blobParts[0] -Offer $blobParts[1] `
+                    -Skus $blobParts[2] -Version $blobParts[3]
+                $vm = Set-AzureRmVMOSDisk -VM $vm -VhdUri $osDiskVhdUri -name $imageName -CreateOption fromImage -Caching ReadWrite
 
-            $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
-            if (!$NEWVM) {
-                Write-Host "Failed to create VM" -ForegroundColor Red
-            } else {
-                Write-Host "VM $imageName started successfully..." -ForegroundColor Green
+                $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
+                if (!$NEWVM) {
+                    Write-Host "Failed to create VM" -ForegroundColor Red
+                    sleep(30)
+                    $trying = $true
+                    $tries = $tries + 1
+                    if ($tries -gt 5) {
+                        break
+                    }
+                } else {
+                    Write-Host "VM $imageName started successfully..." -ForegroundColor Green
+                }
+            } catch {
+                Write-Host "Caught exception attempting to start the new VM.  Aborting..."
             }
-        } catch {
-            Write-Host "Caught exception attempting to start the new VM.  Aborting..."
         }
     }
 
