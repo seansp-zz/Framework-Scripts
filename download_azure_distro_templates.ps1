@@ -16,13 +16,15 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $rg="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $nm="smokesourcestorageacct",
-    [Parameter(Mandatory=$false)] [string] $srcContainer="safe-templates"
+    [Parameter(Mandatory=$false)] [string] $srcContainer="safe-templates",
+
+    [Parameter(Mandatory=$false)] [string[]] $location
 )
 
 . C:\Framework-Scripts\common_functions.ps1
 . C:\Framework-Scripts\secrets.ps1
 
-login_azure $rg $nm
+login_azure $rg $nm $location
 
 $uri_front="https://"
 $uri_middle="smokesourcestorageacct.blob.core.windows.net/"

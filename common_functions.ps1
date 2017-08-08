@@ -1,10 +1,26 @@
-﻿function login_azure([string] $rg, [string] $sa) {
+﻿function login_azure([string] $rg, [string] $sa, [string] $location) {
     . "C:\Framework-Scripts\secrets.ps1"
 
     Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
     Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 
     if ($rg -ne "" -and $sa -ne "") {
+        $existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa
+        if ($? -eq $false) {
+            #
+            #  Storage account did not exist -- try to create
+            New-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa -SkuName Premium_LRS -Location $location -Kind BlobStorage
+        }
+        
+        $currentLoc = ($existingAccount.Location).ToString()
+
+        if ($currentLoc -ne $location) {            
+            Write-Warning "***************************************************************************************"
+            Write-Warning "Storage account $sa is in different region ($currentLoc) than current ($location)."
+            Write-Warning "       You will not be able to create any virtual machines from this account!"
+            Write-Warning "***************************************************************************************"
+        }
+
         $out = Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa 2>&1
     }
 }
@@ -18,12 +34,12 @@ function make_cred () {
     return $cred
 }
 
-function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
+function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [string] $location,
                              [System.Management.Automation.PSCredential] $cred,
                              [System.Management.Automation.Remoting.PSSessionOption] $o,
                              [switch] $retryOnTimeout)
 {
-    login_azure $rg $sa > $null
+    login_azure $rg $sa $location > $null
 
     $pipName=$vmName + "PublicIP"
 
@@ -35,7 +51,12 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
             return $null
         }
 
-        new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+        $thisSession = new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+        if ($? -eq $false) {
+            return $null
+        } else {
+            return $thisSession
+        }
     } catch {
         return $null
     }
@@ -43,7 +64,8 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA,
 
 function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine[]] $runningVMs,
                                     [string] $destRG,
-                                    [string] $destSA)
+                                    [string] $destSA,
+                                    [string] $location)
 {
     Write-Host "Removing from $destRG and $destSA"
 
@@ -51,13 +73,14 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
     {
         param ([Parameter(Mandatory=$false)] [string] $vm_name,
                 [Parameter(Mandatory=$false)] [string] $destRG,
-                [Parameter(Mandatory=$false)] [string] $destSA
+                [Parameter(Mandatory=$false)] [string] $destSA,
+                [Parameter(Mandatory=$false)] [string] $location
         )
                 
         . C:\Framework-Scripts\common_functions.ps1
         . C:\Framework-Scripts\secrets.ps1
 
-        login_azure $destRG $destSA
+        login_azure $destRG $destSA $location
         Write-Host "Stopping machine $vm_name in RG $destRG"
         Stop-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
     }
@@ -68,7 +91,7 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
         $vm_name = $singleVM.Name
         $vmJobName = $vm_name + "-Src"
         write-host "Starting job to stop VM $vm_name"
-        Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $vm_name,$destRG,$destSA
+        Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $vm_name,$destRG,$destSA,$location
     }
 
     $allDone = $false
@@ -93,7 +116,8 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
 
 function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine[]] $runningVMs,
                                     [string] $destRG,
-                                    [string] $destSA)
+                                    [string] $destSA,
+                                    [string] $location)
 {
     Write-Host "Deprovisioning from $destRG and $destSA"
 
@@ -101,13 +125,14 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
     {
         param ([Parameter(Mandatory=$false)] [string] $vm_name,
                 [Parameter(Mandatory=$false)] [string] $destRG,
-                [Parameter(Mandatory=$false)] [string] $destSA
+                [Parameter(Mandatory=$false)] [string] $destSA,
+                [Parameter(Mandatory=$false)] [string] $location
         )
                 
         . C:\Framework-Scripts\common_functions.ps1
         . C:\Framework-Scripts\secrets.ps1
 
-        login_azure $destRG $destSA
+        login_azure $destRG $destSA $location
         Write-Host "Deallocating machine $vm_name in RG $destRG"
         Remove-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
     }

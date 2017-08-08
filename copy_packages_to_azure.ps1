@@ -10,7 +10,7 @@
 
 
 Write-Host "Copying Linux kernel build artifacts to the cloud..."
-login_azure $destResourceGroup $destAccountName
+login_azure $destResourceGroup $destAccountName $location
 
 $failure_point = "No failure"
 $key=Get-AzureRmStorageAccountKey -ResourceGroupName $destResourceGroup -Name $destAccountName

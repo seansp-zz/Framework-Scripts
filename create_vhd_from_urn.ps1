@@ -39,8 +39,19 @@ $vmName = $vmNameArray[0]
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
+$env:DESTSA = $destSA + "-" + $location
+Write-Host "Sa for region is $env:DESTSA"
 Write-Host "Working with RG $destRG and SA $destSA"
-login_azure $destRG $destSA
+#
+#  Log in without changing to the RG or SA.  This is intentional
+login_azure
+
+#
+#  Change the name of the SA to include the region, then Now see if the SA exists
+$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa
+
+#
+#  If the account does not exist, create it.
 
 $scriptBlockString = 
 {
@@ -61,10 +72,7 @@ $scriptBlockString =
     . "C:\Framework-Scripts\common_functions.ps1"
     . C:\Framework-Scripts\secrets.ps1
 
-    login_azure $destRG $destSA
-
-    # Global
-    $location = "westus"
+    login_azure $destRG $destSA $location
 
     ## Storage
     $storageType = "Standard_D2"
@@ -82,8 +90,8 @@ $scriptBlockString =
 
     echo "Deleting any existing VM"
     $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
-    deallocate_machines_in_group $runningVMs $destRG $destSA
-
+    deallocate_machines_in_group $runningVMs $destRG $destSA $location
+    
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
     Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue
 

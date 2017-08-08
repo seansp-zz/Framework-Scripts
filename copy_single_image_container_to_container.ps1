@@ -43,7 +43,7 @@ foreach($vmName in $vmNamesIn) {
     $vmNames.Add($vmName)
 }
 
-login_azure $destRG $destSA
+login_azure $destRG $destSA $location
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 get-job | Stop-Job
@@ -71,10 +71,10 @@ if ($makeDronesFromAll -eq $false) {
 }
 
 if ($same_rg -eq $false) {
-    deallocate_machines_in_group $runningVMsSource $sourceRG $sourceSA
+    deallocate_machines_in_group $runningVMsSource $sourceRG $sourceSA $location
 }
 
-deallocate_machines_in_group $runningVMsDest $destRG $destSA
+deallocate_machines_in_group $runningVMsDest $destRG $destSA $location
 
 Write-Host "Launching jobs to copy individual machines..." -ForegroundColor Yellow
 

@@ -3,6 +3,7 @@
     
     [Parameter(Mandatory=$false)] [string] $destSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_source_resource_group",
+    [Parameter(Mandatory=$false)] [string] $location="westus",
 
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd",
 
@@ -43,7 +44,7 @@ foreach ($baseName in $vmNameArray) {
 
     write-host "Executing remote command on machine $vm_name"
 
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o
+    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
     if ($? -eq $true -and $session -ne $null) {
         invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $runCommand
         Exit-PSSession

@@ -50,7 +50,7 @@ $LogDir = "c:\temp\job_logs"
 get-job | Stop-Job
 get-job | Remove-Job
 
-login_azure $destRG $destSA
+login_azure $destRG $destSA $location
 
 if ($makeDronesFromAll -eq $true) {
     Write-Host "Looking at all images in container $sourceContainer"
@@ -109,11 +109,11 @@ $scriptBlockString =
 
     write-host "Checkpoint 3" -ForegroundColor Cyan
     
-    login_azure $destRG $destSA
+    login_azure $destRG $destSA $location
 
     Write-Host "Deallocating machine $vmName, if it is up"
     $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
-    deallocate_machines_in_group $runningMachines $destRG $destSA
+    deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
     $newVMName = $vmName + $newSuffix
     $newVMName = $newVMName | % { $_ -replace ".vhd", "" }

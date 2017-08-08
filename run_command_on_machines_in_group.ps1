@@ -7,7 +7,9 @@
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd",
 
     [Parameter(Mandatory=$false)] [string] $command="unset",
-    [Parameter(Mandatory=$false)] [string] $asRoot="false"
+    [Parameter(Mandatory=$false)] [string] $asRoot="false",
+
+    [Parameter(Mandatory=$false)] [string] $location="westus"
 )
     
     
@@ -25,6 +27,7 @@ $commandString =
 {
     param ( $DestRG,
             $DestSA,
+            $location,
             $suffix,
             $command,
             $asRoot,
@@ -36,14 +39,13 @@ $commandString =
 
     Start-Transcript C:\temp\transcripts\run_command_on_machines_in_group_$vm_name.log > $null
 
-    login_azure $DestRG $DestSA
+    login_azure $DestRG $DestSA $location
     #
     #  Session stuff
     #
     $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
     $cred = make_cred
 
-    login_azure $DestRG $DestSA
     $errorFound = $false
     $suffix = $suffix.Replace(".vhd","")
 
@@ -59,7 +61,7 @@ $commandString =
 
     # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
 
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $cred $o $false
+    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o $false
     if ($? -eq $true -and $session -ne $null) {
         invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $command
         Exit-PSSession
@@ -83,7 +85,7 @@ foreach ($baseName in $vmNameArray) {
 
     # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
 
-    start-job -Name $job_name -ScriptBlock $commandBLock -ArgumentList $DestRG, $DestSA, $suffix, $command, $asRoot, $vm_name > $null
+    start-job -Name $job_name -ScriptBlock $commandBLock -ArgumentList $DestRG, $DestSA, $location, $suffix, $command, $asRoot, $vm_name > $null
 }
 
 $jobFailed = $false

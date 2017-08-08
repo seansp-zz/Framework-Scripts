@@ -12,6 +12,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $requestedNames,
     [Parameter(Mandatory=$false)] [string] $generalizeAll,
 
+    [Parameter(Mandatory=$false)] [string] $location,
+
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd"
 )
 
@@ -25,7 +27,7 @@ if ($requestedNames -ne "unset") {
     $vmNameArray = $requestedNames.Split(',')
 }
 
-login_azure $sourceRG $sourceSA
+login_azure $sourceRG $sourceSA $location
 
 $vmName = $vmNameArray[0]
 if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {

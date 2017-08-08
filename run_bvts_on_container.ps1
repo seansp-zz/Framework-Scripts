@@ -45,11 +45,11 @@ get-job | Remove-Job
 cd C:\azure-linux-automation
 git pull
 
-login_azure $destRG $destSA
+login_azure $destRG $destSA $location
 
 Write-Host "Stopping all running machines..."  -ForegroundColor green
 $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
-deallocate_machines_in_group $runningVMs $sourceRG $sourceSA
+deallocate_machines_in_group $runningVMs $sourceRG $sourceSA $location
 
 Write-Host "Copying the test VMs packages to BVT resource group"
 $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $destRG -Name $destSA

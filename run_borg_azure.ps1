@@ -34,8 +34,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
-Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -force
-Stop-Transcript
+get-job | Stop-Job  > $null
+get-job | remove-job  > $null
 
 Start-Transcript C:\temp\transcripts\run_borg_azure.log -Force
 
@@ -47,6 +47,7 @@ Set-StrictMode -Version 2.0
 $global:sourceResourceGroupName=$sourceResourceGroupName
 $global:sourceStorageAccountName=$sourceStorageAccountName
 $global:sourceContainerName=$sourceContainerName
+$global:location=$location
 
 $global:workingResourceGroupName=$workingResourceGroupName
 $global:workingStorageAccountName=$workingStorageAccountName
@@ -89,8 +90,7 @@ $global:timer_is_running = 0
 #  Session stuff
 #
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$global:pw=convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS"
-$global:cred=new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$global:pw
+$global:cred=make_cred
 
 class MonitoredMachine {
     [string] $name="unknown"
@@ -118,7 +118,7 @@ function copy_azure_machines {
 
         Write-Host "Stopping any currently running machines in the source resource group..."  -ForegroundColor green
         $runningVMs = Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName
-        deallocate_machines_in_group $runningVMs $global:sourceResourceGroupName $global:sourceStorageAccountName
+        deallocate_machines_in_group $runningVMs $global:sourceResourceGroupName $global:sourceStorageAccountName $global:location
 
         $sourceKey=Get-AzureRmStorageAccountKey -ResourceGroupName $global:sourceResourceGroupName -Name $global:sourceStorageAccountName
         $sourceContext=New-AzureStorageContext -StorageAccountName $global:sourceStorageAccountName -StorageAccountKey $sourceKey[0].Value
@@ -131,7 +131,7 @@ function copy_azure_machines {
 
         Write-Host "Stopping and deleting any currently running machines in the target resource group..."  -ForegroundColor green
         $runningVMs = Get-AzureRmVm -ResourceGroupName $global:workingResourceGroupName
-        deallocate_machines_in_group $runningVMs $global:workingResourceGroupName $global:workingStorageAccountName
+        deallocate_machines_in_group $runningVMs $global:workingResourceGroupName $global:workingStorageAccountName $global:location
 
         Write-Host "Clearing VHDs in the working storage container $global:workingContainerName..."  -ForegroundColor green
         Get-AzureStorageBlob -Container $global:workingContainerName -blob * | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $global:workingContainerName -Force} > $null
@@ -223,8 +223,6 @@ function copy_azure_machines {
 
 
 function launch_azure_vms {
-    get-job | Stop-Job  > $null
-    get-job | remove-job  > $null
     foreach ($vmName in $global:neededVms) {
         $machine = new-Object MonitoredMachine
         $machine.name = $vmName
@@ -244,7 +242,9 @@ function launch_azure_vms {
         $storageAccount="smokeworkingstorageacct"
         $containerName="vhds-under-test"
 
-        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] -vmName $args[3] -network "SmokeVNet" -subnet "SmokeSubnet-1" -NSG "SmokeNSG" -location "westus"} -ArgumentList @($resourceGroup),@($storageAccount),@($containerName),@($vmName)
+        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] `
+                                                    -vmName $args[3] -network "SmokeVNet" -subnet "SmokeSubnet-1" -NSG "SmokeNSG" -location $args[4]} `
+                                                    -ArgumentList @($resourceGroup),@($storageAccount),@($containerName),@($vmName),@($global:location)
     }
 
     foreach ($machineLog in $global:machineLogs) {
@@ -278,8 +278,6 @@ function launch_azure_vms {
 }
 
 $action={
-    Start-Transcript C:\temp\transcripts\run_borg_azure_timer.log -Append
-
     . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1
 
@@ -290,7 +288,6 @@ $action={
 
         if ($machineStatus -eq "Completed" -or $global:num_remaining -eq 0) {
             Write-Host "    **** Machine $machineName is in state $machineStatus, which is complete, or there are no remaining machines" -ForegroundColor green
-            Stop-Transcript
             return 0
         }
 
@@ -313,7 +310,7 @@ $action={
             if ($localMachine.Name -eq $machineName) {
                 if ($localMachine.session -eq $null) {
                     $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                                                        $global:cred $global:o $false
+                                                        $global:location $global:cred $global:o $false
 
                     Write-Host "Creating PowerShell Remoting session to machine $machineName"  -ForegroundColor green
                     if ($localSession -ne $null) {
@@ -342,11 +339,8 @@ $action={
                 $runCommand = "echo $password | sudo -S bash -c `'$command`'"
                 $commandBLock=[scriptblock]::Create($runCommand)
                 $expected_vers = invoke-command -session $localSession -ScriptBlock $commandBLock -ArgumentList $command      
-                if ($? -eq $false) {
-                    $expected_vers = "Unknown"
-                }
                 Write-Host "$machineName Expected version retrieved as $expected_vers" -ForegroundColor Cyan
-                
+                $expected_vers = ($expected_vers.Split(" "))[0]
             }
             Catch
             {
@@ -363,6 +357,16 @@ $action={
         
             # Write-Host "Looking for version $expected_verDeb or $expected_verCent"
             if ($exceptionCaught -eq $false) {
+                if ($expected_vers -eq "") {
+                    write-host "Expected_vers was unset" -ForegroundColor Red
+                    $expected_vers = "unset"
+                }
+
+                if ($installed_vers -eq "") {
+                    Write-Host "Installed_vers was unset"
+                    $Installed_vers = "Unknown"
+                }
+
                 if ($expected_vers.CompareTo($installed_vers) -ne 0) {
                     if (($global:elapsed % $global:boot_timeout_intervals_per_minute) -eq 0) {
                         Write-Host "     Machine $machineName reports up, but the kernel version is $installed_vers when we expected" -ForegroundColor Cyan
@@ -397,7 +401,7 @@ $action={
     }
 
     $global:elapsed=$global:elapsed+$global:interval
-    # Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
+    Write-Host "Checking elapsed = $global:elapsed against interval limit of $global:boot_timeout_intervals" -ForegroundColor Yellow
 
     if ($global:elapsed -ge $global:boot_timeout_intervals) {
         Write-Host "Elapsed is $global:elapsed"
@@ -498,7 +502,7 @@ $action={
                                 if ($monitoredMachine.session -eq $null) {
 
                                     $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                                                                        $cred $o $false
+                                                                        $global:location $cred $o $false
                                     
                                     if ($localSession -ne $null) {
                                         $monitoredMachine.session = $localSession
@@ -548,7 +552,6 @@ $action={
         }
     }
     [Console]::Out.Flush() 
-    Stop-Transcript
 }
 
 Get-EventSubscriber -SourceIdentifier "AzureBORGTimer" | Unregister-Event
@@ -574,7 +577,7 @@ Write-Host "                                BORG CUBE is initialized"           
 Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRONES)" -ForegroundColor yellow
 Write-Host "    "
 
-login_azure $global:sourceResourceGroupName $global:sourceStorageAccountName
+login_azure $global:sourceResourceGroupName $global:sourceStorageAccountName $global:location
 
 $date1 = Get-Date -Date "01/01/1970"
 $date2 = Get-Date
@@ -606,7 +609,7 @@ $timer.Interval = 1000
 $timer.Enabled = $true
 $timer.start()
 
-Write-Host "Finished launching the VMs.  Completed is $global:completed" -ForegroundColor Yellow
+Write-Host "Finished launching the VMs.  Waiting for Completed to go to 1.  Completed is presently $global:completed" -ForegroundColor Yellow
 while ($global:completed -eq 0) {
     start-sleep -s 1
 }

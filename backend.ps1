@@ -77,6 +77,7 @@ class Backend {
 class AzureBackend : Backend {
     [String] $Name = "AzureBackend"
     [String] $SecretsPath = "C:\Framework-Scripts\secrets.ps1"
+    [String] $CommonFunctionsPath = "C:\Framework-Scripts\common_functions.ps1"
     [String] $ProfilePath = "C:\Azure\ProfileContext.ctx"
     [String] $ResourceGroupName = "smoke_working_resource_group"
     [String] $StorageAccountName = "smokeworkingstorageacct"
@@ -84,24 +85,39 @@ class AzureBackend : Backend {
     [String] $Location = "westus"
     [String] $VMFlavor = "Standard_D2"
     [String] $NetworkName = "SmokeVNet"
-    [String] $SubnetName = "SmokeSubnet-1"
+    [String] $SubnetName = "SmokeSubnet"
     [String] $NetworkSecGroupName = "SmokeNSG"
+    [String] $addressPrefix = "172.19.0.0/16"
+    [String] $subnetPrefix = "172.19.0.0/24"
 
     AzureBackend ($Params) : base ($Params) {
+        if (Test-Path $this.CommonFunctionsPath) {
+            . $this.CommonFunctionsPath
+        } else {
+            throw "??? Common Functions file file does not exist."
+        }
+
+        if (Test-Path $this.SecretsPath) {
+            . $this.SecretsPath
+        } else {
+            throw "Secrets file does not exist."
+        }
+    }
+
+    [Instance] GetInstanceWrapper ($InstanceName) {
+        if (Test-Path $this.CommonFunctionsPath) {
+            . $this.CommonFunctionsPath
+        } else {
+            throw "??? Common Functions file file does not exist."
+        }
+
         if (Test-Path $this.SecretsPath) {
             . $this.SecretsPath
         } else {
             throw "Secrets file does not exist."
         }
 
-        login_azure $this.ResourceGroupName $this.StorageAccountName
-    }
-
-    [Instance] GetInstanceWrapper ($InstanceName) {
-        if ($this.ResourceGroupName -and $this.StorageAccountName) {
-            Set-AzureRmCurrentStorageAccount -ResourceGroupName $this.ResourceGroupName `
-                -StorageAccountName $this.StorageAccountName | Out-Null
-        }
+        login_azure $this.ResourceGroupName $this.StorageAccountName $this.Location
 
         $instance = [AzureInstance]::new($this, $InstanceName)
         return $instance
@@ -120,49 +136,80 @@ class AzureBackend : Backend {
             Remove-AzureRmVM -Force
     }
 
-    [void] CreateInstance ($InstanceName) {
+    [void] CreateInstance ($InstanceName) {        
         ([Backend]$this).CreateInstance($InstanceName)
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
-        $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
-        Write-Host "Assigning network and subnet config to new machine" `
-            -ForegroundColor Yellow
-            
-        #
-        #  JWF -- TODO:  Add VNET and Subnet detection and creation just like we have for NIC and IP Address
+
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $this.NetworkName = $this.NetworkName + $regionSuffix
+        $this.SubnetName =  $this.SubnetName + $regionSuffix
+        $this.NetworkSecGroupName = $this.NetworkSecGroupName + $regionSuffix
+        
+        $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
+        if (!$sg) {
+            write-host "Network security group does not exist for this region.  Creating now..." -ForegroundColor Yellow
+            $rule1 = New-AzureRmNetworkSecurityRuleConfig -Name "ssl-rule" -Description "Allow SSL over HTTP" `
+                                                            -Access "Allow" -Protocol "Tcp" -Direction "Inbound" -Priority "100" `
+                                                            -SourceAddressPrefix "Internet" -SourcePortRange "*" `
+                                                            -DestinationAddressPrefix "*" -DestinationPortRange "443"
+            $rule2 = New-AzureRmNetworkSecurityRuleConfig -Name "ssh-rule" -Description "Allow SSH" `
+                                                            -Access "Allow" -Protocol "Tcp" -Direction "Inbound" -Priority "101" `
+                                                            -SourceAddressPrefix "Internet" -SourcePortRange "*" -DestinationAddressPrefix "*" `
+                                                            -DestinationPortRange "22"
+
+            New-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName -Location $this.Location -SecurityRules $rule1,$rule2
+
+            $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
+            Write-Host "Done."
+        }
+
         $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
+        if (!$VMVNETObject) {
+            write-host "Network does not exist for this region.  Creating now..." -ForegroundColor Yellow
+            $VMSubnetObject = New-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName  -AddressPrefix $this.subnetPrefix -NetworkSecurityGroup $sg
+            New-AzureRmVirtualNetwork   -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -Location $this.Location -AddressPrefix $this.addressPrefix -Subnet $VMSubnetObject
+            $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
+        }
+
         $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
+        if (!$VMSubnetObject) {
+            write-host "Subnet does not exist for this region.  Creating now..." -ForegroundColor Yellow
+            Add-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -AddressPrefix $this.subnetPrefix -NetworkSecurityGroup $sg
+            Set-AzureRmVirtualNetwork -VirtualNetwork $VMVNETObject 
+            $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
+            $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject 
+        }
+
+        $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
+        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
-        $ipName = $InstanceName + "PublicIP"
+        $ipName = $InstanceName + "PublicIP" + $regionSuffix
         $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $ipName `
             -ErrorAction SilentlyContinue
         if (!$pip) {
-            Write-Host "Creating new IP address..." -ForegroundColor Yellow
-            New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
+            write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
+            $vm = New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
                 -Name $ipName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
             $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $ipName
         }
 
         Write-Host "Assigning the network interface" -ForegroundColor Yellow
-        $nicName = $InstanceName + "VMNic"
-        $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
-            -ErrorAction SilentlyContinue
+        $nicName = $InstanceName + "VMNic" + $regionSuffix
+        $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
         if (!$VNIC) {
             Write-Host "Creating new network interface" -ForegroundColor Yellow
-            New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
+            $vm = New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
                 -Location $this.Location -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
             $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName
         }
-
-        #
-        #  JWF -- TODO -- Can we make sure port 443 is enabled here?
-        $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
         $VNIC.NetworkSecurityGroup = $sg
+        
         Set-AzureRmNetworkInterface -NetworkInterface $VNIC
 
         Write-Host "Adding the network interface" -ForegroundColor Yellow
         Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
-
+        
         $blobURIRaw = ("https://{0}.blob.core.windows.net/{1}/{2}.vhd" -f `
                        @($this.StorageAccountName, $this.ContainerName, $InstanceName))
 

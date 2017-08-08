@@ -31,7 +31,7 @@ param (
 $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
 $cred = make_cred
 
-login_azure $sourceRG $sourceSA
+login_azure $sourceRG $sourceSA $location
 
 $blobs = Get-AzureStorageBlob -Container $sourceContainer
 
@@ -48,14 +48,15 @@ $comandScript = {
         $sourceContainer,
         $network,
         $subnet,
-        $NSG)
+        $NSG,
+        $location)
 
     Start-Transcript C:\temp\transcripts\run_command_on_container_$blobName.log -Force
     . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1
 
-    login_azure $sourceRG $sourceSA
-    
+    login_azure $sourceRG $sourceSA $location
+     
     $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
     if ($runningVMs.Name -contains $blobName) {
         write-host "VM $blobName is running"
@@ -64,7 +65,7 @@ $comandScript = {
 
         if ($StartMachines -ne $false) {
             Write-Host "Starting VM for VHD $blobName..."
-            .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA -containerName $sourceContainer -network $network -subnet $subnet -NSG $NSG
+            .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA -containerName $sourceContainer -network $network -subnet $subnet -NSG $NSG -Location $location
         } else {
             Write-Host "StartMachine was not set.  VM $blobName will not be started or used."
             $failed = $true
