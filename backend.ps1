@@ -21,12 +21,32 @@ class Instance {
         $this.Backend.CleanupInstance($this.Name)
     }
 
-    [void] Create () {
-        $this.Backend.CreateInstance($this.Name)
+    [void] CreateFromSpecialized () {
+        $this.Backend.CreateInstanceFromSpecialized($this.Name)
+    }
+
+    [void] CreateFromURN () {
+        $this.Backend.CreateInstanceFromURN($this.Name)
+    }
+
+    [void] CreateFromGeneralized () {
+        $this.Backend.CreateInstanceFromGeneralized($this.Name)
+    }
+
+    [void] StopInstance () {
+        $this.Backend.StopInstance($this.Name)
+    }
+
+    [void] RemoveInstance () {
+        $this.Backend.removeInstance($this.Name)
     }
 
     [String] GetPublicIP () {
         return $this.Backend.GetPublicIP($this.Name)
+    }
+
+    [object] GetVM () {
+        return $this.Backend.GetVM()
     }
 }
 
@@ -51,7 +71,13 @@ class Backend {
         return $null
     }
 
-    [void] CreateInstance ($InstanceName) {
+    [void] CreateInstanceFromSpecialized ($InstanceName) {
+    }
+
+    [void] CreateInstanceFromURN ($InstanceName) {
+    }
+
+    [void] CreateInstanceFromGeneralized ($InstanceName) {
     }
 
     [void] CleanupInstance ($InstanceName) {
@@ -66,6 +92,19 @@ class Backend {
     [String] GetPublicIP ($InstanceName) {
         Write-Host ("Getting instance public IP a on backend " + $this.Name) -ForegroundColor Green
         return $null
+    }
+
+    [object] GetVM($instanceName) {
+       Write-Host ("Getting instance VM on backend " + $this.Name) -ForegroundColor Green
+       return $null       
+    }
+
+    [void] StopInstance($instanceName) {
+       Write-Host ("StopInstance VM on backend " + $this.Name) -ForegroundColor Green
+    }
+
+    [void] RemoveInstance($instanceName) {
+       Write-Host ("RemoveInstance VM on backend " + $this.Name) -ForegroundColor Green
     }
 
     [Object] GetPSSession ($InstanceName) {
@@ -89,6 +128,7 @@ class AzureBackend : Backend {
     [String] $NetworkSecGroupName = "SmokeNSG"
     [String] $addressPrefix = "172.19.0.0/16"
     [String] $subnetPrefix = "172.19.0.0/24"
+    [String] $blobURN = "Unset"
 
     AzureBackend ($Params) : base ($Params) {
         if (Test-Path $this.CommonFunctionsPath) {
@@ -123,6 +163,26 @@ class AzureBackend : Backend {
         return $instance
     }
 
+    [void] StopInstance ($InstanceName) {
+        ([Backend]$this).StopInstance($InstanceName)
+
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
+        Stop-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
+    }
+
+    [void] RemoveInstance ($InstanceName) {
+        ([Backend]$this).RemoveInstance($InstanceName)
+
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
+        Remove-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
+    }
+
     [void] CleanupInstance ($InstanceName) {
         ([Backend]$this).CleanupInstance($InstanceName)
         $vm = Get-AzureRmVm -ResourceGroupName $this.ResourceGroupName -Status | `
@@ -136,15 +196,9 @@ class AzureBackend : Backend {
             Remove-AzureRmVM -Force
     }
 
-    [void] CreateInstance ($InstanceName) {        
-        ([Backend]$this).CreateInstance($InstanceName)
-        Write-Host "Creating a new VM config..." -ForegroundColor Yellow
-
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        $this.NetworkName = $this.NetworkName + $regionSuffix
-        $this.SubnetName =  $this.SubnetName + $regionSuffix
-        $this.NetworkSecGroupName = $this.NetworkSecGroupName + $regionSuffix
-        
+    # Microsoft.Azure.Commands.Network.Models.PSNetworkSecurityGroup
+    [object] getNSG()
+    {
         $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
         if (!$sg) {
             write-host "Network security group does not exist for this region.  Creating now..." -ForegroundColor Yellow
@@ -163,6 +217,12 @@ class AzureBackend : Backend {
             Write-Host "Done."
         }
 
+        return $sg
+    }
+
+    # Microsoft.Azure.Commands.Network.Models.PSVirtualNetwork
+    [object] getNetwork($sg)
+    {
         $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
         if (!$VMVNETObject) {
             write-host "Network does not exist for this region.  Creating now..." -ForegroundColor Yellow
@@ -171,6 +231,12 @@ class AzureBackend : Backend {
             $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
         }
 
+        return $VMVNETObject
+    }
+
+    # Microsoft.Azure.Commands.Network.Models.PSSubnet
+    [object] getSubnet($sg,$VMVNETObject)
+    {
         $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
         if (!$VMSubnetObject) {
             write-host "Subnet does not exist for this region.  Creating now..." -ForegroundColor Yellow
@@ -180,22 +246,29 @@ class AzureBackend : Backend {
             $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject 
         }
 
-        $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
-        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+        return $VMSubnetObject
+    }
 
-        Write-Host "Assigning the public IP address" -ForegroundColor Yellow
-        $ipName = $InstanceName + "PublicIP" + $regionSuffix
-        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $ipName `
+    # Microsoft.Azure.Commands.Network.Models.PSPublicIpAddress
+    [object] getPIP($pipName)
+    {
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName `
             -ErrorAction SilentlyContinue
         if (!$pip) {
             write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
             $vm = New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
-                -Name $ipName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
-            $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $ipName
+                -Name $pipName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
+            $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName
         }
 
-        Write-Host "Assigning the network interface" -ForegroundColor Yellow
-        $nicName = $InstanceName + "VMNic" + $regionSuffix
+        return $pip
+    }
+
+    # Microsoft.Azure.Commands.Network.Models.PSNetworkInterface
+    [object] getNIC([string] $nicName,
+                    [object] $VMSubnetObject, 
+                    [object] $pip)
+    {
         $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
         if (!$VNIC) {
             Write-Host "Creating new network interface" -ForegroundColor Yellow
@@ -203,6 +276,37 @@ class AzureBackend : Backend {
                 -Location $this.Location -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
             $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName
         }
+
+        return $VNIC
+    }
+
+    [void] CreateInstanceFromSpecialized ($InstanceName) {        
+        ([Backend]$this).CreateInstanceFromSpecialized($InstanceName)
+        Write-Host "Creating a new VM config..." -ForegroundColor Yellow
+
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        
+        $sg = $this.getNSG()
+
+        $VMVNETObject = $this.getNetwork($sg)
+
+        $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
+
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
+        $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
+        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+
+        Write-Host "Assigning the public IP address" -ForegroundColor Yellow
+        $ipName = $imageName
+        $pip = $this.getPIP($ipName)
+
+        Write-Host "Assigning the network interface" -ForegroundColor Yellow
+        $nicName = $imageName
+        $VNIC = $this.getNIC($nicName, $VMSubnetObject, $pip)
+
+        Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
         $VNIC.NetworkSecurityGroup = $sg
         
         Set-AzureRmNetworkInterface -NetworkInterface $VNIC
@@ -210,17 +314,19 @@ class AzureBackend : Backend {
         Write-Host "Adding the network interface" -ForegroundColor Yellow
         Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
         
+        #
+        #  Code specific to a specialized blob
         $blobURIRaw = ("https://{0}.blob.core.windows.net/{1}/{2}.vhd" -f `
                        @($this.StorageAccountName, $this.ContainerName, $InstanceName))
 
-        $vm = Set-AzureRmVMOSDisk -VM $vm -Name $InstanceName -VhdUri $blobURIRaw -CreateOption Attach -Linux
+        $vm = Set-AzureRmVMOSDisk -VM $vm -Name $imageName -VhdUri $blobURIRaw -CreateOption Attach -Linux
         try {
             Write-Host "Starting the VM" -ForegroundColor Yellow
             $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
             if (!$NEWVM) {
                 Write-Host "Failed to create VM" -ForegroundColor Red
             } else {
-                Write-Host "VM $InstanceName started successfully..." -ForegroundColor Green
+                Write-Host "VM $imageName started successfully..." -ForegroundColor Green
             }
         } catch {
             Write-Host "Caught exception attempting to start the new VM.  Aborting..."
@@ -229,10 +335,136 @@ class AzureBackend : Backend {
         }
     }
 
+    [void] CreateInstanceFromURN ($InstanceName) {        
+        ([Backend]$this).CreateInstanceFromURN($InstanceName)
+        Write-Host "Creating a new VM config..." -ForegroundColor Yellow
+
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        
+        $sg = $this.getNSG()
+
+        $VMVNETObject = $this.getNetwork($sg)
+
+        $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
+
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
+        $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
+        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+
+        Write-Host "Assigning the public IP address" -ForegroundColor Yellow
+        $ipName = $imageName
+        $pip = $this.getPIP($ipName)
+
+        Write-Host "Assigning the network interface" -ForegroundColor Yellow
+        $nicName = $imageName
+        $VNIC = $this.getNIC($nicName, $VMSubnetObject, $pip)
+        $VNIC.NetworkSecurityGroup = $sg
+        
+        Set-AzureRmNetworkInterface -NetworkInterface $VNIC
+
+        Write-Host "Adding the network interface" -ForegroundColor Yellow
+        Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
+
+        Write-Host "Parsing the blob string " $this.blobURN
+        $blobParts = $this.blobURN.split(":")
+        $blobSA = $this.StorageAccountName
+        $blobContainer = $this.ContainerName
+        $osDiskVhdUri = "https://$blobSA.blob.core.windows.net/$blobContainer/"+$InstanceName+".vhd"
+
+        try {
+            Write-Host "Starting the VM" -ForegroundColor Yellow
+            $cred = make_cred_initial
+            $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $imageName -Credential $cred
+            $vm = Set-AzureRmVMSourceImage -VM $vm -PublisherName $blobParts[0] -Offer $blobParts[1] `
+                -Skus $blobParts[2] -Version $blobParts[3]
+            $vm = Set-AzureRmVMOSDisk -VM $vm -VhdUri $osDiskVhdUri -name $imageName -CreateOption fromImage -Caching ReadWrite
+
+            $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
+            if (!$NEWVM) {
+                Write-Host "Failed to create VM" -ForegroundColor Red
+            } else {
+                Write-Host "VM $imageName started successfully..." -ForegroundColor Green
+            }
+        } catch {
+            Write-Host "Caught exception attempting to start the new VM.  Aborting..."
+        }
+    }
+
+    [void] CreateInstanceFromGeneralized ($InstanceName) {        
+        ([Backend]$this).CreateInstance($InstanceName)
+        Write-Host "Creating a new VM config..." -ForegroundColor Yellow
+
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        
+        $sg = $this.getNSG()
+
+        $VMVNETObject = $this.getNetwork($sg)
+
+        $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
+
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
+        $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
+        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+
+        Write-Host "Assigning the public IP address" -ForegroundColor Yellow
+        $ipName = $imageName
+        $pip = $this.getPIP($ipName)
+
+        Write-Host "Assigning the network interface" -ForegroundColor Yellow
+        $nicName = $imageName
+        $VNIC = $this.getNIC($nicName, $VMSubnetObject, $pip)
+
+        Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+        $VNIC.NetworkSecurityGroup = $sg
+        
+        Set-AzureRmNetworkInterface -NetworkInterface $VNIC
+
+        #
+        #  Set up the OS disk
+        Write-Host "Setting up the OS disk.  Image name is $imageName"       
+        $blobURIRaw = ("https://{0}.blob.core.windows.net/{1}/{2}.vhd" -f `
+                       @($this.StorageAccountName, $this.ContainerName, $InstanceName))
+
+        $imageConfig = New-AzureRmImageConfig -Location $this.Location
+        $imageConfig = Set-AzureRmImageOsDisk -Image $imageConfig -OsType Windows -OsState Generalized -BlobUri $blobURIRaw
+        $image = New-AzureRmImage -ImageName $imageName -ResourceGroupName $this.ResourceGroupName -Image $imageConfig
+
+        $cred = make_cred_initial
+        $vm = Set-AzureRmVMSourceImage -VM $vm -Id $image.Id
+        $vm = Set-AzureRmVMOSDisk -VM $vm -DiskSizeInGB 20 -name $imageName -CreateOption fromImage -Caching ReadWrite
+        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Windows -ComputerName $imageName `
+                    -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+
+        Write-Host "Adding the network interface" -ForegroundColor Yellow
+        Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
+        
+        
+        try {
+            Write-Host "Starting the VM" -ForegroundColor Yellow
+            
+            $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
+            if (!$NEWVM) {
+                Write-Host "Failed to create VM" -ForegroundColor Red
+            } else {
+                Write-Host "VM $imageName started successfully..." -ForegroundColor Green
+            }
+        } catch {
+            Write-Host "Caught exception attempting to start the VM $imageName.  Aborting..." -ForegroundColor Red
+        }
+    }
+
     [String] GetPublicIP ($InstanceName) {
         ([Backend]$this).GetPublicIP($InstanceName)
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
         $ip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName `
-            -Name ($InstanceName + "-pip")
+            -Name ($imageName)
         if ($ip) {
             return $ip.IPAddress
         } else {
@@ -242,6 +474,14 @@ class AzureBackend : Backend {
 
     [Object] GetPSSession ($InstanceName) {
         return ([Backend]$this).GetPSSession()
+    }
+
+    [Object] GetVM($instanceName) {
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+
+        return Get-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Name $imageName
     }
 }
 

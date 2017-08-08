@@ -36,7 +36,7 @@ $copyblobs = {$copyblobs_array}.Invoke()
 $copyblobs.clear()
 
 Write-Host "Names array: " $vmNameArray
-$numNames = $vmNameArray.Length
+$numNames = $vmNameArray.Count
 
 $vmName = $vmNameArray[0]
 if ($makeDronesFromAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
@@ -137,7 +137,7 @@ $scriptBlockString =
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
     $port=22
-    $pipName = $newVMName + "PublicIP"
+    $pipName = $newVMName
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red

@@ -6,22 +6,22 @@
 
     if ($rg -ne "" -and $sa -ne "") {
         $existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa
-        if ($? -eq $false) {
-            #
-            #  Storage account did not exist -- try to create
-            New-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa -SkuName Premium_LRS -Location $location -Kind BlobStorage
-        }
-        
+        if ($? -eq $true) {
         $currentLoc = ($existingAccount.Location).ToString()
 
-        if ($currentLoc -ne $location) {            
+            if ($currentLoc -ne $location) {            
+                Write-Warning "***************************************************************************************"
+                Write-Warning "Storage account $sa is in different region ($currentLoc) than current ($location)."
+                Write-Warning "       You will not be able to create any virtual machines from this account!"
+                Write-Warning "***************************************************************************************"
+            }
+
+            $out = Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa 2>&1
+        } else {
             Write-Warning "***************************************************************************************"
-            Write-Warning "Storage account $sa is in different region ($currentLoc) than current ($location)."
-            Write-Warning "       You will not be able to create any virtual machines from this account!"
+            Write-Warning "Storage account $sa does not exist in location $location."
             Write-Warning "***************************************************************************************"
         }
-
-        $out = Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa 2>&1
     }
 }
 
@@ -34,6 +34,15 @@ function make_cred () {
     return $cred
 }
 
+function make_cred_initial () {
+    . "C:\Framework-Scripts\secrets.ps1"
+
+    $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PAS2" 
+    $cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
+
+    return $cred
+}
+
 function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [string] $location,
                              [System.Management.Automation.PSCredential] $cred,
                              [System.Management.Automation.Remoting.PSSessionOption] $o,
@@ -41,7 +50,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [stri
 {
     login_azure $rg $sa $location > $null
 
-    $pipName=$vmName + "PublicIP"
+    $pipName=$vmName
 
     try {
         $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
@@ -67,6 +76,11 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
                                     [string] $destSA,
                                     [string] $location)
 {
+    if ($runningVMs -eq $null) {
+        Write-Host "Cannot stop empty group"
+        return
+    }
+
     Write-Host "Removing from $destRG and $destSA"
 
     $scriptBlockString =
@@ -121,6 +135,11 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
 {
     Write-Host "Deprovisioning from $destRG and $destSA"
 
+    if ($runningVMs -eq $null) {
+        Write-Host "Cannot deprovision empty group"
+        return
+    }
+
     $scriptBlockString =
     {
         param ([Parameter(Mandatory=$false)] [string] $vm_name,
@@ -135,6 +154,10 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
         login_azure $destRG $destSA $location
         Write-Host "Deallocating machine $vm_name in RG $destRG"
         Remove-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
+    }
+
+    if ($runningVMs.Count -lt 1) {
+        return
     }
 
     $scriptBlock = [scriptblock]::Create($scriptBlockString)

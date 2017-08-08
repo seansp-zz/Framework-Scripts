@@ -149,7 +149,7 @@ while ($stop_checking -eq $false) {
             }
             $neededVms.Remove($machine)
 
-            if ($neededVms.Length -le 0) {
+            if ($neededVms.Count -le 0) {
                 Write-Host "All downloads have completed or failed.  Terminating loop." -ForegroundColor Green
                 break;
             }

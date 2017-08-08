@@ -13,50 +13,76 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
+get-job | Stop-Job
+get-job | remove-job
+
+Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log -Force
 
 $vmNames_array=@()
 $vmNameArray = {$vmNamess_array}.Invoke()
 $vmNameArray.Clear()
-$vmNameArray = $Incoming_vmNames.Split(',')
+if ($Incoming_vmNames -contains ",") {
+    $vmNameArray = $Incoming_vmNames.Split(',')
+} else {
+    $vmNameArray += $Incoming_vmNames
+}
 
-$blobURNArray=@()
-$blobURNArray = {$blobURNArray}.Invoke()
-$blobURNArray = $Incoming_blobURNs.Split(',')
+$blobURN_Array=@()
+$blobURNArray = {$blobURNs_Array}.Invoke()
+$blobURNArray.Clear()
 
-Write-Host "Names array: " $vmNameArray
-$numNames = $vmNameArray.Length
-Write-Host "blobs array: " $blobURNArray
-$numBlobs = $blobURNArray.Length
+if ($Incoming_vmNames -contains ",") {
+    $blobURNArray = $Incoming_blobURNs.Split(',')
+} else {
+    $blobURNArray += $Incoming_blobURNs
+}
+# $blobURNArray = $Incoming_blobURNs.Split(',')
 
-if ($vmNameArray.Length -ne $blobURNArray.Length) {
-    Write-Host "Please provide the same number of names and URNs. You have $numNames names and $numBlobs blobs"
+Write-Host "Names array: " $vmNameArray -ForegroundColor Yellow
+$numNames = $vmNameArray.Count
+Write-Host "blobs array: " $blobURNArray -ForegroundColor Yellow
+$numBlobs = $blobURNArray.Count
+
+$firstBlob = $blobURNArray[0]
+
+if ($vmNameArray.Count -ne $blobURNArray.Count) {
+    Write-Host "Please provide the same number of names and URNs. You have $numNames names and $numBlobs blobs" -ForegroundColor Red
     exit 1
 } else {
-    Write-Host "There are $vmNameArray.Length left..."
+    $numLeft = $vmNameArray.Count
+    Write-Host "There are $numLeft machines to process..."  -ForegroundColor Gray
 }
 $vmName = $vmNameArray[0]
 
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
+$location=($location.ToLower()).Replace(" ","")
+
 $regionSuffix = ("-" + $location) -replace " ","-"
-$env:DESTSA = $destSA + $regionSuffix
+$saSuffix = $location -replace " ",""
+$env:DESTSA = $destSA + "777" + $saSuffix.ToLower()
 $destSA = $env:DESTSA
-Write-Host "Sa for region is $env:DESTSA"
-Write-Host "Working with RG $destRG and SA $destSA"
+
 #
 #  Log in without changing to the RG or SA.  This is intentional
-login_azure "" "" ""
+login_azure
 
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
 $existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA
 if ($? -eq $false) {
-    New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind BlobStorage -AccessTier Hot
+    Write-Host "Storage account $destSA did not exist.  Creating it and populating with the right containers..." -ForegroundColor Yellow
+    New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind Storage
+
+    write-host "Selecting it as the current SA" -ForegroundColor Yellow
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
+    Write-Host "creating the containers" -ForegroundColor Yellow
     New-AzureStorageContainer -Name "ready-for-bvt" -Permission Blob
     New-AzureStorageContainer -Name "drones" -Permission Blob
+    Write-Host "Complete." -ForegroundColor Green
 }
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
@@ -65,80 +91,77 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountN
 
 $scriptBlockString = 
 {
-    param ($vmName,
-            $blobURN,
-            $destRG,
-            $destSA,
-            $destContainer,
-            $location,
-            $suffix,
-            $NSG,
-            $vnetName,
-            $subnetName
-            )
-
+    param ( [string] $vmName,
+            [string] $blobURN,
+            [string] $destRG,
+            [string] $destSA,
+            [string] $destContainer,
+            [string] $location,
+            [string] $suffix,
+            [string] $NSG,
+            [string] $vnetName,
+            [string] $subnetName
+            )    
     Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log -Force
 
-    . "C:\Framework-Scripts\common_functions.ps1"
+    . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1
 
     $regionSuffix = ("-" + $location) -replace " ","-"
-    $destSA = $destSA + $regionSuffix
+    # $destSA = $destSA + $regionSuffix
     $NSG = $NSG + $regionSuffix
     $subnetName =  $subnetName + $regionSuffix
     $vnetName  = $vnetName  + $regionSuffix
-    $pipName = $vmName + "PublicIP" + $regionSuffix
-    $nicName = $vmName + "VMNic" + $regionSuffix
+    $pipName = $vmName 
+    $nicName = $vmName
 
     login_azure $destRG $destSA $location
 
     ## Storage
     $storageType = "Standard_D2"
 
-    ## Network
-    $nicname = $vmName + "VMNic" + $regionSuffix
-
     $vnetAddressPrefix = "10.0.0.0/16"
     $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
-    ## Compute
-
-    $vmSize = "Standard_A2"
-
-
-    echo "Deleting any existing VM"
+    Write-Host "Deleting any existing VM" -ForegroundColor Green
     $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
-    deallocate_machines_in_group $runningVMs $destRG $destSA $location
+    if ($runningVMs -ne $null) {
+        deallocate_machines_in_group $runningVMs $destRG $destSA $location
+    }
     
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue
+    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue    
 
-    Write-Host "Attempting to create virtual machine $vmName.  This may take some time." -ForegroundColor Green
-    Write-Host "User is $TEST_USER_ACCOUNT_NAME"
-    Write-Host "Password is $TEST_USER_ACCOUNT_PAS2"
-    $vmName = $vmName + $suffix
-    $diskName=$vmName
-    write-host "Creating machine $vmName"
-    $pw = convertto-securestring -AsPlainText -force -string "$TEST_USER_ACCOUNT_PASS" 
-    [System.Management.Automation.PSCredential]$cred = new-object -typename system.management.automation.pscredential -argumentlist "$TEST_USER_ACCOUNT_NAME",$pw
+    . C:\Framework-Scripts\backend.ps1
+    # . "$scriptPath\backend.ps1"
+    $backendFactory = [BackendFactory]::new()
+    $azureBackend = $backendFactory.GetBackend("AzureBackend", @(1))
 
-    az vm create -n $vmName -g $destRG -l $location --image $blobURN --storage-container-name $destContainer --use-unmanaged-disk --nsg $NSG `
-       --subnet $subnetName --vnet-name $vnetName  --storage-account $destSA --os-disk-name $diskName --admin-password $TEST_USER_ACCOUNT_PAS2 `
-       --admin-username mstest --authentication-type password --public-ip-address $pipName -nic $nicName
-    if ($? -eq $false) {
-        Write-Error "Failed to create VM.  Details follow..."
-        Stop-Transcript
-        exit 1
-    }
+    $azureBackend.ResourceGroupName = $destRG
+    $azureBackend.StorageAccountName = $destSA
+    $azureBackend.ContainerName = $destContainer
+    $azureBackend.Location = $location
+    $azureBackend.VMFlavor = $storageType
+    $azureBackend.NetworkName = $vnetName
+    $azureBackend.SubnetName = $subnetName
+    $azureBackend.NetworkSecGroupName = $NSG
+    $azureBackend.addressPrefix = $vnetAddressPrefix
+    $azureBackend.subnetPrefix = $vnetSubnetAddressPrefix
+    $azureBackend.blobURN = $blobURN
 
-    $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
+    $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
+    $azureInstance.Cleanup()
+    $azureInstance.CreateFromURN()
+
+    $VM = $azureInstance.GetVM()
+    # $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
     # Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
 
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
-    write-host "Attempting to contact the machine..."
+    write-host "Attempting to contact the machine..." -ForegroundColor Green
     
-    $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
+    $ip=$azureInstance.GetPublicIP()
     $password=$TEST_USER_ACCOUNT_PAS2
     $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
@@ -152,30 +175,30 @@ $scriptBlockString =
     #  Eat the prompt and get the host into .known_hosts
     $remoteAddress = $ip
     $remoteTmp=$remoteAddress + ":/tmp"
-    Write-Host "Attempting to contact remote macnhine using $remoteAddress"
+    Write-Host "Attempting to contact remote macnhine using $remoteAddress" -ForegroundColor Green
     while ($true) {
         $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
         echo "SSL Rreply is $sslReply"
         if ($sslReply -match "README" ) {
-            Write-Host "Got a key request"
+            Write-Host "Got a key request" -ForegroundColor Green
             break
         } else {
-            Write-Host "No match"
+            Write-Host "No match" -ForegroundColor Yellow
             sleep(10)
         }
     }
     $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
 
-    Write-Host "Setting SELinux into permissive mode"
+    Write-Host "Setting SELinux into permissive mode" -ForegroundColor Green
     try_plink $ip $runDisableCommand0
 
-    Write-Host "VM Created successfully.  Stopping it now..."
-    Stop-AzureRmVM -ResourceGroupName $destRG -Name $vmName -Force
+    Write-Host "VM Created successfully.  Stopping it now..." -ForegroundColor Green
+    $azureInstance.StopInstance()
 
-    # Write-Host "Deleting the VM so we can harvest the VHD..."
-    Remove-AzureRmVM -ResourceGroupName $destRG -Name $diskName -Force
+    Write-Host "Deleting the VM so we can harvest the VHD..." -ForegroundColor Green
+    $azureInstance.RemoveInstance()
 
-    Write-Host "Machine $vmName is ready for assimilation..."
+    Write-Host "Machine $vmName is ready for assimilation..." -ForegroundColor Green
 
     Stop-Transcript
 }
@@ -186,10 +209,10 @@ $i = 0
 foreach ($vmName in $vmNameArray) {
     $blobURN = $blobURNArray[$i]
     $i++
-    Write-Host "Preparing machine $vmName for service as a drone..."
+    Write-Host "Preparing machine $vmName for (URN $blobURN) service as a drone..." -ForegroundColor Green
 
     $jobName=$vmName + "-intake-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,$location,`
+    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$Suffix,$NSG,`
                                                                       $vnetName,$subnetName
     if ($? -ne $true) {
@@ -198,7 +221,7 @@ foreach ($vmName in $vmNameArray) {
         exit 1
     }
 
-    Write-Host "Just launched job $jobName"
+    Write-Host "Just launched job $jobName" -ForegroundColor Green
 }
 
 $notDone = $true
@@ -220,11 +243,19 @@ while ($notDone -eq $true) {
             $useColor = "Magenta"
         }
         write-host "    Job $jobName is in state $jobState" -ForegroundColor $useColor
-        
+        $logFileName = "C:\temp\transcripts\create_vhd_from_urn_$vmName.log"
+        $logLines = Get-Content -Path $logFileName -Tail 5 -ErrorAction SilentlyContinue
+        if ($? -eq $true) {
+            Write-Host "         Last 5 lines from the log file:" -ForegroundColor Cyan
+            foreach ($line in $logLines) { 
+                write-host "        "$line -ForegroundColor Gray 
+            }
+        }
     }
     sleep 10
 }
 
+Stop-Transcript
 #
 #  Exit with error if we failed to create the VM.  THe setup may have failed, but we can't tell that right ow
 exit 0

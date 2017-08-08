@@ -23,11 +23,14 @@ param (
 )
 Start-Transcript C:\temp\transcripts\create_vhd_from_azure_vm.log -Force
 
+$location=($location.ToLower()).Replace(" ","")
 $regionSuffix = ("-" + $location) -replace " ","-"
-$sourceSA = $sourceSA + $regionSuffix
-$destSA = $destSA + $regionSuffix
+$saSuffix = $location -replace " ",""
+$sourceSA = $sourceSA + "777" + $saSuffix.ToLower()
+$destSA = $destSA + "777" + $saSuffix.ToLower()
 
 Write-Host "Launching jobs to copy machine image from $sourceRG/$sourceSA/$sourceContainer to $destRG/$destSA/$destContainer..." -ForegroundColor Yellow
+
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer -destSA $destSA `
                                                                   -destRG $destRG -sourceExtension ".vhd" -destExtension $destExtension -destContainer $destContainer `
                                                                   -location $location -makeDronesFromAll "False" -overwriteVHDs "True" -vmNamesIn $vmNames

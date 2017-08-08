@@ -32,4 +32,4 @@ $azureBackend.NetworkSecGroupName = $NSG
 
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()
-$azureInstance.Create()
+$azureInstance.CreateFromSpecialized()
