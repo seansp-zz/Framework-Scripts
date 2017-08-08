@@ -44,11 +44,15 @@ Write-Host "Sa for region is $env:DESTSA"
 Write-Host "Working with RG $destRG and SA $destSA"
 #
 #  Log in without changing to the RG or SA.  This is intentional
-login_azure
+login_azure "" "" ""
 
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
-$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa
+$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA
+if ($? -eq $false) {
+    New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind BlobStorage
+}
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
 #
 #  If the account does not exist, create it.
