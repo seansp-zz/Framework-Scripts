@@ -10,6 +10,11 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds",
     [Parameter(Mandatory=$false)] [string] $sourceExtension=".vhd",
 
+    [Parameter(Mandatory=$false)] [String] $VMFlavor = "Standard_D2"
+    [Parameter(Mandatory=$false)] [String] $addressPrefix = "172.19.0.0/16"
+    [Parameter(Mandatory=$false)] [String] $subnetPrefix = "172.19.0.0/24"
+    [Parameter(Mandatory=$false)] [string] $location="westus",
+
     #
     #  Normally you don't need to change these...
     [Parameter(Mandatory=$false)] [string] $destSA="smokesourcestorageacct",
@@ -17,8 +22,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $destContainer="clean-vhds",
     [Parameter(Mandatory=$false)] [string] $destExtension="-Smoke-1.vhd",
 
-    [Parameter(Mandatory=$false)] [string] $location="westus",
-
+    # 
+    #  Optional -- if not given, all VMs are copied
     [Parameter(Mandatory=$false)] [string[]] $vmNames=""
 )
 Start-Transcript C:\temp\transcripts\create_vhd_from_azure_vm.log -Force
