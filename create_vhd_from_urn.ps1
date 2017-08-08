@@ -39,7 +39,7 @@ $vmName = $vmNameArray[0]
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
-$regionSuffix = ("-" + $this.Location) -replace " ","-"
+$regionSuffix = ("-" + $location) -replace " ","-"
 $env:DESTSA = $destSA + $regionSuffix
 $destSA = $env:DESTSA
 Write-Host "Sa for region is $env:DESTSA"
