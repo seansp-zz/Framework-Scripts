@@ -21,19 +21,19 @@ get-job | remove-job
 Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log -Force
 
 $vmNames_array=@()
-$vmNameArray = {$vmNamess_array}.Invoke()
+$vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-if ($Incoming_vmNames -contains ",") {
+if ($Incoming_vmNames -like "*,*") {
     $vmNameArray = $Incoming_vmNames.Split(',')
 } else {
     $vmNameArray += $Incoming_vmNames
 }
 
 $blobURN_Array=@()
-$blobURNArray = {$blobURNs_Array}.Invoke()
+$blobURNArray = {$blobURN_Array}.Invoke()
 $blobURNArray.Clear()
 
-if ($Incoming_vmNames -contains ",") {
+if ($Incoming_vmNames -like "*,*") {
     $blobURNArray = $Incoming_blobURNs.Split(',')
 } else {
     $blobURNArray += $Incoming_blobURNs
@@ -211,6 +211,7 @@ $scriptBlockString =
     $remoteAddress = $ip
     $remoteTmp=$remoteAddress + ":/tmp"
     Write-Host "Attempting to contact remote macnhine using $remoteAddress" -ForegroundColor Green
+    $timeOut = 0
     while ($true) {
         $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
         echo "SSL Rreply is $sslReply"
@@ -220,6 +221,12 @@ $scriptBlockString =
         } else {
             Write-Host "No match" -ForegroundColor Yellow
             sleep(10)
+            $timeOut = $timeOut + 1
+            if ($timeOut -ge 60) {
+                Write-Host "Failed to contact machine at IP $remoteAddress for 600 seconds.  Timeout."
+                Stop-Transcript
+                return 1
+            }
         }
     }
     $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
