@@ -11,6 +11,10 @@
     [Parameter(Mandatory=$false)] [string] $subnetName = "SmokeSubnet-1",
     [Parameter(Mandatory=$false)] [string] $NSG = "SmokeNSG",
 
+    [Parameter(Mandatory=$false)] [String] $VMFlavor = "Standard_D2"
+    [Parameter(Mandatory=$false)] [String] $addressPrefix = "172.19.0.0/16"
+    [Parameter(Mandatory=$false)] [String] $subnetPrefix = "172.19.0.0/24"
+
     [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
 )
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -18,6 +22,7 @@ get-job | Stop-Job
 get-job | remove-job
 
 Start-Transcript C:\temp\transcripts\create_vhd_from_urn.log -Force
+
 
 $vmNames_array=@()
 $vmNameArray = {$vmNamess_array}.Invoke()
