@@ -40,6 +40,7 @@ $vmName = $vmNameArray[0]
 . "C:\Framework-Scripts\secrets.ps1"
 
 $env:DESTSA = $destSA + "-" + $location
+$destSA = $env:DESTSA
 Write-Host "Sa for region is $env:DESTSA"
 Write-Host "Working with RG $destRG and SA $destSA"
 #
