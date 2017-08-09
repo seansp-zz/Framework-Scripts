@@ -274,7 +274,7 @@ foreach ($vmName in $vmNameArray) {
 
     $jobName=$vmName + "-intake-job"
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$VMFlavor,$blobURN,$destRG,$destSA,`
-                                                                      $destContainer,$location,$Suffix,$NSG,`
+                                                                      $destContainer,$location,$suffix,$NSG,`
                                                                       $vnetName,$subnetName
     if ($? -ne $true) {
         Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
