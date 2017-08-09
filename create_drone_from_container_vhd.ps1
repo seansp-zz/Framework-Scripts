@@ -35,7 +35,7 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-if ($makeDronesFromAll -eq $false) {
+if ($makeDronesFromAll -ne $true) {
     $regionSuffix = ("-" + $this.Location) -replace " ","-"
     $nameCount = 0
     foreach ($vmName in $vmNameArray) {
@@ -53,7 +53,7 @@ Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Count
 
 $vmName = $vmNameArray[0]
-if ($makeDronesFromAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
+if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
     exit 1
