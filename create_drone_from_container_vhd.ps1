@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
-    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll=$false,
-    [Parameter(Mandatory=$false)] [string] $overwriteVHDs=$false,
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll="False",
+    [Parameter(Mandatory=$false)] [string] $overwriteVHDs="False",
 
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
@@ -35,7 +35,7 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-if ($makeDronesFromAll -eq $false) {
+if ($makeDronesFromAll -eq "False") {
     $regionSuffix = ("-" + $this.Location) -replace " ","-"
     foreach ($vmName in $vmNameArray) {
         $vmName = $vmName + $regionSuffix
