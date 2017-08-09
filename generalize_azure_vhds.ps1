@@ -23,8 +23,15 @@ param (
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-if ($requestedNames -ne "unset") {
+if ($requestedNames -ne "Unset" -and $requestedNames -like "*,*") {
     $vmNameArray = $requestedNames.Split(',')
+} else {
+    $vmNameArray += $requestedNames
+}
+
+$regionSuffix = ("-" + $this.Location) -replace " ","-"
+foreach ($vmName in $vmNameArray) {
+    $vmName = $vmName + $regionSuffix
 }
 
 login_azure $sourceRG $sourceSA $location
