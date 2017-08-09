@@ -71,21 +71,25 @@ get-job | Remove-Job
 login_azure $destRG $destSA $location
 
 if ($makeDronesFromAll -eq $true) {
+    
+    $blobSearch = "*" + $currentSuffix + ".vhd"
     Write-Host "Looking at all images in container $sourceContainer"
-    $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix.vhd"
+    $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob $blobSearch
     foreach ($blob in $copyblob_new) {
         Write-Host "Adding blob $blob.Name to the list"
         copyblobs += $blob
     }
 } else {
     foreach ($vmName in $vmNameArray) {
-        Write-Host "Looking for image $vmName in container $sourceContainer"
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName$suffix.vhd" -ErrorAction SilentlyContinue
+        $fullName = $vmName + $suffix + ".vhd"
+        Write-Host "Looking for image $fullName in container $sourceContainer"
+        
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $fullName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
-            Write-Host "Adding blob for $vmName$suffix.vhd to the list..."
-            $copyblobs += $vmName$suffix.vhd
+            Write-Host "Adding blob for $fullName to the list..."
+            $copyblobs += $fullName
         } else {
-            Write-Host "Blob for machine $vmName$suffix.vhd was not found.  This machine cannot be processed."
+            Write-Host "Blob for machine $fullName was not found.  This machine cannot be processed."
         }
     }
 }
