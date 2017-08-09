@@ -17,8 +17,10 @@
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-if ($requestedNames[0] -ne "") {
+if ($requestedNames -like "*,*") {
     $vmNameArray = $requestedNames.Split(',')
+} else {
+    $vmNameArray += $requestedNames
 }
 
 write-host "Copying file $file to $vmNameArray "
@@ -40,7 +42,6 @@ $commandBLock=[scriptblock]::Create($runCommand)
 
 foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName + $suffix
-    $vm_name = $vm_name | % { $_ -replace ".vhd", "" }
 
     write-host "Executing remote command on machine $vm_name"
 

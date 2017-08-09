@@ -39,8 +39,10 @@ $copyblobs.Clear()
 $vmNames_array=@()
 $vmNames = {$vmNames_array}.Invoke()
 $vmNames.Clear()
-foreach($vmName in $vmNamesIn) {
-    $vmNames.Add($vmName)
+if ($vmNamesIn -like "*,*") {
+    $vmNames = $vmNamesIn.Split(',')
+} else {
+    $vmNames += $vmNamesIn
 }
 
 login_azure $destRG $destSA $location

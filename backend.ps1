@@ -442,7 +442,7 @@ class AzureBackend : Backend {
         $blobParts = $this.blobURN.split(":")
         $blobSA = $this.StorageAccountName
         $blobContainer = $this.ContainerName
-        $osDiskVhdUri = "https://$blobSA.blob.core.windows.net/$blobContainer/"+$imageName + ".vhd"
+        $osDiskVhdUri = "https://$blobSA.blob.core.windows.net/$blobContainer/"+$imageName+".vhd"
 
         $trying = $true
         $tries = 0

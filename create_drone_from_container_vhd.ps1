@@ -18,8 +18,8 @@
     [Parameter(Mandatory=$false)] [string] $network="SmokeVNet",
     [Parameter(Mandatory=$false)] [string] $subnet="SmokeSubnet-1",
 
-    [Parameter(Mandatory=$false)] [string] $currentSuffix="-Smoke-1.vhd",
-    [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed.vhd"
+    [Parameter(Mandatory=$false)] [string] $currentSuffix="-Smoke-1",
+    [Parameter(Mandatory=$false)] [string] $newSuffix="-RunOnce-Primed"
 )
 
 Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcript -Force
@@ -72,7 +72,7 @@ login_azure $destRG $destSA $location
 
 if ($makeDronesFromAll -eq $true) {
     Write-Host "Looking at all images in container $sourceContainer"
-    $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix"
+    $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob "*$currentSuffix.vhd"
     foreach ($blob in $copyblob_new) {
         Write-Host "Adding blob $blob.Name to the list"
         copyblobs += $blob
@@ -80,12 +80,12 @@ if ($makeDronesFromAll -eq $true) {
 } else {
     foreach ($vmName in $vmNameArray) {
         Write-Host "Looking for image $vmName in container $sourceContainer"
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName$suffix" -ErrorAction SilentlyContinue
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName$suffix.vhd" -ErrorAction SilentlyContinue
         if ($? -eq $true) {
-            Write-Host "Adding blob for $vmName to the list..."
-            $copyblobs += $vmName
+            Write-Host "Adding blob for $vmName$suffix.vhd to the list..."
+            $copyblobs += $vmName$suffix.vhd
         } else {
-            Write-Host "Blob for machine $vmName was not found.  This machine cannot be processed."
+            Write-Host "Blob for machine $vmName$suffix.vhd was not found.  This machine cannot be processed."
         }
     }
 }

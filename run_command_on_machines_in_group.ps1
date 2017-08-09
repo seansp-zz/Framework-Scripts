@@ -19,8 +19,10 @@
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-if ($requestedNames[0] -ne "") {
+if ($requestedNames -like "*,*") {
     $vmNameArray = $requestedNames.Split(',')
+} else {
+    $vmNameArray += $requestedNames
 }
 
 $commandString = 

@@ -31,6 +31,7 @@ $destContainer="vhds"
 
 $copyblobs_array=@()
 $copyblobs = {$copyblobs_array}.Invoke()
+$copyblobs.Clear()
 
 if ($OverwriteVHDs -ne "False") {
     $overwriteVHDs = $true
