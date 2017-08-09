@@ -49,6 +49,7 @@ if ($makeDronesFromAll -ne $true) {
 $copyblobs = {$copyblobs_array}.Invoke()
 $copyblobs.clear()
 
+#
 Write-Host "Names array: " $vmNameArray
 $numNames = $vmNameArray.Count
 
