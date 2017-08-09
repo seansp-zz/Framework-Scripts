@@ -8,13 +8,13 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="clean-vhds",
-    [Parameter(Mandatory=$false)] [string] $sourceExtension="Smoke-1.vhd",
+    [Parameter(Mandatory=$false)] [string] $sourceExtension="Smoke-1",
 
 
     [Parameter(Mandatory=$false)] [string] $destSA="smokesourcestorageacct",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $destContainer="safe-templates",
-    [Parameter(Mandatory=$false)] [string] $destExtension="Smoke-1.vhd",
+    [Parameter(Mandatory=$false)] [string] $destExtension="Smoke-1",
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
 
@@ -100,7 +100,7 @@ if ($makeDronesFromAll -eq $true) {
     }
 } else {
     foreach ($vmName in $vmNames) {
-        $theName = $vmName + $sourceExtension
+        $theName = $vmName + $sourceExtension + ".vhd"
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
         if ($? -eq $true) {
             $copyblobs.Add($singleBlob)
@@ -117,8 +117,8 @@ if ($clearDestContainer -eq $true) {
 }
 
 foreach ($vmName in $vmNames) {
-    $sourceName = $vmName + $sourceExtension
-    $targetName = $vmName + $destExtension
+    $sourceName = $vmName + $sourceExtension + ".vhd"
+    $targetName = $vmName + $destExtension + ".vhd"
 
     Write-Host "Initiating job to copy VHD $targetName from cache to working directory..." -ForegroundColor Yellow
     if ($overwriteVHDs -eq $true) {
@@ -147,8 +147,8 @@ while ($stillCopying -eq $true) {
     write-host "Checking blob copy status..." -ForegroundColor yellow
 
     foreach ($vmName in $vmNames) {
-        $sourceName = $vmName + $sourceExtension
-        $targetName = $vmName + $destExtension
+        $sourceName = $vmName + $sourceExtension + ".vhd"
+        $targetName = $vmName + $destExtension + ".vhd"
 
         $copyStatus = Get-AzureStorageBlobCopyState -Blob $targetName -Container $destContainer -ErrorAction SilentlyContinue
         $status = $copyStatus.Status
