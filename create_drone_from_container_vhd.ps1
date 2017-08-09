@@ -81,7 +81,7 @@ if ($makeDronesFromAll -eq $true) {
     }
 } else {
     foreach ($vmName in $vmNameArray) {
-        $fullName = $vmName + $suffix + ".vhd"
+        $fullName = $vmName + "-" $ $vmFlavor + $currentSuffix + ".vhd"
         Write-Host "Looking for image $fullName in container $sourceContainer"
         
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $fullName -ErrorAction SilentlyContinue
