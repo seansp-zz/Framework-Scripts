@@ -29,7 +29,18 @@ Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcrip
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
-$vmNameArray = $requestedNames.Split(',')
+if ($requestedNames -like "*,*") {
+    $vmNameArray = $requestedNames.Split(',')
+} else {
+    $vmNameArray += $requestedNames
+}
+
+if ($makeDronesFromAll -eq $false) {
+    $regionSuffix = ("-" + $this.Location) -replace " ","-"
+    foreach ($vmName in $vmNameArray) {
+        $vmName = $vmName + $regionSuffix
+    }
+}
 
 [System.Collections.ArrayList]$copyblobs_array
 $copyblobs = {$copyblobs_array}.Invoke()
@@ -62,7 +73,7 @@ if ($makeDronesFromAll -eq $true) {
 } else {
     foreach ($vmName in $vmNameArray) {
         Write-Host "Looking for image $vmName in container $sourceContainer"
-        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName*$suffix" -ErrorAction SilentlyContinue
+        $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob "$vmName$suffix" -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             Write-Host "Adding blob for $vmName to the list..."
             $copyblobs += $vmName

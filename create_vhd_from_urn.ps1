@@ -35,8 +35,7 @@ if ($Incoming_vmNames -like "*,*") {
 $blobURN_Array=@()
 $blobURNArray = {$blobURN_Array}.Invoke()
 $blobURNArray.Clear()
-
-if ($Incoming_vmNames -like "*,*") {
+if ($Incoming_blobURNs -like "*,*") {
     $blobURNArray = $Incoming_blobURNs.Split(',')
 } else {
     $blobURNArray += $Incoming_blobURNs
@@ -62,15 +61,6 @@ $vmName = $vmNameArray[0]
 . "C:\Framework-Scripts\secrets.ps1"
 
 $location=($location.ToLower()).Replace(" ","")
-
-$saLength = $destSA.Length
-if ($saLength -gt 24) {
-    #
-    #  Truncate the name
-    $destSA = $destSA.Substring(0, 24)
-    $saLength = $destSA.Length
-}
-
 
 #  Log in without changing to the RG or SA.  This is intentional
 login_azure
@@ -172,8 +162,6 @@ $scriptBlockString =
     $nicName = $vmName
 
     login_azure $destRG $destSA $location
-
-   
 
     Write-Host "Deleting any existing VM" -ForegroundColor Green
     $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
