@@ -181,6 +181,8 @@ $scriptBlockString =
     $azureBackend.StorageAccountName = $destSA
     $azureBackend.ContainerName = $destContainer
     $azureBackend.Location = $location
+    #
+    #  These are intake VHDs, so they don't get a VM Flavor.
     $azureBackend.VMFlavor = $VMFlavor
     $azureBackend.NetworkName = $vnetName
     $azureBackend.SubnetName = $subnetName
