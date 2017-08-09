@@ -7,7 +7,7 @@
     if ($rg -ne "" -and $sa -ne "") {
         $existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $rg -Name $sa
         if ($? -eq $true) {
-        $currentLoc = ($existingAccount.Location).ToString()
+            $currentLoc = ($existingAccount.Location).ToString()
 
             if ($currentLoc -ne $location) {            
                 Write-Warning "***************************************************************************************"
@@ -23,6 +23,8 @@
             Write-Warning "***************************************************************************************"
         }
     }
+
+    return $sa
 }
 
 function make_cred () {

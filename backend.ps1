@@ -147,6 +147,7 @@ class AzureBackend : Backend {
     [String] $addressPrefix = "172.19.0.0/16"
     [String] $subnetPrefix = "172.19.0.0/24"
     [String] $blobURN = "Unset"
+    [String] $suffix = "-Smoke-1"
 
     AzureBackend ($Params) : base ($Params) {
         if (Test-Path $this.CommonFunctionsPath) {
@@ -227,6 +228,7 @@ class AzureBackend : Backend {
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         Stop-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
     }
@@ -237,6 +239,7 @@ class AzureBackend : Backend {
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         Remove-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
     }
@@ -352,6 +355,7 @@ class AzureBackend : Backend {
 
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
         Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
@@ -407,6 +411,7 @@ class AzureBackend : Backend {
 
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
         Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
@@ -475,6 +480,7 @@ class AzureBackend : Backend {
 
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
         Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
@@ -531,6 +537,7 @@ class AzureBackend : Backend {
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         $ip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName `
             -Name ($imageName)
@@ -549,6 +556,7 @@ class AzureBackend : Backend {
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
 
         return Get-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Name $imageName
     }

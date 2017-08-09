@@ -7,11 +7,14 @@
     [Parameter(Mandatory=$false)] [string] $destContainer="ready-for-bvt",
     [Parameter(Mandatory=$false)] [string] $location="westus",
 
+    [Parameter(Mandatory=$false)] [string] $useNewResourceGroup = "True",
+
     [Parameter(Mandatory=$false)] [string] $vnetName = "SmokeVNet",
     [Parameter(Mandatory=$false)] [string] $subnetName = "SmokeSubnet-1",
     [Parameter(Mandatory=$false)] [string] $NSG = "SmokeNSG",
 
-    [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1"
+    [Parameter(Mandatory=$false)] [string] $suffix = "-Smoke-1",
+    [Parameter(Mandatory=$false)] [string] $VMFlavor="standard_d2_v2"
 )
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -38,7 +41,6 @@ if ($Incoming_vmNames -like "*,*") {
 } else {
     $blobURNArray += $Incoming_blobURNs
 }
-# $blobURNArray = $Incoming_blobURNs.Split(',')
 
 Write-Host "Names array: " $vmNameArray -ForegroundColor Yellow
 $numNames = $vmNameArray.Count
@@ -61,11 +63,6 @@ $vmName = $vmNameArray[0]
 
 $location=($location.ToLower()).Replace(" ","")
 
-$regionSuffix = ("-" + $location) -replace " ","-"
-$saSuffix = $location -replace " ",""
-$env:DESTSA = $destSA + "777" + $saSuffix.ToLower()
-$destSA = $env:DESTSA
-
 $saLength = $destSA.Length
 if ($saLength -gt 24) {
     #
@@ -73,13 +70,23 @@ if ($saLength -gt 24) {
     $destSA = $destSA.Substring(0, 24)
     $saLength = $destSA.Length
 }
-Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
 
 
-#
 #  Log in without changing to the RG or SA.  This is intentional
 login_azure
 
+Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
+#
+$existingGroup = Get-AzureRmResourceGroup -Name $destRG
+if ($? -eq $true -and $existingGroup -ne $null) {
+    write-host "Resource group already existed.  Deleting resource group." -ForegroundColor Yellow
+    Remove-AzureRmResourceGroup -Name $destRG -Force
+
+    write-host "Creating new resource group $destRG"
+    New-AzureRmResourceGroup -Location $location -Name $destRG -Force
+}
+
+#
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
 $existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA
@@ -115,6 +122,7 @@ if ($? -eq $false) {
 $scriptBlockString = 
 {
     param ( [string] $vmName,
+            [string] $VMFlavor,
             [string] $blobURN,
             [string] $destRG,
             [string] $destSA,
@@ -131,19 +139,15 @@ $scriptBlockString =
     . C:\Framework-Scripts\common_functions.ps1
     . C:\Framework-Scripts\secrets.ps1
 
-    $regionSuffix = ("-" + $location) -replace " ","-"
-    # $destSA = $destSA + $regionSuffix
-    $NSG = $NSG + $regionSuffix
-    $subnetName =  $subnetName + $regionSuffix
-    $vnetName  = $vnetName  + $regionSuffix
+    $NSG = $NSG
+    $subnetName =  $subnetName
+    $vnetName  = $vnetName
     $pipName = $vmName 
     $nicName = $vmName
 
     login_azure $destRG $destSA $location
 
     ## Storage
-    $storageType = "Standard_D2_v2"
-
     $vnetAddressPrefix = "10.0.0.0/16"
     $vnetSubnetAddressPrefix = "10.0.0.0/24"
 
@@ -165,13 +169,14 @@ $scriptBlockString =
     $azureBackend.StorageAccountName = $destSA
     $azureBackend.ContainerName = $destContainer
     $azureBackend.Location = $location
-    $azureBackend.VMFlavor = $storageType
+    $azureBackend.VMFlavor = $VMFlavor
     $azureBackend.NetworkName = $vnetName
     $azureBackend.SubnetName = $subnetName
     $azureBackend.NetworkSecGroupName = $NSG
     $azureBackend.addressPrefix = $vnetAddressPrefix
     $azureBackend.subnetPrefix = $vnetSubnetAddressPrefix
     $azureBackend.blobURN = $blobURN
+    $azureBackend.suffix = $suffix
 
     $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
     $azureInstance.Cleanup()
@@ -260,7 +265,7 @@ foreach ($vmName in $vmNameArray) {
     }
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$Suffix,$NSG,`
-                                                                      $vnetName,$subnetName, $firstPass
+                                                                      $vnetName,$subnetName,$VMFlavor,$firstPass
     if ($? -ne $true) {
         Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
