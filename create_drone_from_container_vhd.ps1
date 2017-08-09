@@ -12,6 +12,7 @@
     [Parameter(Mandatory=$false)] [string] $destContainer="safe-templates",
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
+    [Parameter(Mandatory=$false)] [string] $vmFlavor="Standard_d2_v2",
 
     [Parameter(Mandatory=$false)] [string] $NSG="SmokeNSG",
     [Parameter(Mandatory=$false)] [string] $network="SmokeVNet",
@@ -41,7 +42,7 @@ if ($makeDronesFromAll -ne $true) {
 Write-Host "Appending region suffix $regionSuffix to VM Names"
     $nameCount = 0
     foreach ($vmName in $vmNameArray) {
-        $vmName = $vmName + $regionSuffix
+        $vmName = $vmName + $vmFlavor + $regionSuffix
         $vmNameArray[$nameCount] = $vmName
         $nameCount = $nameCount + 1
     }
