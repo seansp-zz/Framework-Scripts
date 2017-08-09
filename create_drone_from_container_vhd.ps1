@@ -35,7 +35,8 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-if ($makeDronesFromAll -eq "False") {
+Write-Host "MakeDronesFromAll = $makeDronesFromAll"
+if ($makeDronesFromAll -eq $false) {
     $regionSuffix = ("-" + $this.Location) -replace " ","-"
     foreach ($vmName in $vmNameArray) {
         $vmName = $vmName + $regionSuffix
