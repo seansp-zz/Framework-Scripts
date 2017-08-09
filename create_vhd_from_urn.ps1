@@ -116,6 +116,28 @@ if ($? -eq $false) {
     Write-Host "Complete." -ForegroundColor Green
 }
 
+. C:\Framework-Scripts\backend.ps1
+# . "$scriptPath\backend.ps1"
+$backendFactory = [BackendFactory]::new()
+$azureBackend = $backendFactory.GetBackend("AzureBackend", @(1))
+
+$azureBackend.ResourceGroupName = $destRG
+$azureBackend.StorageAccountName = $destSA
+$azureBackend.ContainerName = $destContainer
+$azureBackend.Location = $location
+$azureBackend.VMFlavor = $VMFlavor
+$azureBackend.NetworkName = $vnetName
+$azureBackend.SubnetName = $subnetName
+$azureBackend.NetworkSecGroupName = $NSG
+$azureBackend.addressPrefix = $vnetAddressPrefix
+$azureBackend.subnetPrefix = $vnetSubnetAddressPrefix
+$azureBackend.blobURN = $blobURN
+$azureBackend.suffix = $suffix
+
+$azureInstance = $azureBackend.GetInstanceWrapper("AzureSetup")
+$azureInstance.Cleanup()
+$ret = $azureInstance.SetupAzureRG()
+
 #
 #  If the account does not exist, create it.
 
@@ -131,8 +153,7 @@ $scriptBlockString =
             [string] $suffix,
             [string] $NSG,
             [string] $vnetName,
-            [string] $subnetName,
-            [bool]   $firstPass
+            [string] $subnetName
             )    
     Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log -Force
 
@@ -181,16 +202,6 @@ $scriptBlockString =
     $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
     $azureInstance.Cleanup()
 
-    if ($firstPass -eq $true) {
-        Write-Host "FirstPass was TRUE -- Setting up Azure" -ForegroundColor Cyan
-        $ret = $azureInstance.SetupAzureRG()
-        Write-Host "Returned from FirstPass with "$ret
-    } else {
-        Write-Host "FirstPass was FALSE -- Setting up Azure" -ForegroundColor Cyan
-        $ret = $azureInstance.WaitForAzureRG()
-        Write-Host "Returned from FirstPass with "$ret
-    }
-    
     $azureInstance.CreateFromURN()
 
     $VM = $azureInstance.GetVM()
@@ -253,25 +264,20 @@ $scriptBlockString =
 $scriptBlock = [scriptblock]::Create($scriptBlockString)
 
 $i = 0
-[bool]$firstPass = $true
 foreach ($vmName in $vmNameArray) {
     $blobURN = $blobURNArray[$i]
     $i++
     Write-Host "Preparing machine $vmName for (URN $blobURN) service as a drone..." -ForegroundColor Green
 
     $jobName=$vmName + "-intake-job"
-    if ($firstPass -eq $true) {
-        Write-Host "FIRST PASS JOB IS " $jobName -ForegroundColor Cyan
-    }
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$Suffix,$NSG,`
-                                                                      $vnetName,$subnetName,$VMFlavor,$firstPass
+                                                                      $vnetName,$subnetName,$VMFlavor
     if ($? -ne $true) {
         Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
         exit 1
     }
-    $firstPass = $false
 
     Write-Host "Just launched job $jobName" -ForegroundColor Green
 }
