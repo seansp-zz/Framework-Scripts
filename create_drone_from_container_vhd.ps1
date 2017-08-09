@@ -36,7 +36,7 @@ if ($requestedNames -like "*,*") {
 }
 
 if ($makeDronesFromAll -ne $true) {
-    $regionSuffix = ("-" + $this.Location) -replace " ","-"
+    $regionSuffix = ("-" + $location) -replace " ","-"
     $nameCount = 0
     foreach ($vmName in $vmNameArray) {
         $vmName = $vmName + $regionSuffix
