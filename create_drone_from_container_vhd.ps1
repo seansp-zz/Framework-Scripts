@@ -42,7 +42,7 @@ if ($makeDronesFromAll -ne $true) {
 Write-Host "Appending flavor $vmFlavor and region suffix $regionSuffix to VM Names"
     $nameCount = 0
     foreach ($vmName in $vmNameArray) {
-        $vmName = $vmName + $vmFlavor + $regionSuffix
+        $vmName = $vmName +"-" + $vmFlavor + $regionSuffix
         $vmNameArray[$nameCount] = $vmName
         $nameCount = $nameCount + 1
     }
