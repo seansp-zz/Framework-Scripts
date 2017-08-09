@@ -67,19 +67,19 @@ login_azure
 
 Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
 #
-$existingGroup = Get-AzureRmResourceGroup -Name $destRG
+$existingGroup = Get-AzureRmResourceGroup -Name $destRG -ErrorAction SilentlyContinue
 if ($? -eq $true -and $existingGroup -ne $null) {
     write-host "Resource group already existed.  Deleting resource group." -ForegroundColor Yellow
     Remove-AzureRmResourceGroup -Name $destRG -Force
 
-    write-host "Creating new resource group $destRG"
-    New-AzureRmResourceGroup -Location $location -Name $destRG -Force
+    write-host "Creating new resource group $destRG in loction $location"
+    New-AzureRmResourceGroup -Name $destRG -Location $location
 }
 
 #
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
-$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA
+$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     Write-Host "Storage account $destSA did not exist.  Creating it and populating with the right containers..." -ForegroundColor Yellow
     New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind Storage
@@ -94,13 +94,13 @@ if ($? -eq $false) {
 }
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
-$gotContainer = Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName
+$gotContainer = Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     Write-Host "creating the BVT ready container" -ForegroundColor Yellow
     New-AzureStorageContainer -Name "ready-for-bvt" -Permission Blob
 }
 
-$gotContainer = Get-AzureStorageBlob -Container "drones" -Prefix $vmName
+$gotContainer = Get-AzureStorageBlob -Container "drones" -Prefix $vmName -ErrorAction SilentlyContinue
 if ($? -eq $false) {
     New-AzureStorageContainer -Name "drones" -Permission Blob
     Write-Host "Complete." -ForegroundColor Green
@@ -164,13 +164,13 @@ $scriptBlockString =
     login_azure $destRG $destSA $location
 
     Write-Host "Deleting any existing VM" -ForegroundColor Green
-    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
+    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction SilentlyContinue
     if ($runningVMs -ne $null) {
         deallocate_machines_in_group $runningVMs $destRG $destSA $location
     }
     
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction Continue    
+    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction SilentlyContinue  
 
     . C:\Framework-Scripts\backend.ps1
     # . "$scriptPath\backend.ps1"
