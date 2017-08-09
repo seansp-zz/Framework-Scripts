@@ -118,6 +118,11 @@ if ($? -eq $false) {
 
 . C:\Framework-Scripts\backend.ps1
 # . "$scriptPath\backend.ps1"
+
+ ## Storage
+$vnetAddressPrefix = "10.0.0.0/16"
+$vnetSubnetAddressPrefix = "10.0.0.0/24"
+
 $backendFactory = [BackendFactory]::new()
 $azureBackend = $backendFactory.GetBackend("AzureBackend", @(1))
 
@@ -168,9 +173,7 @@ $scriptBlockString =
 
     login_azure $destRG $destSA $location
 
-    ## Storage
-    $vnetAddressPrefix = "10.0.0.0/16"
-    $vnetSubnetAddressPrefix = "10.0.0.0/24"
+   
 
     Write-Host "Deleting any existing VM" -ForegroundColor Green
     $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction Continue
@@ -270,9 +273,9 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Preparing machine $vmName for (URN $blobURN) service as a drone..." -ForegroundColor Green
 
     $jobName=$vmName + "-intake-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$blobURN,$destRG,$destSA,`
+    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$VMFlavor,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$Suffix,$NSG,`
-                                                                      $vnetName,$subnetName,$VMFlavor
+                                                                      $vnetName,$subnetName
     if ($? -ne $true) {
         Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript
