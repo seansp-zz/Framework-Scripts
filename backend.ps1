@@ -409,10 +409,6 @@ class AzureBackend : Backend {
 
         $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
 
-        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
-        $imageName = $imageName -replace "_","-"
-        $imageName = $imageName + $this.suffix
-
         if ($this.VMFlavor -eq "") {
             $our_vmFlavor = "Standard_d2_v2"
         } else {
@@ -420,6 +416,10 @@ class AzureBackend : Backend {
         }
 
         $this.VMFlavor = ""
+
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix        
 
         $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $our_vmFlavor
         Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
