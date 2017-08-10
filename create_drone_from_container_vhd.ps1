@@ -43,14 +43,11 @@ $regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
 $regionSuffix = $regionSuffix -replace "_","-"
 
 $fullSuffix = "-" + $regionSuffix + $currentSuffix
+$fullDestSuffix = "-" + $regionSuffix + $newSuffix
 
 [System.Collections.ArrayList]$copyblobs_array
 $copyblobs = {$copyblobs_array}.Invoke()
 $copyblobs.clear()
-
-#
-Write-Host "Names array: " $vmNameArray
-$numNames = $vmNameArray.Count
 
 $vmName = $vmNameArray[0]
 if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
@@ -59,7 +56,6 @@ if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArr
     exit 1
 }
     
-$LogDir = "c:\temp\job_logs"
 
 get-job | Stop-Job
 get-job | Remove-Job
@@ -83,7 +79,8 @@ if ($makeDronesFromAll -eq $true) {
         
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $fullName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
-            Write-Host "Adding blob for $fullName to the list..."
+            $singleBlobName = $singleBlob.Name
+            Write-Host "Adding blob for $fullName ($singleBlobName) to the list..."
             $copyblobs += $vmName
         } else {
             Write-Host "Blob for machine $fullName was not found.  This machine cannot be processed."
@@ -100,7 +97,7 @@ if ($copyblobs.Count -eq 0) {
 write-host "Copying blobs..."
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                        -destSA $destSA -destRG $destRG -destContainer $destContainer `
-                                       -sourceExtension $fullSuffix -destExtension $newSuffix -location $location `
+                                       -sourceExtension $fullSuffix -destExtension $fullDestSuffix -location $location `
                                        -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNameArray
 
 
@@ -135,13 +132,16 @@ $scriptBlockString =
     $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
     deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
-    $newVMName = $vmName + $newSuffix
-    $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
-    $blobURIRaw="https://$sourceSA.blob.core.windows.net/$sourceContainer/" + $vmName + $currentSuffix
+    $regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+    $regionSuffix = $regionSuffix -replace "_","-"
+
+    $newVMName = $vmName
+    # $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
     Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
     C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
-                                                    -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
+                                                    -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor -suffix $newSuffix 
+                                                    #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
                                                     # -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
@@ -152,12 +152,16 @@ $scriptBlockString =
     #
     #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
     #  but kept getting timeouts on the Ubuntu machines.
-
-    $currentDir="C:\Framework-Scripts"
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
-    $port=22
-    $pipName = $newVMName
+
+    $regionSuffix = ("-" + $location) -replace " ","-"
+    $imageName = $newVMName + "-" + $vmFlavor + $regionSuffix.ToLower()
+    $imageName = $imageName -replace "_","-"
+    $imageName = $imageName + $newSuffix
+    $imageName = $imageName -replace ".vhd", ""
+
+    $pipName = $imageName
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
@@ -175,17 +179,17 @@ $scriptBlockString =
     #  Now transfer the files
     $ipTemp = $ip + ":/tmp"
     while ($true) {
-        $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
-        echo "SSL Rreply is $sslReply"
+        $sslReply=@(Write-Output "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
+        Write-Output "SSL Rreply is $sslReply"
         if ($sslReply -match "README" ) {
             Write-Host "Got a key request"
             break
         } else {
             Write-Host "No match"
-            sleep(10)
+            start-sleep(10)
         }
     }
-    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
+    $sslReply=@(Write-Output "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
 
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\make_drone.sh c:\temp\nix_files\make_drone.sh
     C:\azure-linux-automation\tools\dos2unix.exe -n C:\Framework-Scripts\secrets.sh c:\temp\nix_files\secrets.sh
@@ -254,7 +258,7 @@ get-job | Remove-Job
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 foreach ($vmName in $vmNameArray) { 
     $jobName=$vmName + "-drone-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
+    Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
                                                                       $destContainer,$location,$currentSuffix,$newSuffix,$NSG,`
                                                                       $network,$subnet,$vmFlavor
     if ($? -ne $true) {
@@ -280,7 +284,7 @@ while ($notDone -eq $true) {
             $notDone = $true
         }
     }
-    sleep 10
+    Start-Sleep 10
 }
 
 Write-Host "All jobs have completed.  Checking results (this will take a moment...)"

@@ -44,7 +44,7 @@ write-host "Overwrite flag is $overwriteVHDs"
 get-job | Stop-Job
 get-job | Remove-Job
 
-cd C:\azure-linux-automation
+set-location C:\azure-linux-automation
 git pull
 
 login_azure $destRG $destSA $location
@@ -79,9 +79,9 @@ foreach ($oneblob in $blobs) {
 
     $targetName = $sourceName
     if ($removeTag -ne "") {
-        $targetName = $sourceName | % { $_ -replace $removeTag, ".vhd" }
+        $targetName = $sourceName -replace $removeTag,".vhd"
     }
-    $targetName = $targetName | % { $_ -replace ".vhd", "-Booted-and-Verified.vhd" }
+    $targetName = $targetName -replace ".vhd","-Booted-and-Verified.vhd"
     
     $blobIsInDest = $false
     if ($existingBlobs.Name -contains $targetName) {
@@ -112,7 +112,7 @@ foreach ($oneblob in $blobs) {
 }
 
 if ($copyblobs.Count -gt 0) {
-    sleep 5
+    start-sleep 5
     Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
     Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA  
@@ -154,7 +154,7 @@ if ($copyblobs.Count -gt 0) {
 
         if ($stillCopying -eq $true) {
             Write-Host ""
-            sleep(10)
+            start-sleep(10)
         } else {
             Write-Host ""
             Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor green
@@ -162,12 +162,9 @@ if ($copyblobs.Count -gt 0) {
     }
 }
 
-$uri_front="https://"
-$uri_middle=".blob.core.windows.net/vhds/"
-
 # Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA 
 # $blobs=get-AzureStorageBlob -Container $destContainer
-cd C:\azure-linux-automation
+Set-Location C:\azure-linux-automation
 $launched_machines = 0
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccountName $sourceSA 
@@ -180,11 +177,10 @@ foreach ($oneblob in $blobs) {
 
     $targetName = $sourceName
     if ($removeTag -ne "") {
-        $targetName = $sourceName | % { $_ -replace $removeTag, ".vhd" }
+        $targetName = $sourceName -replace $removeTag, ".vhd" 
     }
-    $targetName = $targetName | % { $_ -replace ".vhd", "-Booted-and-Verified.vhd" }
+    $targetName = $targetName -replace ".vhd", "-Booted-and-Verified.vhd"
 
-    $uri=$uri_front + $destSA + $uri_middle + $targetName
     (Get-Content .\$templateFile).Replace("SMOKE_MACHINE_NAME_HERE",$targetName) | out-file $configFileName
 
     #
@@ -258,7 +254,7 @@ while ($completed_machines -lt $launched_machines) {
 
     $sleep_count += 1
     if ($completed_machines -lt $launched_machines) {
-        sleep(10)
+        start-sleep(10)
     } else {
         Write-Host "ALL BVTs have completed.  Checking results..."
 

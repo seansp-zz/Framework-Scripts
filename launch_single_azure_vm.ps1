@@ -12,7 +12,13 @@
     [Parameter(Mandatory=$false)] [string] $adminUser="",
     [Parameter(Mandatory=$false)] [string] $adminPW="",
     [Parameter(Mandatory=$false)] [string] $Location="westus",
-    [Parameter(Mandatory=$false)] [string] $VMFlavor="Standard_D2"
+    [Parameter(Mandatory=$false)] [string] $VMFlavor="Standard_D2",
+
+    [Parameter(Mandatory=$false)] [string] $addressPrefix = "10.0.0.0/16",
+    [Parameter(Mandatory=$false)] [string] $subnetPrefix = "10.0.0.0/24",
+    [Parameter(Mandatory=$false)] [string] $blobURN,
+
+    [Parameter(Mandatory=$false)] [string] $suffix = ".vhd"
 )
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -24,11 +30,16 @@ $azureBackend = $backendFactory.GetBackend("AzureBackend", @(1))
 $azureBackend.ResourceGroupName = $resourceGroup
 $azureBackend.StorageAccountName = $storageAccount
 $azureBackend.ContainerName = $containerName
-$azureBackend.Location = $Location
+$azureBackend.Location = $location
 $azureBackend.VMFlavor = $VMFlavor
 $azureBackend.NetworkName = $network
 $azureBackend.SubnetName = $subnet
 $azureBackend.NetworkSecGroupName = $NSG
+
+$azureBackend.addressPrefix = $vnetAddressPrefix
+$azureBackend.subnetPrefix = $vnetSubnetAddressPrefix
+$azureBackend.blobURN = $blobURN
+$azureBackend.suffix = $suffix
 
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()

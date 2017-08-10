@@ -18,18 +18,21 @@ param (
     [Parameter(Mandatory=$false)] [string] $destExtension="-Smoke-1.vhd",
 
     [Parameter(Mandatory=$false)] [string] $location="westus",
+    [Parameter(Mandatory=$false)] [string] $VMFlavor="Standard_D2_v2",
 
     [Parameter(Mandatory=$false)] [string[]] $vmNames=""
 )
 Start-Transcript C:\temp\transcripts\create_vhd_from_azure_vm.log -Force
 
-$sourceExtension = $sourceExtension -replace "_","-"
-$destExtension = $destExtension -replace "_","-"
+$regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+$regionSuffix = $regionSuffix -replace "_","-"
+
+$fullSuffix = "-" + $regionSuffix + $destExtension
 
 Write-Host "Launching jobs to copy machine image from $sourceRG/$sourceSA/$sourceContainer to $destRG/$destSA/$destContainer..." -ForegroundColor Yellow
 
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer -destSA $destSA `
-                                                                  -destRG $destRG -sourceExtension ".vhd" -destExtension $destExtension -destContainer $destContainer `
+                                                                  -destRG $destRG -sourceExtension ".vhd" -destExtension $fullSuffix -destContainer $destContainer `
                                                                   -location $location -makeDronesFromAll "False" -overwriteVHDs "True" -vmNamesIn $vmNames
 
 Write-Host "Machines are ready for assimilation..."

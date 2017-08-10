@@ -52,10 +52,14 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [stri
 {
     login_azure $rg $sa $location > $null
 
-    $pipName=$vmName
+    $regionSuffix = ("-" + $this.Location) -replace " ","-"
+    $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+    $imageName = $imageName -replace "_","-"
+    $imageName = $imageName + $this.suffix
+    $imageName = $imageName | % { $_ -replace ".vhd", "" } 
 
     try {
-        $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $pipName
+        $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $imageName
 
         if ($ipAddress.IpAddress -eq "Not Assigned") {
             Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
@@ -153,9 +157,19 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
         . C:\Framework-Scripts\common_functions.ps1
         . C:\Framework-Scripts\secrets.ps1
 
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
+        $imageName = $imageName | % { $_ -replace ".vhd", "" } 
+
         login_azure $destRG $destSA $location
         Write-Host "Deallocating machine $vm_name in RG $destRG"
         Remove-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
+
+        Get-AzureRmNetworkInterface -ResourceGroupName $destRG | Where-Object -Property Name -Like $vm_name | Remove-AzureRmNetworkInterface -Force
+
+        Get-AzureRmPublicIpAddress -ResourceGroupName $destRG | Where-Object -Property Name -Like $vm_name | Remove-AzureRmPublicIpAddress -Force
     }
 
     if ($runningVMs.Count -lt 1) {

@@ -30,10 +30,6 @@ param (
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
-$sourceExtension = ("-" + $vmFlavor + $sourceExtension) -replace "_","-"
-$destExtension = ("-" + $vmFlavor + $destExtension) -replace "_","-"
-
-
 Write-Host "Switch overwriteVHDs is $overwriteVHDs"
 
 $copyblobs_array=@()
@@ -58,6 +54,14 @@ $same_rg=$false
 if ($sourceRG -eq $destRG) {
     $same_rg = $true
 }
+
+$runningVMs_Source=@()
+$runningVMsSource = {$runningVMs_Source}.Invoke()
+$runningVMsSource.Clear()
+
+$runningVMs_Dest=@()
+$runningVMsDest = {$runningVMs_Dest}.Invoke()
+$runningVMsDest.Clear()
 
 if ($makeDronesFromAll -eq $false) {
     #
