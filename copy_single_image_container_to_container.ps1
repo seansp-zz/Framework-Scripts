@@ -104,7 +104,7 @@ if ($makeDronesFromAll -eq $true) {
     }
 } else {
     foreach ($vmName in $vmNames) {
-        $theName = $vmName + $sourceExtension + ".vhd"
+        $theName = $vmName + $sourceExtension
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $theName
         if ($? -eq $true) {
             $copyblobs.Add($singleBlob)
@@ -121,8 +121,8 @@ if ($clearDestContainer -eq $true) {
 }
 
 foreach ($vmName in $vmNames) {
-    $sourceName = $vmName + $sourceExtension + ".vhd"
-    $targetName = $vmName + $destExtension + ".vhd"
+    $sourceName = $vmName + $sourceExtension
+    $targetName = $vmName + $destExtension
 
     Write-Host "Initiating job to copy VHD $targetName from cache to working directory..." -ForegroundColor Yellow
     if ($overwriteVHDs -eq $true) {
@@ -151,8 +151,8 @@ while ($stillCopying -eq $true) {
     write-host "Checking blob copy status..." -ForegroundColor yellow
 
     foreach ($vmName in $vmNames) {
-        $sourceName = $vmName + $sourceExtension + ".vhd"
-        $targetName = $vmName + $destExtension + ".vhd"
+        $sourceName = $vmName + $sourceExtension
+        $targetName = $vmName + $destExtension
 
         $copyStatus = Get-AzureStorageBlobCopyState -Blob $targetName -Container $destContainer -ErrorAction SilentlyContinue
         $status = $copyStatus.Status
