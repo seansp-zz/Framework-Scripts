@@ -240,7 +240,7 @@ class AzureBackend : Backend {
     }
 
     [void] CleanupInstance ($InstanceName) {
-        RemoveInstance($InstanceName)
+        $this.RemoveInstance($InstanceName)
 
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
@@ -342,7 +342,6 @@ class AzureBackend : Backend {
     }
 
     [void] CreateInstanceFromSpecialized ($InstanceName) {        
-        ([Backend]$this).CreateInstanceFromSpecialized($InstanceName)
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
 
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
@@ -398,7 +397,6 @@ class AzureBackend : Backend {
     }
 
     [void] CreateInstanceFromURN ($InstanceName) {        
-        ([Backend]$this).CreateInstanceFromURN($InstanceName)
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
 
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
@@ -467,7 +465,6 @@ class AzureBackend : Backend {
     }
 
     [void] CreateInstanceFromGeneralized ($InstanceName) {        
-        ([Backend]$this).CreateInstance($InstanceName)
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
 
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
