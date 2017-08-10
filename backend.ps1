@@ -223,21 +223,11 @@ class AzureBackend : Backend {
     }
 
     [void] StopInstance ($InstanceName) {
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
-        $imageName = $imageName -replace "_","-"
-        $imageName = $imageName + $this.suffix
-
-        Stop-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
+        Stop-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
-    [void] RemoveInstance ($InstanceName) {
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
-        $imageName = $imageName -replace "_","-"
-        $imageName = $imageName + $this.suffix
-
-        Remove-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
+    [void] RemoveInstance ($InstanceName) {    
+        Remove-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
     [void] CleanupInstance ($InstanceName) {
