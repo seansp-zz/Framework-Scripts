@@ -291,7 +291,8 @@ Write-Host "All jobs have completed.  Checking results (this will take a moment.
 
 #
 #  Get the results of that
-$status = c:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $destSA -destRG $destRG -suffix $newSuffix -command "/bin/uname -a"
+$status = c:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $destSA -destRG $destRG `
+                                                                    -suffix $newSuffix -location $location -command "/bin/uname -a"
 $status
 
 if ($status -contains "FAILED to establish PSRP connection") {

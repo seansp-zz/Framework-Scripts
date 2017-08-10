@@ -46,35 +46,37 @@ function make_cred_initial () {
 }
 
 function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [string] $location,
+                             [string] $VMFalvor,
                              [System.Management.Automation.PSCredential] $cred,
                              [System.Management.Automation.Remoting.PSSessionOption] $o,
                              [switch] $retryOnTimeout)
 {
     login_azure $rg $sa $location > $null
 
-    $regionSuffix = ("-" + $this.Location) -replace " ","-"
-    $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
-    $imageName = $imageName -replace "_","-"
-    $imageName = $imageName + $this.suffix
-    $imageName = $imageName | % { $_ -replace ".vhd", "" } 
+    $vm_search_string = $vmName + "*" + $location + "*"
 
-    try {
-        $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg -Name $imageName
+    # try {
+        Write-Host "Attempting to locate host by search string " $vm_search_string
+        $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg | Where-Object -Property Name -Like $vm_search_string
+        Write-Host "Got IP Address " $ipAddress.Name ", with IP Address " $ipAddress.IpAddress
 
         if ($ipAddress.IpAddress -eq "Not Assigned") {
             Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
             return $null
         }
-
+        Write-Host "Attempting contact at " $ipAddress.IpAddress
         $thisSession = new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
         if ($? -eq $false) {
+            Write-Host "Contact failed..."
             return $null
         } else {
+            write-host "Contact was successful"
             return $thisSession
         }
-    } catch {
-        return $null
-    }
+    # } catch {
+      #  Write-Host "Caught exception??"
+      #  return $null
+    # }
 }
 
 function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtualMachine[]] $runningVMs,

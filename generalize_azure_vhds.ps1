@@ -56,11 +56,11 @@ if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[
 
 Write-Host "Replacing cloud-init..."
 C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $sourceSA -destRG $sourceRG `
-                                                          -suffix $suffix -command "echo $TEST_USER_ACCOUNT_PASS | sudo -S bash -c `"/bin/mv /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS /usr/bin/cloud-init`""
+                                                          -suffix $suffix -asRoot "True" -location $location -command "/bin/mv /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS /usr/bin/cloud-init"
 
 Write-Host "Deprovisioning..."
 C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $sourceSA -destRG $sourceRG `
-                                                          -suffix $suffix -command "echo $TEST_USER_ACCOUNT_PASS | sudo -S bash -c `"waagent -deprovision -force`""
+                                                          -suffix $suffix -asRoot "True" -location $location -command "waagent -deprovision -force"
  if ($? -eq $false) {
     Write-Host "FAILED to deprovision machines" -ForegroundColor Red
     exit 1
@@ -68,7 +68,7 @@ C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $reque
 
 Write-Host "And stopping..."
 C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $sourceSA -destRG $sourceRG `
-                                                          -suffix $suffix -command "echo $TEST_USER_ACCOUNT_PASS | sudo -S bash -c shutdown"
+                                                          -suffix $suffix -asRoot "True" -location $location -command "bash -c shutdown"
 if ($? -eq $false) {
     Write-Host "FAILED to stop machines" -ForegroundColor Red
     exit 1
