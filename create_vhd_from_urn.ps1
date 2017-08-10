@@ -68,13 +68,13 @@ login_azure
 Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
 #
 $existingGroup = Get-AzureRmResourceGroup -Name $destRG 
-if ($? -eq $true -and $existingGroup -ne $null) {
+if ($? -eq $true -and $existingGroup -ne $null -and $useNewResourceGroup -eq $true) {
     write-host "Resource group already existed.  Deleting resource group." -ForegroundColor Yellow
     Remove-AzureRmResourceGroup -Name $destRG -Force
 
     write-host "Creating new resource group $destRG in loction $location"
     New-AzureRmResourceGroup -Name $destRG -Location $location
-} elseif ($existingGroup -eq $null) {
+} elseif ($existingGroup -eq $null -and $useNewResourceGroup -eq $true) {
     write-host "Creating new resource group $destRG in loction $location"
     New-AzureRmResourceGroup -Name $destRG -Location $location
 }
@@ -196,7 +196,8 @@ $scriptBlockString =
     $azureBackend.suffix = $suffix
 
     $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
-    $azureInstance.Cleanup()
+
+    $azureInstance.CreateFromURN()
 
     $VM = $azureInstance.GetVM()
     # $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName

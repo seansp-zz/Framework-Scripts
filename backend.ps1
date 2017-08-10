@@ -247,20 +247,22 @@ class AzureBackend : Backend {
     [void] CleanupInstance ($InstanceName) {
         ([Backend]$this).CleanupInstance($InstanceName)
 
+        RemoveInstance($InstanceName)
+
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
 
-        $vm = Get-AzureRmVm -ResourceGroupName $this.ResourceGroupName -Status | `
-            Where-Object -Property Name -eq $imageName
-        if (!$vm) {
-            Write-Host ("VM $imageName does not exist") -ForegroundColor Yellow
-            return
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName 
+        if ($pip) {
+            Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName -Force
         }
-        Get-AzureRmVm -ResourceGroupName $this.ResourceGroupName -Status | `
-            Where-Object -Property Name -eq $imageName | `
-            Remove-AzureRmVM -Force
+
+        $VNIC = Get-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName 
+        if ($VNIC) {
+            Remove-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
+        }
     }
 
     # Microsoft.Azure.Commands.Network.Models.PSNetworkSecurityGroup
@@ -562,6 +564,8 @@ class AzureBackend : Backend {
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
+
+        write-host "GetVM looking for $imageName"
 
         return Get-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Name $imageName
     }
