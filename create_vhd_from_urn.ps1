@@ -247,9 +247,6 @@ $scriptBlockString =
     Write-Host "Setting SELinux into permissive mode" -ForegroundColor Green
     try_plink $ip $runDisableCommand0
 
-    Write-Host "VM Created successfully.  Stopping it now..." -ForegroundColor Green
-    $azureInstance.StopInstance()
-
     Write-Host "Deleting the VM so we can harvest the VHD..." -ForegroundColor Green
     $azureInstance.RemoveInstance()
 
