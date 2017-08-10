@@ -200,6 +200,7 @@ $scriptBlockString =
 
     $azureInstance.CreateFromURN()
 
+    $azureBackend.VMFlavor = $VMFlavor
     $VM = $azureInstance.GetVM()
     # $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
     Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA

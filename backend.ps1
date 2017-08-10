@@ -205,11 +205,11 @@ class AzureBackend : Backend {
             if (!$sg) {
                 sleep(10)
             } else {
-                $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
+                $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
                 if (!$VMVNETObject) {
                     sleep(10)
                 } else {
-                    $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
+                    $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -ErrorAction SilentlyContinue
                     if (!$VMSubnetObject) {
                         sleep(10)
                     } else {
@@ -260,7 +260,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSNetworkSecurityGroup
     [object] getNSG()
     {
-        $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
+        $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
         if (!$sg) {
             write-host "Network security group does not exist for this region.  Creating now..." -ForegroundColor Yellow
             $rule1 = New-AzureRmNetworkSecurityRuleConfig -Name "ssl-rule" -Description "Allow SSL over HTTP" `
@@ -284,7 +284,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSVirtualNetwork
     [object] getNetwork($sg)
     {
-        $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
+        $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
         if (!$VMVNETObject) {
             write-host "Network does not exist for this region.  Creating now..." -ForegroundColor Yellow
             $VMSubnetObject = New-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName  -AddressPrefix $this.subnetPrefix -NetworkSecurityGroup $sg
@@ -298,7 +298,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSSubnet
     [object] getSubnet($sg,$VMVNETObject)
     {
-        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
+        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -ErrorAction SilentlyContinue
         if (!$VMSubnetObject) {
             write-host "Subnet does not exist for this region.  Creating now..." -ForegroundColor Yellow
             Add-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -AddressPrefix $this.subnetPrefix -NetworkSecurityGroup $sg
