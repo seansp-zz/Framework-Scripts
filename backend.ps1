@@ -238,8 +238,8 @@ class AzureBackend : Backend {
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
            
-        Write-Host "Stopping machine $InstanceName"
-        Remove-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
+        Write-Host "Removing machine $imageName"
+        Remove-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
     [void] CleanupInstance ($InstanceName) {
