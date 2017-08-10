@@ -247,15 +247,15 @@ class AzureBackend : Backend {
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
 
-        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName 
-        if ($pip) {
-            Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName -Force
-        }
-
         $VNIC = Get-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName 
         if ($VNIC) {
             Remove-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
         }
+
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName 
+        if ($pip) {
+            Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName -Force
+        }        
     }
 
     # Microsoft.Azure.Commands.Network.Models.PSNetworkSecurityGroup
