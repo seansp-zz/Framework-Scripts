@@ -67,7 +67,7 @@ login_azure
 
 Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
 #
-$existingGroup = Get-AzureRmResourceGroup -Name $destRG -ErrorAction SilentlyContinue
+$existingGroup = Get-AzureRmResourceGroup -Name $destRG 
 if ($? -eq $true -and $existingGroup -ne $null) {
     write-host "Resource group already existed.  Deleting resource group." -ForegroundColor Yellow
     Remove-AzureRmResourceGroup -Name $destRG -Force
@@ -82,7 +82,7 @@ if ($? -eq $true -and $existingGroup -ne $null) {
 #
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
-$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -ErrorAction SilentlyContinue
+$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA 
 if ($? -eq $false) {
     Write-Host "Storage account $destSA did not exist.  Creating it and populating with the right containers..." -ForegroundColor Yellow
     New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind Storage
@@ -97,13 +97,13 @@ if ($? -eq $false) {
 }
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
-$gotContainer = Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName -ErrorAction SilentlyContinue
+$gotContainer = Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName 
 if ($? -eq $false) {
     Write-Host "creating the BVT ready container" -ForegroundColor Yellow
     New-AzureStorageContainer -Name "ready-for-bvt" -Permission Blob
 }
 
-$gotContainer = Get-AzureStorageBlob -Container "drones" -Prefix $vmName -ErrorAction SilentlyContinue
+$gotContainer = Get-AzureStorageBlob -Container "drones" -Prefix $vmName 
 if ($? -eq $false) {
     New-AzureStorageContainer -Name "drones" -Permission Blob
     Write-Host "Complete." -ForegroundColor Green
@@ -167,13 +167,13 @@ $scriptBlockString =
     login_azure $destRG $destSA $location
 
     Write-Host "Deleting any existing VM" -ForegroundColor Green
-    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force -ErrorAction SilentlyContinue
+    $runningVMs = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*" | Remove-AzureRmVM -Force 
     if ($runningVMs -ne $null) {
         deallocate_machines_in_group $runningVMs $destRG $destSA $location
     }
     
     Write-Host "Clearing any old images in $destContainer with prefix $vmName..." -ForegroundColor Green
-    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer} -ErrorAction SilentlyContinue  
+    Get-AzureStorageBlob -Container $destContainer -Prefix $vmName | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer}   
 
     . C:\Framework-Scripts\backend.ps1
     # . "$scriptPath\backend.ps1"
@@ -298,7 +298,7 @@ while ($notDone -eq $true) {
         }
         write-host "    Job $jobName is in state $jobState" -ForegroundColor $useColor
         $logFileName = "C:\temp\transcripts\create_vhd_from_urn_$vmName.log"
-        $logLines = Get-Content -Path $logFileName -Tail 5 -ErrorAction SilentlyContinue
+        $logLines = Get-Content -Path $logFileName -Tail 5 
         if ($? -eq $true) {
             Write-Host "         Last 5 lines from the log file:" -ForegroundColor Cyan
             foreach ($line in $logLines) { 

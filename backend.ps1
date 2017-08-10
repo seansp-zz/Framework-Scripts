@@ -10,7 +10,7 @@ class Instance {
 
     Instance ($Backend, $Name) {
         $transcriptPath = $this.LogPath -f @($Name)
-        Start-Transcript -Path $transcriptPath -Force -ErrorAction SilentlyContinue -Append
+        Start-Transcript -Path $transcriptPath -Force  -Append
         $this.Backend = $Backend
         $this.Name = $Name
         Write-Host ("Initialized instance wrapper" + $this.Name) -ForegroundColor Blue
@@ -201,15 +201,15 @@ class AzureBackend : Backend {
     [string] WaitForAzureRG( ) {
         $azureIsReady = $false
         while ($azureIsReady -eq $false) {
-            $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+            $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
             if (!$sg) {
                 sleep(10)
             } else {
-                $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+                $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
                 if (!$VMVNETObject) {
                     sleep(10)
                 } else {
-                    $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -ErrorAction SilentlyContinue
+                    $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
                     if (!$VMSubnetObject) {
                         sleep(10)
                     } else {
@@ -260,7 +260,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSNetworkSecurityGroup
     [object] getNSG()
     {
-        $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+        $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
         if (!$sg) {
             write-host "Network security group does not exist for this region.  Creating now..." -ForegroundColor Yellow
             $rule1 = New-AzureRmNetworkSecurityRuleConfig -Name "ssl-rule" -Description "Allow SSL over HTTP" `
@@ -284,7 +284,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSVirtualNetwork
     [object] getNetwork($sg)
     {
-        $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+        $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
         if (!$VMVNETObject) {
             write-host "Network does not exist for this region.  Creating now..." -ForegroundColor Yellow
             $VMSubnetObject = New-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName  -AddressPrefix $this.subnetPrefix -NetworkSecurityGroup $sg
@@ -298,7 +298,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSSubnet
     [object] getSubnet($sg,$VMVNETObject)
     {
-        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -ErrorAction SilentlyContinue
+        $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject 
         if (!$VMSubnetObject) {
             write-host "Subnet does not exist for this region.  Creating now..." -ForegroundColor Yellow
             Add-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject -AddressPrefix $this.subnetPrefix -NetworkSecurityGroup $sg
@@ -313,8 +313,7 @@ class AzureBackend : Backend {
     # Microsoft.Azure.Commands.Network.Models.PSPublicIpAddress
     [object] getPIP($pipName)
     {
-        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName `
-            -ErrorAction SilentlyContinue
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
         if (!$pip) {
             write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
             $vm = New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
@@ -330,7 +329,7 @@ class AzureBackend : Backend {
                     [object] $VMSubnetObject, 
                     [object] $pip)
     {
-        $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+        $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName 
         if (!$VNIC) {
             Write-Host "Creating new network interface" -ForegroundColor Yellow
             $vm = New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
@@ -368,7 +367,7 @@ class AzureBackend : Backend {
         $nicName = $imageName
         $VNIC = $this.getNIC($nicName, $VMSubnetObject, $pip)
 
-        Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+        Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName 
         $VNIC.NetworkSecurityGroup = $sg
         
         Set-AzureRmNetworkInterface -NetworkInterface $VNIC
@@ -493,7 +492,7 @@ class AzureBackend : Backend {
         $nicName = $imageName
         $VNIC = $this.getNIC($nicName, $VMSubnetObject, $pip)
 
-        Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName -ErrorAction SilentlyContinue
+        Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName 
         $VNIC.NetworkSecurityGroup = $sg
         
         Set-AzureRmNetworkInterface -NetworkInterface $VNIC
