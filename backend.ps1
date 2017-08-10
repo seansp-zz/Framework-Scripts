@@ -247,7 +247,7 @@ class AzureBackend : Backend {
     [void] CleanupInstance ($InstanceName) {
         ([Backend]$this).CleanupInstance($InstanceName)
 
-        regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
