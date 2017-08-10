@@ -310,7 +310,7 @@ $action={
             if ($localMachine.Name -eq $machineName) {
                 if ($localMachine.session -eq $null) {
                     $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                                                        $global:location $global:cred $global:o $false
+                                                        $global:location $global:cred $global:o
 
                     Write-Host "Creating PowerShell Remoting session to machine $machineName"  -ForegroundColor green
                     if ($localSession -ne $null) {
@@ -502,7 +502,7 @@ $action={
                                 if ($monitoredMachine.session -eq $null) {
 
                                     $localSession = create_psrp_session $machineName $global:workingResourceGroupName $global:workingStorageAccountName `
-                                                                        $global:location $cred $o $false
+                                                                        $global:location $cred $o
                                     
                                     if ($localSession -ne $null) {
                                         $monitoredMachine.session = $localSession

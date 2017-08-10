@@ -62,10 +62,11 @@ $commandString =
     }
 
     $commandBLock=[scriptblock]::Create($runCommand)
+    $favor="standard_d2_V2"
 
     # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
 
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o $false
+    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
     if ($? -eq $true -and $session -ne $null) {
         invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $command
         Exit-PSSession

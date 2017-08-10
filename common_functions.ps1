@@ -46,10 +46,8 @@ function make_cred_initial () {
 }
 
 function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [string] $location,
-                             [string] $VMFalvor,
                              [System.Management.Automation.PSCredential] $cred,
-                             [System.Management.Automation.Remoting.PSSessionOption] $o,
-                             [switch] $retryOnTimeout)
+                             [System.Management.Automation.Remoting.PSSessionOption] $o)
 {
     login_azure $rg $sa $location > $null
 
@@ -158,12 +156,6 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
                 
         . C:\Framework-Scripts\common_functions.ps1
         . C:\Framework-Scripts\secrets.ps1
-
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
-        $imageName = $imageName -replace "_","-"
-        $imageName = $imageName + $this.suffix
-        $imageName = $imageName | % { $_ -replace ".vhd", "" } 
 
         login_azure $destRG $destSA $location
         Write-Host "Deallocating machine $vm_name in RG $destRG"
