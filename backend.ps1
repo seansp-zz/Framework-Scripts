@@ -246,14 +246,20 @@ class AzureBackend : Backend {
 
     [void] CleanupInstance ($InstanceName) {
         ([Backend]$this).CleanupInstance($InstanceName)
+
+        regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
+
         $vm = Get-AzureRmVm -ResourceGroupName $this.ResourceGroupName -Status | `
-            Where-Object -Property Name -eq $InstanceName
+            Where-Object -Property Name -eq $imageName
         if (!$vm) {
-            Write-Host ("VM $InstanceName does not exist") -ForegroundColor Yellow
+            Write-Host ("VM $imageName does not exist") -ForegroundColor Yellow
             return
         }
         Get-AzureRmVm -ResourceGroupName $this.ResourceGroupName -Status | `
-            Where-Object -Property Name -eq $InstanceName | `
+            Where-Object -Property Name -eq $imageName | `
             Remove-AzureRmVM -Force
     }
 
