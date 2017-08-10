@@ -183,7 +183,6 @@ class AzureBackend : Backend {
     }
 
     [string] SetupAzureRG( ) {
-        ([Backend]$this).SetupAzureRG()
         #
         #  Avoid potential race conditions
         Write-Host "Getting the NSG"
@@ -223,8 +222,6 @@ class AzureBackend : Backend {
     }
 
     [void] StopInstance ($InstanceName) {
-        ([Backend]$this).StopInstance($InstanceName)
-
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
@@ -234,8 +231,6 @@ class AzureBackend : Backend {
     }
 
     [void] RemoveInstance ($InstanceName) {
-        ([Backend]$this).RemoveInstance($InstanceName)
-
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
@@ -245,8 +240,6 @@ class AzureBackend : Backend {
     }
 
     [void] CleanupInstance ($InstanceName) {
-        ([Backend]$this).CleanupInstance($InstanceName)
-
         RemoveInstance($InstanceName)
 
         $regionSuffix = ("-" + $this.Location) -replace " ","-"
