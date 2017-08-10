@@ -39,19 +39,8 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-if ($makeDronesFromAll -ne $true) {
-
-    $regionSuffix = $vmFlavor + ("-" + $location) -replace " ","-"
-    $regionSuffix = $regionSuffix -replace "_","-"
-
-    Write-Host "Appending flavor $vmFlavor and region suffix $regionSuffix to VM Names"
-    $nameCount = 0
-    foreach ($vmName in $vmNameArray) {
-        $vmName = $vmName +"-" + $regionSuffix
-        $vmNameArray[$nameCount] = $vmName
-        $nameCount = $nameCount + 1
-    }
-}
+$regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+$regionSuffix = $regionSuffix -replace "_","-"
 
 [System.Collections.ArrayList]$copyblobs_array
 $copyblobs = {$copyblobs_array}.Invoke()
@@ -77,12 +66,13 @@ login_azure $destRG $destSA $location
 
 if ($makeDronesFromAll -eq $true) {
     
-    $blobSearch = "*" + $currentSuffix + ".vhd"
+    $blobSearch = "*" + $VMFlavor + $currentSuffix + ".vhd"
     Write-Host "Looking at all images in container $sourceContainer"
     $copyblob_new=get-AzureStorageBlob -Container $sourceContainer -Blob $blobSearch
     foreach ($blob in $copyblob_new) {
-        Write-Host "Adding blob $blob.Name to the list"
-        copyblobs += $blob
+        $blobName = $blob.Name
+        Write-Host "Adding blob $Name to the list"
+        $copyblobs += $blobName
     }
 } else {
     foreach ($vmName in $vmNameArray) {
@@ -92,7 +82,7 @@ if ($makeDronesFromAll -eq $true) {
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $fullName -ErrorAction SilentlyContinue
         if ($? -eq $true) {
             Write-Host "Adding blob for $fullName to the list..."
-            $copyblobs += $fullName
+            $copyblobs += $vmName
         } else {
             Write-Host "Blob for machine $fullName was not found.  This machine cannot be processed."
         }
@@ -126,7 +116,8 @@ $scriptBlockString =
             $newSuffix,
             $NSG,
             $network,
-            $subnet
+            $subnet,
+            $vmFlavor
             )
             write-host "Checkpoint 1" -ForegroundColor Cyan
     Start-Transcript C:\temp\transcripts\$vmName-scriptblock.log -Force
@@ -148,7 +139,7 @@ $scriptBlockString =
 
     Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
     C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
-                                                    -network $network -subnet $subnet -NSG $NSG #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
+                                                    -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor #  -addAdminUser $TEST_USER_ACCOUNT_NAME `
                                                     # -adminUser $TEST_USER_ACCOUNT_NAME -adminPW $TEST_USER_ACCOUNT_PAS2
     if ($? -ne $true) {
         Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
@@ -263,7 +254,7 @@ foreach ($vmName in $vmNameArray) {
     $jobName=$vmName + "-drone-job"
     $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$sourceRG,$sourceSA,$sourceContainer,$destRG,$destSA,`
                                                                       $destContainer,$location,$currentSuffix,$newSuffix,$NSG,`
-                                                                      $network,$subnet
+                                                                      $network,$subnet,$vmFlavor
     if ($? -ne $true) {
         Write-Host "Error starting make_drone job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript

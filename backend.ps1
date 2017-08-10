@@ -223,27 +223,36 @@ class AzureBackend : Backend {
     }
 
     [void] StopInstance ($InstanceName) {
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
+
         Stop-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
-    [void] RemoveInstance ($InstanceName) {    
+    [void] RemoveInstance ($InstanceName) { 
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+        $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
+        $imageName = $imageName -replace "_","-"
+        $imageName = $imageName + $this.suffix
+           
         Remove-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
     [void] CleanupInstance ($InstanceName) {
         $this.RemoveInstance($InstanceName)
 
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
+
+        $VNIC = Get-AzureRmNetworkInterface -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName 
+        if ($VNIC) {
+            Remove-AzureRmNetworkInterface -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -Force
+        }
+
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
-
-        $VNIC = Get-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName 
-        if ($VNIC) {
-            Remove-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
-        }
-
-        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName 
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName
         if ($pip) {
             Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName -Force
         }        
