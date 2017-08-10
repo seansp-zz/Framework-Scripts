@@ -74,6 +74,9 @@ if ($? -eq $true -and $existingGroup -ne $null) {
 
     write-host "Creating new resource group $destRG in loction $location"
     New-AzureRmResourceGroup -Name $destRG -Location $location
+} elseif ($existingGroup -eq $null) {
+    write-host "Creating new resource group $destRG in loction $location"
+    New-AzureRmResourceGroup -Name $destRG -Location $location
 }
 
 #
