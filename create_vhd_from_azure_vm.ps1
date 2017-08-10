@@ -23,6 +23,9 @@ param (
 )
 Start-Transcript C:\temp\transcripts\create_vhd_from_azure_vm.log -Force
 
+$sourceExtension = $sourceExtension -replace "_","-"
+$destExtension = $destExtension -replace "_","-"
+
 Write-Host "Launching jobs to copy machine image from $sourceRG/$sourceSA/$sourceContainer to $destRG/$destSA/$destContainer..." -ForegroundColor Yellow
 
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer -destSA $destSA `

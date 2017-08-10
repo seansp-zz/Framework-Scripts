@@ -176,6 +176,7 @@ class AzureBackend : Backend {
             throw "Secrets file does not exist."
         }
 
+        $this.suffix = $this.suffix -replace "_","-"
         login_azure $this.ResourceGroupName $this.StorageAccountName $this.Location
 
         $instance = [AzureInstance]::new($this, $InstanceName)

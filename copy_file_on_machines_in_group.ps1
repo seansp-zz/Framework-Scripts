@@ -10,6 +10,7 @@
     [Parameter(Mandatory=$false)] [string] $scriptName="unset" 
 )
     
+$suffix = $suffix -replace "_","-"
     
 . c:\Framework-Scripts\common_functions.ps1
 . c:\Framework-Scripts\secrets.ps1

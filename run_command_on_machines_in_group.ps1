@@ -25,6 +25,8 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
+$suffix = $suffix -replace "_","-"
+
 $commandString = 
 {
     param ( $DestRG,

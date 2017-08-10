@@ -27,6 +27,9 @@ Start-Transcript -Path C:\temp\transcripts\create_drone_from_container.transcrip
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
+$currentSuffix = $currentSuffix -replace "_","-"
+$newSuffix = $newSuffix -replace "_","-"
+
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()

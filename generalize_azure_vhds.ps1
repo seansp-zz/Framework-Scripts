@@ -17,6 +17,8 @@ param (
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd"
 )
 
+$suffix = $suffix -replace "_","-"
+
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 

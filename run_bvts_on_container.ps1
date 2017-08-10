@@ -27,6 +27,7 @@ param (
 
 #
 #  This is a required location
+$removeTag = $removeTag -replace "_","-"
 $destContainer="vhds"
 
 $copyblobs_array=@()

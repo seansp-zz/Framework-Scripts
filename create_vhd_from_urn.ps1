@@ -17,6 +17,8 @@
     [Parameter(Mandatory=$false)] [string] $VMFlavor="standard_d2_v2"
 )
 
+$suffix = $suffix -replace "_","-"
+
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 get-job | Stop-Job
 get-job | remove-job

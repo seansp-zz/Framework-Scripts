@@ -30,6 +30,10 @@ param (
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
+$sourceExtension = $sourceExtension -replace "_","-"
+$destExtension = $destExtension -replace "_","-"
+
+
 Write-Host "Switch overwriteVHDs is $overwriteVHDs"
 
 $copyblobs_array=@()
