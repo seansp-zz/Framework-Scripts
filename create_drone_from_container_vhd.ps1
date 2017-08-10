@@ -41,11 +41,13 @@ if ($requestedNames -like "*,*") {
 
 if ($makeDronesFromAll -ne $true) {
 
-    $regionSuffix = ("-" + $location) -replace " ","-"
-Write-Host "Appending flavor $vmFlavor and region suffix $regionSuffix to VM Names"
+    $regionSuffix = $vmFlavor + ("-" + $location) -replace " ","-"
+    $regionSuffix = $regionSuffix -replace "_","-"
+
+    Write-Host "Appending flavor $vmFlavor and region suffix $regionSuffix to VM Names"
     $nameCount = 0
     foreach ($vmName in $vmNameArray) {
-        $vmName = $vmName +"-" + $vmFlavor + $regionSuffix
+        $vmName = $vmName +"-" + $regionSuffix
         $vmNameArray[$nameCount] = $vmName
         $nameCount = $nameCount + 1
     }
