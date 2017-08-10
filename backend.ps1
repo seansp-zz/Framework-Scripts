@@ -228,6 +228,7 @@ class AzureBackend : Backend {
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
 
+        Write-Host "Stopping machine $InstanceName"
         Stop-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
@@ -237,13 +238,14 @@ class AzureBackend : Backend {
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
            
+        Write-Host "Stopping machine $InstanceName"
         Remove-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
     [void] CleanupInstance ($InstanceName) {
         $this.RemoveInstance($InstanceName)
 
-
+        Write-Host "Stopping machine $InstanceName.  Deleting NIC $this.NetworkName"
         $VNIC = Get-AzureRmNetworkInterface -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName 
         if ($VNIC) {
             Remove-AzureRmNetworkInterface -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -Force
@@ -252,6 +254,8 @@ class AzureBackend : Backend {
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
+
+        Write-Host "Stopping machine $InstanceName.  Deleting PIP $imageName"
         $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName
         if ($pip) {
             Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $imageName -Force
