@@ -30,8 +30,8 @@ param (
 
 . "C:\Framework-Scripts\common_functions.ps1"
 
-$sourceExtension = $sourceExtension -replace "_","-"
-$destExtension = $destExtension -replace "_","-"
+$sourceExtension = ("-" + $vmFlavor + $sourceExtension) -replace "_","-"
+$destExtension = ("-" + $vmFlavor + $destExtension) -replace "_","-"
 
 
 Write-Host "Switch overwriteVHDs is $overwriteVHDs"
@@ -94,7 +94,7 @@ Set-AzureRmCurrentStorageAccount –ResourceGroupName $sourceRG –StorageAccoun
 if ($makeDronesFromAll -eq $true) {
     $blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*$sourceExtension"
     $blobCount = $blobs.Count
-    Write-Host "Making drones of all VHDs in container $sourceContainer.  There will be $blobCount VHDs:"-ForegroundColor Magenta
+    Write-Host "Making drones of all VHDs in container $sourceContainer from region $location, with extenstion $sourceExtension.  There will be $blobCount VHDs:"-ForegroundColor Magenta
     $vmNames.Clear()
     foreach ($blob in $blobs) {
         $copyblobs.Add($blob)
