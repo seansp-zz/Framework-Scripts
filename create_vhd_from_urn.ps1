@@ -84,7 +84,7 @@ if ($? -eq $true -and $existingGroup -ne $null -and $useNewResourceGroup -eq $tr
 #
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
-$existingAccount = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA 
+Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA 
 if ($? -eq $false) {
     Write-Host "Storage account $destSA did not exist.  Creating it and populating with the right containers..." -ForegroundColor Yellow
     New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind Storage
@@ -99,13 +99,13 @@ if ($? -eq $false) {
 }
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 
-$gotContainer = Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName 
+Get-AzureStorageBlob -Container "ready-for-bvt" -Prefix $vmName 
 if ($? -eq $false) {
     Write-Host "creating the BVT ready container" -ForegroundColor Yellow
     New-AzureStorageContainer -Name "ready-for-bvt" -Permission Blob
 }
 
-$gotContainer = Get-AzureStorageBlob -Container "drones" -Prefix $vmName 
+Get-AzureStorageBlob -Container "drones" -Prefix $vmName 
 if ($? -eq $false) {
     New-AzureStorageContainer -Name "drones" -Permission Blob
     Write-Host "Complete." -ForegroundColor Green
@@ -135,8 +135,7 @@ $azureBackend.blobURN = $blobURN
 $azureBackend.suffix = $suffix
 
 $azureInstance = $azureBackend.GetInstanceWrapper("AzureSetup")
-$azureInstance.Cleanup()
-$ret = $azureInstance.SetupAzureRG()
+$azureInstance.SetupAzureRG()
 
 #
 #  If the account does not exist, create it.
