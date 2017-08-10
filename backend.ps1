@@ -409,19 +409,11 @@ class AzureBackend : Backend {
 
         $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
 
-        if ($this.VMFlavor -eq "") {
-            $our_vmFlavor = "Standard_d2_v2"
-        } else {
-            $our_vmFlavor = $this.VMFlavor
-        }
-
-        $this.VMFlavor = ""
-
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix        
 
-        $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $our_vmFlavor
+        $vm = New-AzureRmVMConfig -VMName $imageName -VMSize $this.VMFlavor
         Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
