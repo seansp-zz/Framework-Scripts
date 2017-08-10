@@ -282,6 +282,14 @@ while ($notDone -eq $true) {
         write-host "    Job $jobName is in state $jobState" -ForegroundColor Yellow
         if ($jobState -eq "Running") {
             $notDone = $true
+            $logFile = C:\temp\transcripts\$vmName-scriptblock.log
+            $logLines = Get-Content -Path $logFile -Tail 5 
+            if ($? -eq $true) {
+                Write-Host "         Last 5 lines from the log file:" -ForegroundColor Cyan
+                foreach ($line in $logLines) { 
+                    write-host "        "$line -ForegroundColor Gray 
+                }
+            }
         }
     }
     Start-Sleep 10
@@ -300,9 +308,10 @@ if ($status -contains "FAILED to establish PSRP connection") {
     
     $jobs = get-job
     foreach ($job in $jobs) {
+        $jobName = $job.Name
         Write-Host ""
         Write-Host "------------------------------------------------------------------------------------------------------"
-        Write-Host "                             JOB LOG FOR JOB $job.Name"   
+        Write-Host "                             JOB LOG FOR JOB $jobname"   
         Write-Host "------------------------------------------------------------------------------------------------------"
         Write-Host ""
         $job | receive-job
