@@ -228,8 +228,8 @@ class AzureBackend : Backend {
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
 
-        Write-Host "Stopping machine $InstanceName"
-        Stop-AzureRmVM -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
+        Write-Host "Stopping machine $imageName"
+        Stop-AzureRmVM -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
     }
 
     [void] RemoveInstance ($InstanceName) { 
@@ -250,7 +250,7 @@ class AzureBackend : Backend {
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
 
-        Write-Host "Stopping machine $InstanceName.  Deleting NIC " $this.NetworkName
+        Write-Host "Stopping machine $imageName.  Deleting NIC " $imageName
         $VNIC = Get-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName 
         if ($VNIC) {
             Remove-AzureRmNetworkInterface -Name $imageName -ResourceGroupName $this.ResourceGroupName -Force
