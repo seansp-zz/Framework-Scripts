@@ -42,6 +42,8 @@ if ($requestedNames -like "*,*") {
 $regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
 $regionSuffix = $regionSuffix -replace "_","-"
 
+$fullSuffix = "-" + $regionSuffix + $currentSuffix
+
 [System.Collections.ArrayList]$copyblobs_array
 $copyblobs = {$copyblobs_array}.Invoke()
 $copyblobs.clear()
@@ -76,7 +78,7 @@ if ($makeDronesFromAll -eq $true) {
     }
 } else {
     foreach ($vmName in $vmNameArray) {
-        $fullName = $vmName + "-" +  $regionSuffix + $currentSuffix
+        $fullName = $vmName + $fullSuffix
         Write-Host "Looking for image $fullName in container $sourceContainer"
         
         $singleBlob=get-AzureStorageBlob -Container $sourceContainer -Blob $fullName -ErrorAction SilentlyContinue
@@ -98,7 +100,7 @@ if ($copyblobs.Count -eq 0) {
 write-host "Copying blobs..."
 C:\Framework-Scripts\copy_single_image_container_to_container.ps1 -sourceSA $sourceSA -sourceRG $sourceRG -sourceContainer $sourceContainer `
                                        -destSA $destSA -destRG $destRG -destContainer $destContainer `
-                                       -sourceExtension $currentSuffix -destExtension $newSuffix -location $location `
+                                       -sourceExtension $fullSuffix -destExtension $newSuffix -location $location `
                                        -overwriteVHDs $overwriteVHDs -makeDronesFromAll $makeDronesFromAll -vmNames $vmNameArray
 
 
