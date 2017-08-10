@@ -251,6 +251,9 @@ $scriptBlockString =
     Write-Host "Deleting the VM so we can harvest the VHD..." -ForegroundColor Green
     $azureInstance.RemoveInstance()
 
+    Write-Host "And cleaning up..." -ForegroundColor Green
+    $azureInstance.Cleanup()
+
     Write-Host "Machine $vmName is ready for assimilation..." -ForegroundColor Green
 
     Stop-Transcript
