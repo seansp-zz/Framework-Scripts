@@ -248,7 +248,7 @@ class AzureBackend : Backend {
         if ($VNIC) {
             Remove-AzureRmNetworkInterface -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName -Force
         }
-
+        $regionSuffix = ("-" + $this.Location) -replace " ","-"
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
