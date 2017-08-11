@@ -86,7 +86,7 @@ if ($excludePackages -eq $false) {
         }
     }
 
-    start-sleep 5
+    Start-Sleep -Seconds 5
     Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
     $stillCopying = $true
@@ -127,7 +127,7 @@ if ($excludePackages -eq $false) {
 
         if ($stillCopying -eq $true) {
             Write-Host ""
-            start-sleep (10)
+            Start-Sleep -Seconds 10
         } else {
             Write-Host ""
             Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor green
@@ -161,7 +161,7 @@ foreach ($oneblob in $blobs) {
     }
 }
 
-start-sleep 5
+Start-Sleep -Seconds 5
 Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA  > $null
@@ -203,7 +203,7 @@ while ($stillCopying -eq $true) {
 
     if ($stillCopying -eq $true) {
         Write-Host ""
-        start-sleep(10)
+        Start-Sleep -Seconds 10
     } else {
         Write-Host ""
         Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor green

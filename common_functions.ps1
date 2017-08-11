@@ -129,7 +129,7 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
         }
 
         if ($allDone -eq $false) {
-            start-sleep(10)
+            Start-Sleep -Seconds 10
         }
     }
 }
@@ -203,12 +203,12 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
         }
 
         if ($allDone -eq $false) {
-            start-sleep(10)
+            Start-Sleep -Seconds 10
         }
     }
 
     if ($allDone -eq $false) {
-        start-sleep(10)
+        Start-Sleep -Seconds 10
     }
 }
 
