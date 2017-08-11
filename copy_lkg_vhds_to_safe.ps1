@@ -86,7 +86,7 @@ if ($excludePackages -eq $false) {
         }
     }
 
-    sleep 5
+    start-sleep 5
     Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
     $stillCopying = $true
@@ -127,7 +127,7 @@ if ($excludePackages -eq $false) {
 
         if ($stillCopying -eq $true) {
             Write-Host ""
-            sleep(10)
+            start-sleep (10)
         } else {
             Write-Host ""
             Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor green
@@ -149,7 +149,7 @@ get-AzureStorageBlob -Container $sourceContainer -Blob "*-BORG.vhd"
 $blobs=get-AzureStorageBlob -Container $sourceContainer -Blob "*-BORG.vhd"
 foreach ($oneblob in $blobs) {
     $sourceName=$oneblob.Name
-    $targetName = $sourceName | % { $_ -replace "-BORG.vhd", "-Booted-and-Verified.vhd" }
+    $targetName = $sourceName -replace "-BORG.vhd", "-Booted-and-Verified.vhd"
 
     Write-Host "Initiating job to copy VHD $targetName from final build to output cache directory..." -ForegroundColor green
     $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext -Force > $null
@@ -161,7 +161,7 @@ foreach ($oneblob in $blobs) {
     }
 }
 
-sleep 5
+start-sleep 5
 Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA  > $null
@@ -203,7 +203,7 @@ while ($stillCopying -eq $true) {
 
     if ($stillCopying -eq $true) {
         Write-Host ""
-        sleep(10)
+        start-sleep(10)
     } else {
         Write-Host ""
         Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor green

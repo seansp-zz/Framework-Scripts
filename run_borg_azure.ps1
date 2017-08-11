@@ -142,7 +142,7 @@ function copy_azure_machines {
         Write-Host "Preparing the individual machines..." -ForegroundColor green
         foreach ($oneblob in $blobs) {
             $sourceName=$oneblob.Name
-            $targetName = $sourceName | % { $_ -replace "-RunOnce-Primed.vhd", "-BORG.vhd" }
+            $targetName = $sourceName -replace "-RunOnce-Primed.vhd", "-BORG.vhd"
 
             $vmName = $targetName.Replace(".vhd","")
             $global:neededVMs.Add($vmName)
@@ -163,7 +163,7 @@ function copy_azure_machines {
             $lastPart=$splitUri[$splitUri.Length - 1]
 
             $sourceName = $lastPart
-            $targetName = $sourceName | % { $_ -replace ".vhd", "-BORG.vhd" }
+            $targetName = $sourceName -replace ".vhd", "-BORG.vhd"
 
             $vmName = $targetName.Replace(".vhd","")
 
@@ -214,7 +214,7 @@ function copy_azure_machines {
         }
 
         if ($stillCopying -eq $true) {
-            sleep(15)
+            start-sleepleep(15)
         } else {
             Write-Host "All copy jobs have completed.  Rock on."
         }
@@ -256,7 +256,6 @@ function launch_azure_vms {
         
         if ($jobState -eq "Failed") {
             Write-Host " ---------> Azure boot Job $jobName failed to lanch.  Error information is $jobStatus.Error" -ForegroundColor yellow
-            $global:failed = 1
             $global:num_remaining -= 1
             if ($global:num_remaining -eq 0) {
                 $global:completed = 1
@@ -284,7 +283,6 @@ $action={
     function checkMachine ([MonitoredMachine]$machine) {
         $machineName=$machine.name
         $machineStatus=$machine.status
-        $machineIP=$machine.ipAddress
 
         if ($machineStatus -eq "Completed" -or $global:num_remaining -eq 0) {
             Write-Host "    **** Machine $machineName is in state $machineStatus, which is complete, or there are no remaining machines" -ForegroundColor green
@@ -295,8 +293,6 @@ $action={
             Write-Host "    **** ??? Machine $machineName was not in state Booting.  Cannot process" -ForegroundColor red
             return 1
         }        
-
-        $failed=0
 
         #
         #  Attempt to create the PowerShell PSRP session

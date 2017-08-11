@@ -38,13 +38,12 @@ $s=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential 
 $ourHost=hostname
 $c="progress_logs/" + $ourHost
 
-$linuxOs = $linuxInfo.ID
 phoneHome "Checking for successful kernel installation"
 
 if ($failure_point -eq "") {
     $kernel_name=uname -r
 } else {
-    $kernel_name = $failure_point
+        $kernel_name = $failure_point
 }
  
 if (Get-Item -ErrorAction SilentlyContinue -Path /root/expected_version ) {

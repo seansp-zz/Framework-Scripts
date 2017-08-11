@@ -16,7 +16,7 @@
                 Write-Warning "***************************************************************************************"
             }
 
-            $out = Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa 2>&1
+            Set-AzureRmCurrentStorageAccount –ResourceGroupName $rg –StorageAccountName $sa 2>&1
         } else {
             Write-Warning "***************************************************************************************"
             Write-Warning "Storage account $sa does not exist in location $location."
@@ -129,7 +129,7 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
         }
 
         if ($allDone -eq $false) {
-            sleep(10)
+            start-sleep(10)
         }
     }
 }
@@ -203,12 +203,12 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
         }
 
         if ($allDone -eq $false) {
-            sleep(10)
+            start-sleep(10)
         }
     }
 
     if ($allDone -eq $false) {
-        sleep(10)
+        start-sleep(10)
     }
 }
 

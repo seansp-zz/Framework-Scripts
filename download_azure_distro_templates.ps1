@@ -27,7 +27,6 @@ param (
 login_azure $rg $nm $location
 
 $uri_front="https://"
-$uri_middle="smokesourcestorageacct.blob.core.windows.net/"
 
 $neededVms_array=@()
 $neededVms = {$neededVms_array}.Invoke()
@@ -97,9 +96,7 @@ $sleepCount = 1
 $stop_checking = $false
 
 while ($stop_checking -eq $false) {
-    foreach ($machine in $neededVms) {
-        $waitIntervals = 0
-    
+    foreach ($machine in $neededVms) {    
         $jobName = $machine + "-download"
 
         if (($sleepCount % 6) -eq 0) {

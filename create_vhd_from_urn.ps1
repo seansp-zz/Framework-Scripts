@@ -19,7 +19,6 @@
 
 $suffix = $suffix -replace "_","-"
 
-$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 get-job | Stop-Job
 get-job | remove-job
 
@@ -47,8 +46,6 @@ Write-Host "Names array: " $vmNameArray -ForegroundColor Yellow
 $numNames = $vmNameArray.Count
 Write-Host "blobs array: " $blobURNArray -ForegroundColor Yellow
 $numBlobs = $blobURNArray.Count
-
-$firstBlob = $blobURNArray[0]
 
 if ($vmNameArray.Count -ne $blobURNArray.Count) {
     Write-Host "Please provide the same number of names and URNs. You have $numNames names and $numBlobs blobs" -ForegroundColor Red
@@ -162,8 +159,6 @@ $scriptBlockString =
     $NSG = $NSG
     $subnetName =  $subnetName
     $vnetName  = $vnetName
-    $pipName = $vmName 
-    $nicName = $vmName
 
     login_azure $destRG $destSA $location
 
@@ -210,7 +205,6 @@ $scriptBlockString =
     
     $ip=$azureInstance.GetPublicIP()
     $password=$TEST_USER_ACCOUNT_PAS2
-    $port=22
     $username="$TEST_USER_ACCOUNT_NAME"
 
     #
@@ -226,13 +220,13 @@ $scriptBlockString =
     $timeOut = 0
     while ($true) {
         $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
-        echo "SSL Rreply is $sslReply"
+        Write-Output "SSL Rreply is $sslReply"
         if ($sslReply -match "README" ) {
             Write-Host "Got a key request" -ForegroundColor Green
             break
         } else {
             Write-Host "No match" -ForegroundColor Yellow
-            sleep(10)
+            start-sleep(10)
             $timeOut = $timeOut + 1
             if ($timeOut -ge 60) {
                 Write-Host "Failed to contact machine at IP $remoteAddress for 600 seconds.  Timeout."
@@ -266,7 +260,7 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Preparing machine $vmName for (URN $blobURN) service as a drone..." -ForegroundColor Green
 
     $jobName=$vmName + "-intake-job"
-    $makeDroneJob = Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$VMFlavor,$blobURN,$destRG,$destSA,`
+    Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$VMFlavor,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$suffix,$NSG,`
                                                                       $vnetName,$subnetName
     if ($? -ne $true) {
@@ -278,7 +272,7 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Just launched job $jobName" -ForegroundColor Green
 }
 
-sleep(10)
+start-sleep(10)
 
 $notDone = $true
 while ($notDone -eq $true) {
@@ -308,7 +302,7 @@ while ($notDone -eq $true) {
             }
         }
     }
-    sleep 10
+    start-sleep 10
 }
 
 Stop-Transcript

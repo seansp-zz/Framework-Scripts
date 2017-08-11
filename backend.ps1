@@ -183,7 +183,7 @@ class AzureBackend : Backend {
         $imageName = $InstanceName + "-" + $this.VMFlavor + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
-        $imageName = $imageName | % { $_ -replace ".vhd", "" } 
+        $imageName = $imageName  -replace ".vhd", ""
 
         $instance = [AzureInstance]::new($this, $imageName)
         return $instance
@@ -199,7 +199,7 @@ class AzureBackend : Backend {
         $VMVNETObject = $this.getNetwork($sg)
 
         Write-Host "Getting the subnet"
-        $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
+        $this.getSubnet($sg, $VMVNETObject)
 
         return "Success"
     }
@@ -209,15 +209,15 @@ class AzureBackend : Backend {
         while ($azureIsReady -eq $false) {
             $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
             if (!$sg) {
-                sleep(10)
+                start-sleep(10)
             } else {
                 $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
                 if (!$VMVNETObject) {
-                    sleep(10)
+                    start-sleep(10)
                 } else {
                     $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
                     if (!$VMSubnetObject) {
-                        sleep(10)
+                        start-sleep(10)
                     } else {
                         $azureIsReady = $true
                     }
@@ -313,7 +313,7 @@ class AzureBackend : Backend {
         $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
         if (!$pip) {
             write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
-            $vm = New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
+            New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
                 -Name $pipName -AllocationMethod Dynamic -IdleTimeoutInMinutes 4
             $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName
         }
@@ -329,7 +329,7 @@ class AzureBackend : Backend {
         $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName 
         if (!$VNIC) {
             Write-Host "Creating new network interface" -ForegroundColor Yellow
-            $vm = New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
+            New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
                 -Location $this.Location -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
             $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName
         }
@@ -340,8 +340,6 @@ class AzureBackend : Backend {
     [void] CreateInstanceFromSpecialized ($InstanceName) {        
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
 
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        
         $sg = $this.getNSG()
 
         $VMVNETObject = $this.getNetwork($sg)
@@ -391,8 +389,6 @@ class AzureBackend : Backend {
     [void] CreateInstanceFromURN ($InstanceName) {        
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
 
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        
         $sg = $this.getNSG()
 
         $VMVNETObject = $this.getNetwork($sg)
@@ -437,7 +433,7 @@ class AzureBackend : Backend {
                 $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
                 if (!$NEWVM) {
                     Write-Host "Failed to create VM" -ForegroundColor Red
-                    sleep(30)
+                    start-sleep(30)
                     $trying = $true
                     $tries = $tries + 1
                     if ($tries -gt 5) {
@@ -455,8 +451,6 @@ class AzureBackend : Backend {
     [void] CreateInstanceFromGeneralized ($InstanceName) {        
         Write-Host "Creating a new VM config..." -ForegroundColor Yellow
 
-        $regionSuffix = ("-" + $this.Location) -replace " ","-"
-        
         $sg = $this.getNSG()
 
         $VMVNETObject = $this.getNetwork($sg)

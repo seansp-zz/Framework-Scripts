@@ -47,7 +47,6 @@ $action={
         }
 
         $resultsFile="c:\temp\boot_results\" + $machineName
-        $progressFile="c:\temp\progress_logs\" + $machineName
         
         if ((test-path $resultsFile) -eq $false) {
             Write-Host "      Unable to locate results file $resultsFile.  Cannot process" -ForegroundColor Red
@@ -56,7 +55,6 @@ $action={
 
         $results=get-content $resultsFile
         $resultsSplit = $results.split(' ')
-        $resultsWord=$resultsSplit[0]
         $resustsgot=$resultsSplit[1]
 
         if ($resultsSplit[0] -ne "Success") {
@@ -180,7 +178,6 @@ Get-ChildItem 'D:\azure_images\*.vhd' |
 foreach-Object {
     
     $vhdFile=$_.Name
-    $status="Copying"
 
     $global:num_remaining++
 
@@ -205,7 +202,7 @@ foreach-Object {
         Write-Host "Starting job to copy VHD $vhdFileName to working directory..." -ForegroundColor green
         $jobName=$vhdFileName + "_copy_job"
 
-        $existingJob = get-job $jobName -ErrorAction SilentlyContinue > $null
+        get-job $jobName -ErrorAction SilentlyContinue > $null
         if ($? -eq $true) {
             stop-job $jobName -ErrorAction SilentlyContinue > $null
             remove-job $jobName -ErrorAction SilentlyContinue > $null
@@ -262,7 +259,7 @@ if ($skipCopy -eq $false) {
         }
 
         if ($copy_complete -eq $false) {
-            sleep 30
+            start-sleep 30
         } else {
             break
         }

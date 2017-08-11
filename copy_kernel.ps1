@@ -60,11 +60,11 @@ function callItIn($c, $m) {
 }
 
 function phoneHome($m) {
-echo $m
+Write-Output $m
     if ($global:isHyperV -eq $true) {
 
         if ($global:session -eq $null) {
-            echo "*** Restarting the PowerShell session!" | out-file -Append /opt/microsoft/borg_progress.log
+            write-output "*** Restarting the PowerShell session!" | out-file -Append /opt/microsoft/borg_progress.log
             get-pssession | remove-pssession
             $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
         }
@@ -94,7 +94,7 @@ function phoneVersionHome($m) {
 
     if ($global:isHyperV -eq $true) {
         if ($global:session -eq $null) {
-             echo "*** Restarting (2) the PowerShell session!" | out-file -Append /opt/microsoft/borg_progress.log
+             Write-Output "*** Restarting (2) the PowerShell session!" | out-file -Append /opt/microsoft/borg_progress.log
              get-pssession | remove-pssession
             $global:session=new-PSSession -computername lis-f1637.redmond.corp.microsoft.com -credential $global:cred -authentication Basic -SessionOption $global:o
         }
@@ -117,7 +117,7 @@ Start-Transcript -path /root/borg_install_log -append
 #  Remove the old sentinel file and reset
 #
 Remove-Item -Force "/root/expected_version"
-echo "System Initialization" | Out-File -Path "/root/expected_version"
+write-output "System Initialization" | Out-File -Path "/root/expected_version"
 $failure_point="Setup"
 
 #
@@ -131,7 +131,7 @@ $c | Out-File -FilePath /opt/microsoft/borg_progress.log
 #  Start by cleaning out any existing downloads
 #
 $global:isHyperV=$true
-$lookup=nslookup cdmbuildsna01.redmond.corp.microsoft.com
+nslookup cdmbuildsna01.redmond.corp.microsoft.com
 if ($? -eq $false) {
     $global:isHyperV = $false
     phoneHome "It looks like we're in Azure"
@@ -155,7 +155,7 @@ $failure_point="chmod"
 
 $failure_point="cleaning old"
 phoneHome "Starting copy file scipt"
-cd /root
+set-location /root
 $kernFolder="/root/latest_kernel"
 If (Test-Path $kernFolder) {
     Remove-Item -Recurse -Force $kernFolder
@@ -188,11 +188,11 @@ if ($global:isHyperV -eq $true) {
         }
     }
 
-    echo "Checking for the mount directory..."
+    Write-Output "Checking for the mount directory..."
     if ((Test-Path $pkg_mount_dir/file_list) -eq $false) {
-        echo "mounting..."
+        write-output "mounting..."
         phoneHome "Target directory was not there.  Mounting"
-        echo "Command is mount $pkg_mount_source $pkg_mount_point"
+        write-output "Command is mount $pkg_mount_source $pkg_mount_point"
         @(mount $pkg_mount_source $pkg_mount_point)
         if ($? -eq $false) {
             $failure_point="Mount"
@@ -211,7 +211,7 @@ if ($global:isHyperV -eq $true) {
     #  Copy the files
     #
     phoneHome "Copying the kernel from the drop share"
-    cd /root/latest_kernel
+    set-location /root/latest_kernel
 
     copy-Item -Path $pkg_mount_dir/* -Destination ./
     if ($? -eq $false) {
@@ -222,7 +222,7 @@ if ($global:isHyperV -eq $true) {
     #
     #  If we can't mount the drop folder, maybe we can get the files from Azure
     #
-    cd $kernFolder
+    set-location $kernFolder
 
     phoneHome "Copying the kernel from Azure blob storage"
     $fileListURIBase = "https://" + $pkg_storageaccount + ".blob.core.windows.net/" + $pkg_container
@@ -299,7 +299,7 @@ if (Test-Path /bin/rpm) {
 #
 #  Do the right thing for the platform
 #
-cd $kernFolder
+set-location $kernFolder
 $failure_point="Installing"
 if (Test-Path /bin/rpm) {
     #

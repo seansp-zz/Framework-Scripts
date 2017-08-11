@@ -50,7 +50,6 @@ $commandString =
     $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
     $cred = make_cred
 
-    $errorFound = $false
     $suffix = $suffix.Replace(".vhd","")
 
     $password="$TEST_USER_ACCOUNT_PASS"
@@ -62,10 +61,8 @@ $commandString =
     }
 
     $commandBLock=[scriptblock]::Create($runCommand)
-    $favor="standard_d2_V2"
 
     # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
-
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
     if ($? -eq $true -and $session -ne $null) {
         invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $command
@@ -84,9 +81,9 @@ get-job | Stop-Job
 get-job | Remove-Job
 
 foreach ($baseName in $vmNameArray) {
-    $vm_name = $baseName + $suffix
-    $vm_name = $vm_name | % { $_ -replace ".vhd", "" }
-    $job_name = "run_command_" + $vm_name 
+    $vm_name = $baseName
+    $vm_name = $vm_name -replace ".vhd", ""
+    $job_name = "run_command_" + $vm_name
 
     # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
 
@@ -103,8 +100,8 @@ while ($allDone -eq $false) {
     $vmsFinished = 0
 
     foreach ($baseName in $vmNameArray) {
-        $vm_name = $baseName + $suffix
-        $vm_name = $vm_name | % { $_ -replace ".vhd", "" }
+        $vm_name = $baseName
+        $vm_name = $vm_name -replace ".vhd", "" 
         $job_name = "run_command_" + $vm_name
 
         $job = Get-Job -Name $job_name
@@ -127,7 +124,7 @@ while ($allDone -eq $false) {
     }
 
     if ($allDone -eq $false) {
-        sleep(10)
+        Start-Sleep(10)
     } elseif ($vmsFinished -eq $numNeeded) {
         break
     }
@@ -135,7 +132,7 @@ while ($allDone -eq $false) {
 
 foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName + $suffix
-    $vm_name = $vm_name | % { $_ -replace ".vhd", "" }
+    $vm_name = $vm_name -replace ".vhd", ""
     $job_name = "run_command_" + $vm_name
 
     Get-Job $job_name | Receive-Job -OutVariable $jobText -ErrorAction SilentlyContinue

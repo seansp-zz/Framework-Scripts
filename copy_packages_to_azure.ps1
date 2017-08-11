@@ -19,7 +19,7 @@ if ($? -eq $false) {
     ErrOut($failure_point)
 }
 
-$context=New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
+New-AzureStorageContext -StorageAccountName $destAccountName -StorageAccountKey $key[0].Value
 if ($? -eq $false) {
     $failure_point="NewContext"
     ErrOut($failure_point)
