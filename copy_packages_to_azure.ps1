@@ -27,7 +27,6 @@ if ($? -eq $false) {
 
 #
 #  Copy the latest packages up to Azure
-#
 $packages=get-childitem -path $driveLetter
 Remove-Item -Path C:\temp\file_list -Force
 
