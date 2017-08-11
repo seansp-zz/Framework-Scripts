@@ -209,15 +209,15 @@ class AzureBackend : Backend {
         while ($azureIsReady -eq $false) {
             $sg = Get-AzureRmNetworkSecurityGroup -Name $this.NetworkSecGroupName -ResourceGroupName $this.ResourceGroupName
             if (!$sg) {
-                start-sleep(10)
+                Start-Sleep -Seconds 10
             } else {
                 $VMVNETObject = Get-AzureRmVirtualNetwork -Name $this.NetworkName -ResourceGroupName $this.ResourceGroupName
                 if (!$VMVNETObject) {
-                    start-sleep(10)
+                    Start-Sleep -Seconds 10
                 } else {
                     $VMSubnetObject = Get-AzureRmVirtualNetworkSubnetConfig -Name $this.SubnetName -VirtualNetwork $VMVNETObject
                     if (!$VMSubnetObject) {
-                        start-sleep(10)
+                        Start-Sleep -Seconds 10
                     } else {
                         $azureIsReady = $true
                     }
@@ -433,7 +433,7 @@ class AzureBackend : Backend {
                 $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
                 if (!$NEWVM) {
                     Write-Host "Failed to create VM" -ForegroundColor Red
-                    start-sleep(30)
+                    Start-Sleep -Seconds 30
                     $trying = $true
                     $tries = $tries + 1
                     if ($tries -gt 5) {

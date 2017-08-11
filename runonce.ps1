@@ -49,14 +49,14 @@ function phoneHome($m) {
 #
 #  Give the machine 30 seconds to settle down
 #
-sleep 30
+Start-Sleep -Seconds 30
 
 echo "Checking for platform..."
 $global:isHyperV=$true
 $lookup=nslookup cdmbuildsna01.redmond.corp.microsoft.com
 if ($? -eq $false) {
     $global:isHyperV = $false
-    echo "It looks like we're in Azure"    
+    echo "It looks like we're in Azure"
 } else {
     echo "It looks like we're in Hyper-V"
     $o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck

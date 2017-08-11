@@ -214,7 +214,7 @@ function copy_azure_machines {
         }
 
         if ($stillCopying -eq $true) {
-            start-sleepleep(15)
+            Start-Sleep -Seconds 15
         } else {
             Write-Host "All copy jobs have completed.  Rock on."
         }
@@ -607,7 +607,7 @@ $timer.start()
 
 Write-Host "Finished launching the VMs.  Waiting for Completed to go to 1.  Completed is presently $global:completed" -ForegroundColor Yellow
 while ($global:completed -eq 0) {
-    start-sleep -s 1
+    Start-Sleep -Seconds 1
 }
 
 Write-Host ""

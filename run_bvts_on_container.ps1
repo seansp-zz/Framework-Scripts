@@ -112,10 +112,10 @@ foreach ($oneblob in $blobs) {
 }
 
 if ($copyblobs.Count -gt 0) {
-    start-sleep 5
+    Start-Sleep -Seconds 5
     Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
-    Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA  
+    Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
     $stillCopying = $true
     while ($stillCopying -eq $true) {
         $stillCopying = $false
@@ -154,7 +154,7 @@ if ($copyblobs.Count -gt 0) {
 
         if ($stillCopying -eq $true) {
             Write-Host ""
-            start-sleep(10)
+            Start-Sleep -Seconds 10
         } else {
             Write-Host ""
             Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor green
@@ -254,7 +254,7 @@ while ($completed_machines -lt $launched_machines) {
 
     $sleep_count += 1
     if ($completed_machines -lt $launched_machines) {
-        start-sleep(10)
+        Start-Sleep -Seconds 10
     } else {
         Write-Host "ALL BVTs have completed.  Checking results..."
 

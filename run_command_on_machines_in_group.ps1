@@ -124,7 +124,7 @@ while ($allDone -eq $false) {
     }
 
     if ($allDone -eq $false) {
-        Start-Sleep(10)
+        Start-Sleep -Seconds 10
     } elseif ($vmsFinished -eq $numNeeded) {
         break
     }

@@ -92,14 +92,14 @@ if ($getAll -eq $true) {
     }
 }
 
-$sleepCount = 1
+$sleep_count = 1
 $stop_checking = $false
 
 while ($stop_checking -eq $false) {
-    foreach ($machine in $neededVms) {    
+    foreach ($machine in $neededVms) {
         $jobName = $machine + "-download"
 
-        if (($sleepCount % 6) -eq 0) {
+        if (($sleep_count % 6) -eq 0) {
             Write-Host "Checking download progress of machine $machine, job $jobName"  -ForegroundColor green
         }
 
@@ -107,7 +107,7 @@ while ($stop_checking -eq $false) {
         $failed=$true
 
         if ($jobState.State -eq "Running") {
-            if (($sleepCount % 6) -eq 0) {
+            if (($sleep_count % 6) -eq 0) {
                 $dlLog="c:\temp\"+ $jobName+ "_download.log"
                 Write-Host "Download still in progress.  Last line from log file is:" -ForegroundColor green
                 get-content $dlLog | Select-Object -Last 1 | write-host  -ForegroundColor cyan -ErrorAction SilentlyContinue
@@ -156,6 +156,6 @@ while ($stop_checking -eq $false) {
             }
         }
     }
-    $SleepCount+=1
-    Start-Sleep 10
+    $sleep_count+=1
+    Start-Sleep -Seconds 10
 }

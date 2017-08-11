@@ -186,7 +186,7 @@ $scriptBlockString =
             break
         } else {
             Write-Host "No match"
-            start-sleep(10)
+            Start-Sleep -Seconds 10
         }
     }
     $sslReply=@(Write-Output "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $ipTemp)
@@ -283,16 +283,16 @@ while ($notDone -eq $true) {
         if ($jobState -eq "Running") {
             $notDone = $true
             $logFile = "C:\temp\transcripts\" + $vmName + "-scriptblock.log"
-            $logLines = Get-Content -Path $logFile -Tail 5 
+            $logLines = Get-Content -Path $logFile -Tail 5
             if ($? -eq $true) {
                 Write-Host "         Last 5 lines from the log file:" -ForegroundColor Cyan
-                foreach ($line in $logLines) { 
-                    write-host "        "$line -ForegroundColor Gray 
+                foreach ($line in $logLines) {
+                    write-host "        "$line -ForegroundColor Gray
                 }
             }
         }
     }
-    Start-Sleep 10
+    Start-Sleep -Seconds 10
 }
 
 Write-Host "All jobs have completed.  Checking results (this will take a moment...)"

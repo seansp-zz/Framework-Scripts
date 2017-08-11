@@ -255,11 +255,11 @@ if ($skipCopy -eq $false) {
             {
                 Write-Host "      Copy job $jobName completed successfully." -ForegroundColor green
                 remove-job $jobName -ErrorAction SilentlyContinue
-            }    
+            }
         }
 
         if ($copy_complete -eq $false) {
-            start-sleep 30
+            Start-Sleep -Seconds 30
         } else {
             break
         }
@@ -321,7 +321,7 @@ $timer.Enabled = $true
 $timer.start()
 
 while ($global:completed -eq 0) {
-    start-sleep -s 1
+    Start-Sleep -Seconds 1
 }
 
 write-host "                         Exiting Temporal Evaluation Loop (Unregistering the timer)" -ForegroundColor yellow

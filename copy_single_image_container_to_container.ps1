@@ -144,7 +144,7 @@ foreach ($vmName in $vmNames) {
     }
 }
 
-start-sleep 5
+Start-Sleep -Seconds 5
 Write-Host "All jobs have been launched.  Initial check is:" -ForegroundColor Yellow
 
 $stillCopying = $true
@@ -183,7 +183,7 @@ while ($stillCopying -eq $true) {
     }
 
     if ($stillCopying -eq $true) {
-        start-sleep(10)
+        Start-Sleep -Seconds 10
     } else {
         Write-Host "All copy jobs have completed.  Rock on." -ForegroundColor Green
     }

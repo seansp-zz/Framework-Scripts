@@ -226,7 +226,7 @@ $scriptBlockString =
             break
         } else {
             Write-Host "No match" -ForegroundColor Yellow
-            start-sleep(10)
+            Start-Sleep -Seconds 10
             $timeOut = $timeOut + 1
             if ($timeOut -ge 60) {
                 Write-Host "Failed to contact machine at IP $remoteAddress for 600 seconds.  Timeout."
@@ -272,7 +272,7 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Just launched job $jobName" -ForegroundColor Green
 }
 
-start-sleep(10)
+Start-Sleep -Seconds 10
 
 $notDone = $true
 while ($notDone -eq $true) {
@@ -294,15 +294,15 @@ while ($notDone -eq $true) {
         }
         write-host "    Job $jobName is in state $jobState" -ForegroundColor $useColor
         $logFileName = "C:\temp\transcripts\create_vhd_from_urn_$vmName.log"
-        $logLines = Get-Content -Path $logFileName -Tail 5 
+        $logLines = Get-Content -Path $logFileName -Tail 5
         if ($? -eq $true) {
             Write-Host "         Last 5 lines from the log file:" -ForegroundColor Cyan
-            foreach ($line in $logLines) { 
-                write-host "        "$line -ForegroundColor Gray 
+            foreach ($line in $logLines) {
+                write-host "        "$line -ForegroundColor Gray
             }
         }
     }
-    start-sleep 10
+    Start-Sleep -Seconds 10
 }
 
 Stop-Transcript
