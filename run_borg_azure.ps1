@@ -593,7 +593,7 @@ Write-Host "                                BORG CUBE is initialized"           
 Write-Host "              Starting the Dedicated Remote Nodes of Execution (DRONES)" -ForegroundColor yellow
 Write-Host "    "
 
-login_azure $global:sourceResourceGroupName $global:sourceStorageAccountName $global:location
+login_azure
 
 $date1 = Get-Date -Date "01/01/1970"
 $date2 = Get-Date
@@ -602,7 +602,7 @@ $seconds = (New-TimeSpan -Start $date1 -End $date2).TotalSeconds
 $timerName="AzureBORGTimer-" + $seconds
 Write-Host "Using timer name $timerName"
 
-Write-Host "Looking for storage account $global:workingResourceGroupName in resource group $global:workingResourceGroupName."
+Write-Host "Looking for storage account $global:workingStorageAccountName in resource group $global:workingResourceGroupName."
 
 $existingGroup = Get-AzureRmResourceGroup -Name $global:workingResourceGroupName 
 if ($? -eq $true -and $existingGroup -ne $null -and $global:CleanRG -eq $true) {
@@ -615,6 +615,24 @@ if ($? -eq $true -and $existingGroup -ne $null -and $global:CleanRG -eq $true) {
     write-host "Creating new resource group $global:workingResourceGroupName in loction $global:location"
     New-AzureRmResourceGroup -Name $global:workingResourceGroupName  -Location $global:location
 }
+
+#
+#
+#  Change the name of the SA to include the region, then Now see if the SA exists
+Get-AzureRmStorageAccount -ResourceGroupName $global:workingResourceGroupName  -Name $global:workingStorageAccountName
+if ($? -eq $false) {
+    Write-Host "Storage account $global:workingResourceGroupName  did not exist.  Creating it and populating with the right containers..." -ForegroundColor Yellow
+    New-AzureRmStorageAccount -ResourceGroupName $global:workingResourceGroupName -Name $global:workingStorageAccountName-Location $global:location -SkuName Standard_LRS -Kind Storage
+
+    write-host "Selecting it as the current SA" -ForegroundColor Yellow
+    Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName  –StorageAccountName $global:workingStorageAccountName
+
+    Write-Host "creating the containers" -ForegroundColor Yellow
+    New-AzureStorageContainer -Name "last-build-packages" -Permission Blob
+    New-AzureStorageContainer -Name "vhds-under-test" -Permission Blob
+    Write-Host "Complete." -ForegroundColor Green
+}
+Set-AzureRmCurrentStorageAccount –ResourceGroupName $global:workingResourceGroupName –StorageAccountName $global:workingStorageAccountName
 
 #
 #

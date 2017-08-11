@@ -9,7 +9,7 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
     [Parameter(Mandatory=$false)] [string] $sourcePkgContainer="last-build-packages",
 
-    [Parameter(Mandatory=$false)] [string] $destSA="smokeout",
+    [Parameter(Mandatory=$false)] [string] $destSA="smoketestoutstorageacct",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_output_resource_group",
     [Parameter(Mandatory=$false)] [string] $destContainer="last-known-good-vhds",
     [Parameter(Mandatory=$false)] [string] $destPkgContainer="last-known-good-packages",
@@ -32,11 +32,6 @@ Import-AzureRmContext -Path 'C:\Azure\ProfileContext.ctx' > $null
 Write-Host "Selecting the Azure subscription..." -ForegroundColor Green
 Select-AzureRmSubscription -SubscriptionId "$AZURE_SUBSCRIPTION_ID" > $null
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA > $null
-
-Write-Host "Stopping all running machines..."  -ForegroundColor green
-Get-AzureRmVm -ResourceGroupName $global:sourceResourceGroupName -status |  where-object -Property PowerState -eq -value "VM running" | Stop-AzureRmVM -Force
-# Get-AzureRmVm -ResourceGroupName $sourceRG | Stop-AzureRmVM -Force > $null
-
 
 $destKey=Get-AzureRmStorageAccountKey -ResourceGroupName $destRG -Name $destSA
 $destContext=New-AzureStorageContext -StorageAccountName $destSA -StorageAccountKey $destKey[0].Value
@@ -76,8 +71,9 @@ if ($excludePackages -eq $false) {
         $sourceName=$oneblob.Name
         $targetName = $sourceName
 
-        Write-Host "Initiating job to copy package $targetName from cache to working directory..." -ForegroundColor Yellow
-        $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destPkgContainer -SrcContainer $sourcePkgContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext
+        Write-Host "Initiating job to copy packages from $sourcePkgContainer from cache to working directory $destPkgContainer..." -ForegroundColor Yellow
+        $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -SrcContainer $sourcePkgContainer  -DestContainer $destPkgContainer -DestBlob $targetName `
+                                           -Context $sourceContext -DestContext $destContext
         if ($? -eq $true) {
             $copyblobs.Add($targetName)
         } else {
