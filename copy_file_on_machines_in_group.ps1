@@ -34,8 +34,6 @@ $cred = make_cred
 
 $password="$TEST_USER_ACCOUNT_PASS"
 
-$scriptCommand= { param($cmd) $cmd } 
-
 $command="cp -f /root/Framework-Scripts/" + $scriptName + " /root/runonce.d"
 $runCommand = "echo $password | sudo -S bash -c `'$command`'"
 
@@ -45,8 +43,6 @@ foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName
 
     write-host "Executing remote command on machine $vm_name"
-
-{
     [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
     if ($? -eq $true -and $session -ne $null) {
         invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $runCommand
