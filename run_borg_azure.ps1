@@ -65,6 +65,7 @@ $global:testOutputContainerName=$testOutputContainerName
 $global:workingContainerName=$workingContainerName
 
 $global:useSourceURI=[string]::IsNullOrEmpty($global:sourceURI)
+$global:CleanRG = $CleanRG
 
 #
 #  The machines we're working with
@@ -601,7 +602,21 @@ $seconds = (New-TimeSpan -Start $date1 -End $date2).TotalSeconds
 $timerName="AzureBORGTimer-" + $seconds
 Write-Host "Using timer name $timerName"
 
-if($CLEANRG)
+Write-Host "Looking for storage account $global:workingResourceGroupName in resource group $global:workingResourceGroupName."
+
+$existingGroup = Get-AzureRmResourceGroup -Name $global:workingResourceGroupName 
+if ($? -eq $true -and $existingGroup -ne $null -and $global:CleanRG -eq $true) {
+    write-host "Resource group already existed.  Deleting resource group." -ForegroundColor Yellow
+    Remove-AzureRmResourceGroup -Name $destRG -Force
+
+    write-host "Creating new resource group $global:workingResourceGroupName in loction $global:location"
+    New-AzureRmResourceGroup -Name $global:workingResourceGroupName -Location $global:location
+} elseif ($existingGroup -eq $null -and $global:CleanRG -eq $true) {
+    write-host "Creating new resource group $global:workingResourceGroupName in loction $global:location"
+    New-AzureRmResourceGroup -Name $global:workingResourceGroupName  -Location $global:location
+}
+
+#
 #
 #  Copy the virtual machines to the staging container
 #                

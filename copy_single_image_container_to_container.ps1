@@ -120,7 +120,7 @@ if ($makeDronesFromAll -eq $true) {
 
 Set-AzureRmCurrentStorageAccount –ResourceGroupName $destRG –StorageAccountName $destSA
 if ($clearDestContainer -eq $true) {
-    Write-Host "Clearing destingation container of all jobs with extension $destExtension"
+    Write-Host "Clearing destination container of all jobs with extension $destExtension"
     get-AzureStorageBlob -Container $destContainer -Blob "*$destExtension" | ForEach-Object {Remove-AzureStorageBlob -Blob $_.Name -Container $destContainer }
 }
 
@@ -128,7 +128,7 @@ foreach ($vmName in $vmNames) {
     $sourceName = $vmName + $sourceExtension
     $targetName = $vmName + $destExtension
 
-    Write-Host "Initiating job to copy VHD $targetName from cache to working directory..." -ForegroundColor Yellow
+    Write-Host "Initiating job to copy VHD $targetName from cache to working directory $..." -ForegroundColor Yellow
     if ($overwriteVHDs -eq $true) {
         $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext -Force
     } else {
