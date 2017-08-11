@@ -273,7 +273,7 @@ foreach ($vmName in $vmNameArray) {
 write-host "Checking make_drone jobs..."
 $notDone = $true
 while ($notDone -eq $true) {
-    write-host "Status at "@(date)"is:" -ForegroundColor Green
+    write-host "Status at $(@(date)) is:" -ForegroundColor Green
     $notDone = $false
     foreach ($vmName in $vmNameArray) {
         $jobName=$vmName + "-drone-job"
