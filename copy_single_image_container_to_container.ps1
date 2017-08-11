@@ -5,13 +5,13 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 param (
-    [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $sourceSA="smokesrc",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="clean-vhds",
     [Parameter(Mandatory=$false)] [string] $sourceExtension="Smoke-1",
 
 
-    [Parameter(Mandatory=$false)] [string] $destSA="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $destSA="smokesrc",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $destContainer="safe-templates",
     [Parameter(Mandatory=$false)] [string] $destExtension="Smoke-1",

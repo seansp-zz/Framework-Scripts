@@ -14,11 +14,11 @@ param (
     #
     #  Azure RG for all accounts and containers
     [Parameter(Mandatory=$false)] [string] $sourceResourceGroupName="smoke_source_resource_group",
-    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="smokesrc",
     [Parameter(Mandatory=$false)] [string] $sourceContainerName="safe-templates",
 
     [Parameter(Mandatory=$false)] [string] $workingResourceGroupName="smoke_working_resource_group",
-    [Parameter(Mandatory=$false)] [string] $workingStorageAccountName="smokeworkingstorageacct",
+    [Parameter(Mandatory=$false)] [string] $workingStorageAccountName="smokework",
     [Parameter(Mandatory=$false)] [string] $workingContainerName="vhds-under-test",
 
     [Parameter(Mandatory=$false)] [string] $sourceURI="Unset",
@@ -239,7 +239,7 @@ function launch_azure_vms {
         $global:machineLogs.Add($machine_log)        
 
         $resourceGroup="smoke_working_resource_group"
-        $storageAccount="smokeworkingstorageacct"
+        $storageAccount="smokework"
         $containerName="vhds-under-test"
 
         Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] `

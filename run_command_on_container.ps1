@@ -5,7 +5,7 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 param (
-    [Parameter(Mandatory=$false)] [string] $sourceSA="smokeworkingstorageacct",
+    [Parameter(Mandatory=$false)] [string] $sourceSA="smokework",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
     

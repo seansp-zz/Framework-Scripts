@@ -137,7 +137,7 @@ class AzureBackend : Backend {
     [String] $CommonFunctionsPath = "C:\Framework-Scripts\common_functions.ps1"
     [String] $ProfilePath = "C:\Azure\ProfileContext.ctx"
     [String] $ResourceGroupName = "smoke_working_resource_group"
-    [String] $StorageAccountName = "smokeworkingstorageacct"
+    [String] $StorageAccountName = "smokework"
     [String] $ContainerName = "vhds-under-test"
     [String] $Location = "westus"
     [String] $VMFlavor = "Standard_D2_V2"

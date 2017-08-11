@@ -4,12 +4,12 @@
 #  Author:  John W. Fawcett, Principal Software Development Engineer, Microsoft
 #
 param (
-    [Parameter(Mandatory=$false)] [string] $sourceSA="smokeworkingstorageacct",
+    [Parameter(Mandatory=$false)] [string] $sourceSA="smokework",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
     [Parameter(Mandatory=$false)] [string] $sourcePkgContainer="last-build-packages",
 
-    [Parameter(Mandatory=$false)] [string] $destSA="smoketestoutstorageacct",
+    [Parameter(Mandatory=$false)] [string] $destSA="smokeout",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_output_resource_group",
     [Parameter(Mandatory=$false)] [string] $destContainer="last-known-good-vhds",
     [Parameter(Mandatory=$false)] [string] $destPkgContainer="last-known-good-packages",

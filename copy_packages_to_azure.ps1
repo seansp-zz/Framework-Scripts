@@ -1,6 +1,6 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string] $destResourceGroup="smoke_working_resource_group",
-    [Parameter(Mandatory=$false)] [string] $destAccountName="smokeworkingstorageacct",
+    [Parameter(Mandatory=$false)] [string] $destAccountName="smokework",
     [Parameter(Mandatory=$false)] [string] $destContainer="last-build-packages",
     [Parameter(Mandatory=$false)] [string] $driveLetter="Z:\",
     [Parameter(Mandatory=$false)] [string] $location="westus"

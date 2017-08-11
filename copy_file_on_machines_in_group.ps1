@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$false)] [string[]] $requestedNames,
     
-    [Parameter(Mandatory=$false)] [string] $destSA="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $destSA="smokesrc",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $location="westus",
 

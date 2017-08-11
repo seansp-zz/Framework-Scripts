@@ -15,7 +15,7 @@ param (
     [Parameter(Mandatory=$false)] [string[]] $requestedVMs,
 
     [Parameter(Mandatory=$false)] [string] $rg="smoke_source_resource_group",
-    [Parameter(Mandatory=$false)] [string] $nm="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $nm="smokesrc",
     [Parameter(Mandatory=$false)] [string] $srcContainer="safe-templates",
 
     [Parameter(Mandatory=$false)] [string[]] $location

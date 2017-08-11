@@ -3,11 +3,11 @@
     [Parameter(Mandatory=$false)] [string] $makeDronesFromAll="False",
     [Parameter(Mandatory=$false)] [string] $overwriteVHDs="False",
 
-    [Parameter(Mandatory=$false)] [string] $sourceSA="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $sourceSA="smokesrc",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="clean-vhds",
 
-    [Parameter(Mandatory=$false)] [string] $destSA="smokesourcestorageacct",
+    [Parameter(Mandatory=$false)] [string] $destSA="smokesrc",
     [Parameter(Mandatory=$false)] [string] $destRG="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $destContainer="safe-templates",
 

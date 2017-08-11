@@ -1,7 +1,7 @@
 ﻿param (
     [Parameter(Mandatory=$true)] [string] $vmName,
     [Parameter(Mandatory=$true)] [string] $resourceGroup="smoke_working_resource_group",
-    [Parameter(Mandatory=$true)] [string] $storageAccount="smokeworkingstorageacct",
+    [Parameter(Mandatory=$true)] [string] $storageAccount="smokework",
     [Parameter(Mandatory=$true)] [string] $containerName="vhds-under-test",
 
     [Parameter(Mandatory=$true)] [string] $network="SmokeVNet",
