@@ -16,7 +16,7 @@ param (
 
     [Parameter(Mandatory=$false)] [string] $pkg_location="westus"
 )
-. "C:\Framework-Scripts\secrets.ps1"
+. "/root/Framework-Scripts/secrets.ps1"
 
 $global:isHyperV = $false
 $global:o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck

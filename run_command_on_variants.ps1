@@ -10,8 +10,12 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokework",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
+
+    [Parameter(Mandatory=$false)] [string[]] $Flavors="Unset",
+    [Parameter(Mandatory=$false)] [string[]] $requestedNames = "Unset",
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll="False"
     
-    [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd",
+    [Parameter(Mandatory=$false)] [string] $suffix="-booted-and-verified.vhd",
 
     [Parameter(Mandatory=$false)] [string] $command="unset",
     [Parameter(Mandatory=$false)] [string] $asRoot="False",
@@ -20,14 +24,17 @@ param (
     [Parameter(Mandatory=$false)] [string] $network="smokeVNet",
     [Parameter(Mandatory=$false)] [string] $subnet="SmokeSubnet-1",
     [Parameter(Mandatory=$false)] [string] $NSG="SmokeNSG",
-    [Parameter(Mandatory=$false)] [string] $location="westus",
-
-    [Parameter(Mandatory=$false)] [string[]] $Flavors=""
+    [Parameter(Mandatory=$false)] [string] $location="westus"
 )
 
 System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
 $vmNameArray.Clear()
+if ($requestedNames -like "*,*") {
+    $vmNameArray = $requestedNames.Split(',')
+} else {
+    $vmNameArray += $requestedNames
+}
 
 System.Collections.ArrayList]$all_vmNames_array
 $all_vmNameArray = {$vmNames_array}.Invoke()
@@ -42,14 +49,21 @@ if ($Flavors -like "*,*") {
     $flavorsArray += $Flavors
 }
 
+$vmName = $vmNameArray[0]
+if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
+    Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
+    Stop-Transcript
+    exit 1
+}
+
+if ($flavorsArray.Count -eq 1 -and $flavorsArray[0] -eq "Unset" )
+Write-Host "Must specify at least one VM Flavor to build..  Unable to process this request."
+Stop-Transcript
+exit 1
+}
+
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
-
-#
-#  Session stuff
-#
-$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$cred = make_cred
 
 login_azure $sourceRG $sourceSA $location
 

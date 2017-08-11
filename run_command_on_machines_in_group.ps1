@@ -43,7 +43,7 @@ $commandString =
 
     Start-Transcript C:\temp\transcripts\run_command_on_machines_in_group_$vm_name.log > $null
 
-    login_azure $DestRG $DestSA $location
+    login_azure $DestRG $DestSA $location > $null
     #
     #  Session stuff
     #
@@ -93,6 +93,8 @@ foreach ($baseName in $vmNameArray) {
 $jobFailed = $false
 $jobBlocked = $false
 
+Start-Sleep -Seconds 10
+
 $allDone = $false
 while ($allDone -eq $false) {
     $allDone = $true
@@ -131,8 +133,8 @@ while ($allDone -eq $false) {
 }
 
 foreach ($baseName in $vmNameArray) {
-    $vm_name = $baseName + $suffix
-    $vm_name = $vm_name -replace ".vhd", ""
+    $vm_name = $baseName
+    $vm_name = $vm_name -replace ".vhd", "" 
     $job_name = "run_command_" + $vm_name
 
     Get-Job $job_name | Receive-Job -OutVariable $jobText -ErrorAction SilentlyContinue

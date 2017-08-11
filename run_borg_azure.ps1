@@ -242,9 +242,23 @@ function launch_azure_vms {
         $storageAccount="smokework"
         $containerName="vhds-under-test"
 
-        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -resourceGroup $args[0] -storageAccount $args[1] -containerName $args[2] `
-                                                    -vmName $args[3] -network "SmokeVNet" -subnet "SmokeSubnet-1" -NSG "SmokeNSG" -location $args[4]} `
-                                                    -ArgumentList @($resourceGroup),@($storageAccount),@($containerName),@($vmName),@($global:location)
+    
+        $network="SmokeVNet"
+        $subnet="SmokeSubnet-1"
+        $NSG="SmokeNSG"
+    
+        $VMFlavor="Standard_D2_V2"
+    
+        $addressPrefix = "10.0.0.0/16"
+        $subnetPrefix = "10.0.0.0/24"
+    
+        $suffix = "-BORG.vhd"
+
+        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $args[0] -resourceGroup $args[1] -storageAccount $args[2] -containerName $args[3] `
+                                                    -network $args[4] -subnet $args[5] -NSG $args[6] -location $args[7] -VMFlavor $args[8] -addressPrefix $args[9] `
+                                                    -subnetPrefix $args[10] -suffix $args[11] } `
+                                                    -ArgumentList @($vmName),@($resourceGroup),@($storageAccount),@($containerName),@($network),@($subnet),@($NSG),@($global:location),`
+                                                                  @($vmFlavor),@($addressPrefix),@($subnetPrefix),@($suffix)
     }
 
     foreach ($machineLog in $global:machineLogs) {
