@@ -81,8 +81,8 @@ if ($? -eq $true -and $existingGroup -ne $null -and $useNewResourceGroup -eq $tr
 #
 #
 #  Change the name of the SA to include the region, then Now see if the SA exists
-Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA 
-if ($? -eq $false) {
+$existing = Get-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA 
+if ($? -eq $false -or $existing -eq $null) {
     Write-Host "Storage account $destSA did not exist.  Creating it and populating with the right containers..." -ForegroundColor Yellow
     New-AzureRmStorageAccount -ResourceGroupName $destRG -Name $destSA -Location $location -SkuName Standard_LRS -Kind Storage
 
