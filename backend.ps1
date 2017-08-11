@@ -347,7 +347,7 @@ class AzureBackend : Backend {
         $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
 
         $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
-        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+        Write-Host "Assigning network $($this.NetworkName) and subnet config  $($this.SubnetName) with NSG  $($this.NetworkSecGroupName) to new machine" -ForegroundColor Yellow
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
         $ipName = $InstanceName
@@ -396,7 +396,7 @@ class AzureBackend : Backend {
         $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
 
         $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
-        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+        Write-Host "Assigning network $($this.NetworkName) and subnet config $($this.SubnetName) with NSG $($this.NetworkSecGroupName) to new machine" -ForegroundColor Yellow
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
         $ipName = $InstanceName
@@ -458,7 +458,7 @@ class AzureBackend : Backend {
         $VMSubnetObject = $this.getSubnet($sg, $VMVNETObject)
 
         $vm = New-AzureRmVMConfig -VMName $InstanceName -VMSize $this.VMFlavor
-        Write-Host "Assigning network " $this.NetworkName " and subnet config " $this.SubnetName " with NSG " $this.NetworkSecGroupName " to new machine" -ForegroundColor Yellow            
+        Write-Host "Assigning network $($this.NetworkName) and subnet config $($this.SubnetName) with NSG $($this.NetworkSecGroupName) to new machine" -ForegroundColor Yellow
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
         $ipName = $InstanceName

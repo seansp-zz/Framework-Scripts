@@ -55,15 +55,15 @@ $action={
 
         $results=get-content $resultsFile
         $resultsSplit = $results.split(' ')
-        $resustsgot=$resultsSplit[1]
+        $resultsGot=$resultsSplit[1]
 
         if ($resultsSplit[0] -ne "Success") {
             $resultExpected = $resultsSplit[2]
-            Write-Host "       **** Machine $machineName rebooted, but wrong version detected.  Expected $resultExpected but got $resustsgot" -ForegroundColor red
+            Write-Host "       **** Machine $machineName rebooted, but wrong version detected.  Expected $resultExpected but got $resultsGot" -ForegroundColor red
             $global:failed=$true
         } else {
-            Write-Host "       **** Machine rebooted successfully to kernel version $resustsgot" -ForegroundColor green
-            $global:booted_version=$resustsgot
+            Write-Host "       **** Machine rebooted successfully to kernel version $resultsGot" -ForegroundColor green
+            $global:booted_version=$resultsGot
         }
 
         $machine.status = "Completed"
