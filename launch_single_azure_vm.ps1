@@ -18,7 +18,9 @@
     [Parameter(Mandatory=$false)] [string] $subnetPrefix = "10.0.0.0/24",
     [Parameter(Mandatory=$false)] [string] $blobURN,
 
-    [Parameter(Mandatory=$false)] [string] $suffix = ".vhd"
+    [Parameter(Mandatory=$false)] [string] $suffix = ".vhd",
+
+    [Parameter(Mandatory=$false)] [switch] $imageIsGeneralized = $false
 )
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -43,4 +45,9 @@ $azureBackend.suffix = $suffix
 
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()
-$azureInstance.CreateFromSpecialized()
+
+if ($false -eq $imageIsGeneralized) {}
+    $azureInstance.CreateFromSpecialized()
+} else {
+    $azureInstance.CreateFromGeneralized()
+}

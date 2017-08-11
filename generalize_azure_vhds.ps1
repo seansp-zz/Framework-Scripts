@@ -7,7 +7,7 @@
 param (
     [Parameter(Mandatory=$false)] [string] $sourceSA="smokework",
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
-    [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds_under_test",
+    [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
 
     [Parameter(Mandatory=$false)] [string] $requestedNames,
     [Parameter(Mandatory=$false)] [string] $generalizeAll,

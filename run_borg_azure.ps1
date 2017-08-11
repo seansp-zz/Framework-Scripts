@@ -15,7 +15,7 @@ param (
     #  Azure RG for all accounts and containers
     [Parameter(Mandatory=$false)] [string] $sourceResourceGroupName="smoke_source_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceStorageAccountName="smokesrc",
-    [Parameter(Mandatory=$false)] [string] $sourceContainerName="safe-templates",
+    [Parameter(Mandatory=$false)] [string] $sourceContainerName="drones",
 
     [Parameter(Mandatory=$false)] [string] $workingResourceGroupName="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $workingStorageAccountName="smokework",
@@ -26,12 +26,17 @@ param (
     # 
     #  A place with the contents of Last Known Good.  This is similar to Latest for packagee
     [Parameter(Mandatory=$false)] [string] $testOutputResourceGroup="smoke_output_resoruce_group",
-    [Parameter(Mandatory=$false)] [string] $testOutputStorageAccountName="smoketestoutstorageacct",    
+    [Parameter(Mandatory=$false)] [string] $testOutputStorageAccountName="smoketest",    
     [Parameter(Mandatory=$false)] [string] $testOutputContainerName="last-known-good-vhds",
 
     #
-    #  Our location
-    [Parameter(Mandatory=$false)] [string] $location="westus"
+    #  Our location & flavor
+    [Parameter(Mandatory=$false)] [string] $location="westus",
+    [Parameter(Mandatory=$false)] [string] $vmFlavor="Standard_D2_V2",
+
+    #
+    #  If set, which is the default, this will re-create the destination RG
+    [Parameter(Mandatory=$false)] [string] $CleanRG="false"
 )
 
 get-job | Stop-Job  > $null
@@ -596,7 +601,7 @@ $seconds = (New-TimeSpan -Start $date1 -End $date2).TotalSeconds
 $timerName="AzureBORGTimer-" + $seconds
 Write-Host "Using timer name $timerName"
 
-
+if($CLEANRG)
 #
 #  Copy the virtual machines to the staging container
 #                

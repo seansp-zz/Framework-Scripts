@@ -11,9 +11,9 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
 
-    [Parameter(Mandatory=$false)] [string[]] $Flavors="Unset",
-    [Parameter(Mandatory=$false)] [string[]] $requestedNames = "Unset",
-    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll="False"
+    [Parameter(Mandatory=$false)] [string[]] $Flavors="",
+    [Parameter(Mandatory=$false)] [string[]] $requestedNames = "",
+    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll="False",
     
     [Parameter(Mandatory=$false)] [string] $suffix="-booted-and-verified.vhd",
 
@@ -50,13 +50,13 @@ if ($Flavors -like "*,*") {
 }
 
 $vmName = $vmNameArray[0]
-if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "Unset")) {
+if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
     exit 1
 }
 
-if ($flavorsArray.Count -eq 1 -and $flavorsArray[0] -eq "Unset" )
+if ($flavorsArray.Count -eq 1 -and $flavorsArray[0] -eq "" )
 Write-Host "Must specify at least one VM Flavor to build..  Unable to process this request."
 Stop-Transcript
 exit 1
@@ -91,6 +91,11 @@ $comandScript = {
     . C:\Framework-Scripts\secrets.ps1
 
     login_azure $sourceRG $sourceSA $location
+    
+    $addressPrefix = "10.0.0.0/16"
+    $subnetPrefix = "10.0.0.0/24"
+
+    $suffix = "-BORG.vhd"
      
     $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
     if ($runningVMs.Name -contains $blobName) {
@@ -102,7 +107,7 @@ $comandScript = {
             Write-Host "Starting VM for VHD $blobName..."
             .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA `
                                          -containerName $sourceContainer -network $network -subnet $subnet -NSG $NSG `
-                                         -Location $location -VMFlavor $flavor
+                                         -Location $location -VMFlavor $flavor -generalized
         } else {
             Write-Host "StartMachine was not set.  VM $blobName will not be started or used."
             $failed = $true
