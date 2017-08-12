@@ -270,6 +270,8 @@ foreach ($vmName in $vmNameArray) {
     Write-Host "Just launched job $jobName"
 }
 
+start-sleep -Seconds 10
+
 write-host "Checking make_drone jobs..."
 $notDone = $true
 while ($notDone -eq $true) {
