@@ -46,7 +46,7 @@ $azureBackend.suffix = $suffix
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()
 
-if ($false -eq $imageIsGeneralized) {}
+if ($false -eq $imageIsGeneralized) {
     $azureInstance.CreateFromSpecialized()
 } else {
     $azureInstance.CreateFromGeneralized()
