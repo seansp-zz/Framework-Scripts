@@ -128,7 +128,7 @@ foreach ($vmName in $vmNames) {
     $sourceName = $vmName + $sourceExtension
     $targetName = $vmName + $destExtension
 
-    Write-Host "Initiating job to copy VHD $targetName from cache to working directory $..." -ForegroundColor Yellow
+    Write-Host "Initiating job to copy VHD $sourceName from $sourceRG and $sourceContainer to $targetName in $destRG and $destSA, container $destContainer" -ForegroundColor Yellow
     if ($overwriteVHDs -eq $true) {
         $blob = Start-AzureStorageBlobCopy -SrcBlob $sourceName -DestContainer $destContainer -SrcContainer $sourceContainer -DestBlob $targetName -Context $sourceContext -DestContext $destContext -Force
     } else {
