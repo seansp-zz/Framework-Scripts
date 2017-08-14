@@ -64,10 +64,3 @@ Function ConvertFromInnerXml( $Object )
   }
 }
 
-
-$xml = [xml] (Get-Content "sample.xml")
-Write-Host $xml -ForegroundColor Green
-$SomeCrazyType = ConvertFromXml ( $xml )
-$foo = $SomeCrazyType | ConvertTo-Json -Depth 3
-
-Write-Host $foo -ForegroundColor Yellow
