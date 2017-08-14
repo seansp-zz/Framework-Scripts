@@ -53,6 +53,10 @@ fi;
 if [ -f /usr/bin/dpkg ] ;
   then
     echo "This is a dpkg machine"
+    rm -f /var/lib/dpkg/lock
+    dpkg --configure -a
+    apt --fix-broken -y install
+
     apt-get -y install git
     #  Let's grab the dpkg puppet installer.
     #  TODO: do i really need wget here?
@@ -129,8 +133,6 @@ deb-src http://security.debian.org/ stretch/updates main
 NEW_SOURCES
     #
     #  Make sure things are consistent
-    dpkg --configure -a
-    apt --fix-broken -y install
     apt-get -y update
     apt-get install -y curl
     apt-get install -y dnsutils

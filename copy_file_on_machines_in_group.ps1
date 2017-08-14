@@ -26,7 +26,7 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-write-Verbos "Copying file $file to $vmNameArray "
+write-Verbose "Copying file $file to $vmNameArray "
 
 #
 #  Session stuff

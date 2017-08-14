@@ -24,13 +24,6 @@ param (
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
-
-#
-#  Session stuff
-#
-$o = New-PSSessionOption -SkipCACheck -SkipRevocationCheck -SkipCNCheck
-$cred = make_cred
-
 login_azure $sourceRG $sourceSA $location
 
 $blobs = Get-AzureStorageBlob -Container $sourceContainer
@@ -114,12 +107,12 @@ while ($allDone -eq $false) {
             $allDone = $false
         } elseif ($jobState -eq "Failed") {
             write-host "**********************  JOB ON HOST MACHINE $vmJobName HAS FAILED TO START." -ForegroundColor Red
-            $jobFailed = $true
+            # $jobFailed = $true
             $vmsFinished = $vmsFinished + 1
             $Failed = $true
         } elseif ($jobState -eq "Blocked") {
             write-host "**********************  HOST MACHINE $vmJobName IS BLOCKED WAITING INPUT.  COMMAND WILL NEVER COMPLETE!!" -ForegroundColor Red
-            $jobBlocked = $true
+            # $jobBlocked = $true
             $vmsFinished = $vmsFinished + 1
             $Failed = $true
         } else {

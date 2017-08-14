@@ -11,20 +11,23 @@ param (
     [Parameter(Mandatory=$false)] [string] $sourceRG="smoke_working_resource_group",
     [Parameter(Mandatory=$false)] [string] $sourceContainer="vhds-under-test",
 
+    [Parameter(Mandatory=$false)] [string] $destSA="smokework",
+    [Parameter(Mandatory=$false)] [string] $destRB="smoke_working_resource_group",
+    [Parameter(Mandatory=$false)] [string] $destContainer="vhds-under-test",
+
     [Parameter(Mandatory=$false)] [string[]] $Flavors="",
     [Parameter(Mandatory=$false)] [string[]] $requestedNames = "",
-    [Parameter(Mandatory=$false)] [string] $makeDronesFromAll="False",
     
-    [Parameter(Mandatory=$false)] [string] $suffix="-booted-and-verified.vhd",
-
-    [Parameter(Mandatory=$false)] [string] $command="unset",
-    [Parameter(Mandatory=$false)] [string] $asRoot="False",
-    [Parameter(Mandatory=$true) ] [string] $StartMachines="True",
+    [Parameter(Mandatory=$false)] [string] $currentSuffix="-booted-and-verified.vhd",
+    [Parameter(Mandatory=$false)] [string] $newSuffix="-variant.vhd",
 
     [Parameter(Mandatory=$false)] [string] $network="smokeVNet",
     [Parameter(Mandatory=$false)] [string] $subnet="SmokeSubnet-1",
     [Parameter(Mandatory=$false)] [string] $NSG="SmokeNSG",
-    [Parameter(Mandatory=$false)] [string] $location="westus"
+    [Parameter(Mandatory=$false)] [string] $location="westus",
+
+    [Parameter(Mandatory=$false)] [string] $srcSuffix="-Smoke-1",
+    [Parameter(Mandatory=$false)] [string] $destSuffix="-Variant.vhd"
 )
 
 System.Collections.ArrayList]$vmNames_array
@@ -50,13 +53,13 @@ if ($Flavors -like "*,*") {
 }
 
 $vmName = $vmNameArray[0]
-if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmNameArray[0] -eq "")) {
+if ($makeDronesFromAll -ne $true -and ($vmNameArray.Count -eq 1  -and $vmName -eq "")) {
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
     exit 1
 }
 
-if ($flavorsArray.Count -eq 1 -and $flavorsArray[0] -eq "" )
+if ($flavorsArray.Count -eq 1 -and $flavorsArray[0] -eq "" ) {
 Write-Host "Must specify at least one VM Flavor to build..  Unable to process this request."
 Stop-Transcript
 exit 1
@@ -74,53 +77,66 @@ $blobs = Get-AzureStorageBlob -Container $sourceContainer
 $failed = $false
 
 $comandScript = {
-    param (
-        $blobName,
-        $startMachines,
-        $sourceRG,
-        $sourceSA,
-        $sourceContainer,
-        $network,
-        $subnet,
-        $NSG,
-        $location,
-        $flavor)
+    param ($vmName,
+    $sourceRG,
+    $sourceSA,
+    $sourceContainer,
+    $destRG,
+    $destSA,
+    $destContainer,
+    $location,
+    $currentSuffix,
+    $newSuffix,
+    $NSG,
+    $network,
+    $subnet,
+    $vmFlavor
+    )
+    Start-Transcript C:\temp\transcripts\$vmName-$vmFlacor-Variant.log -Force
 
-    Start-Transcript C:\temp\transcripts\run_command_on_container_$blobName.log -Force
-    . C:\Framework-Scripts\common_functions.ps1
-    . C:\Framework-Scripts\secrets.ps1
+    . "C:\Framework-Scripts\common_functions.ps1"
+    . "C:\Framework-Scripts\secrets.ps1"
 
-    login_azure $sourceRG $sourceSA $location
-    
-    $addressPrefix = "10.0.0.0/16"
-    $subnetPrefix = "10.0.0.0/24"
+    write-host "Checkpoint 3" -ForegroundColor Cyan
 
-    $suffix = "-BORG.vhd"
-     
-    $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
-    if ($runningVMs.Name -contains $blobName) {
-        write-host "VM $blobName is running"
-    } else {
-        Write-Host "VM $blobName is not running."
+    login_azure $destRG $destSA $location
 
-        if ($StartMachines -ne $false) {
-            Write-Host "Starting VM for VHD $blobName..."
-            .\launch_azure_machines.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA `
-                                         -containerName $sourceContainer -network $network -subnet $subnet -NSG $NSG `
-                                         -Location $location -VMFlavor $flavor -generalized
-        } else {
-            Write-Host "StartMachine was not set.  VM $blobName will not be started or used."
-            $failed = $true
-        }
-    }
+    if ($startMachines -eq $true) {}
+    Write-Host "Deallocating machine $vmName, if it is up"
+    $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
+    deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
-    Stop-Transcript
+    $regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+    $regionSuffix = $regionSuffix -replace "_","-"
 
-    if ($failed -eq $true) {
+    $newVMName = $vmName
+    # $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
+
+    Write-Host "Attempting to create virtual machine $newVMName.  This may take some time." -ForegroundColor Green
+    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
+                                                -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor -suffix $newSuffix 
+    if ($? -ne $true) {
+        Write-Host "Error creating VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
         exit 1
     }
 
-    exit 0
+    #
+    #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
+    #  but kept getting timeouts on the Ubuntu machines.
+    $regionSuffix = ("-" + $location) -replace " ","-"
+    $imageName = $newVMName + "-" + $vmFlavor + $regionSuffix.ToLower()
+    $imageName = $imageName -replace "_","-"
+    $imageName = $imageName + $newSuffix
+    $imageName = $imageName -replace ".vhd", ""
+
+    $pipName = $imageName
+    $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
+    if ($? -ne $true) {
+        Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
+        Stop-Transcript
+        exit 1
+    }
 }
 
 $scriptBlock = [scriptblock]::Create($comandScript)
@@ -136,8 +152,10 @@ foreach ($blob in $blobs) {
     foreach ($oneFlavor in $Flavors) {
         $vmJobName = "start_" + $oneFlavor + $blobName
 
-        Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $blobName, $startMachines, $sourceRG, $sourceSA, $sourceContainer, `
-                                                                           $network, $subnet, $NSG, $location, $oneFlavor
+        Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $blobName, $sourceRG, $sourceSA, $sourceContainer,`
+                                                                           $destRG, $destSA, $destContainer, $location,`
+                                                                           $currentSuffix, $newSuffix, $NSG, $network, `
+                                                                           $subnet, $oneFlavor
     }
 }
 
@@ -159,12 +177,12 @@ while ($allDone -eq $false) {
             $allDone = $false
         } elseif ($jobState -eq "Failed") {
             write-host "**********************  JOB ON HOST MACHINE $vmJobName HAS FAILED TO START." -ForegroundColor Red
-            $jobFailed = $true
+            # $jobFailed = $true
             $vmsFinished = $vmsFinished + 1
             $Failed = $true
         } elseif ($jobState -eq "Blocked") {
             write-host "**********************  HOST MACHINE $vmJobName IS BLOCKED WAITING INPUT.  COMMAND WILL NEVER COMPLETE!!" -ForegroundColor Red
-            $jobBlocked = $true
+            # $jobBlocked = $true
             $vmsFinished = $vmsFinished + 1
             $Failed = $true
         } else {
@@ -183,5 +201,3 @@ if ($Failed -eq $true) {
     Write-Host "Remote command execution failed because we could not !" -ForegroundColor Red
     exit 1
 } 
-
-C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $copyBlobs -destSA $sourceSA -destRG $sourceRG -suffix $suffix -command $command -asRoot $asRoot
