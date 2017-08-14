@@ -105,7 +105,7 @@ $comandScript = {
 
         if ($StartMachines -ne $false) {
             Write-Host "Starting VM for VHD $blobName..."
-            .\launch_single_azure_vm.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA `
+            .\launch_azure_machines.ps1 -vmName $blobName -resourceGroup $sourceRG -storageAccount $sourceSA `
                                          -containerName $sourceContainer -network $network -subnet $subnet -NSG $NSG `
                                          -Location $location -VMFlavor $flavor -generalized
         } else {

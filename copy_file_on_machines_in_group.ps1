@@ -7,7 +7,9 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix="-Runonce-Primed.vhd",
 
-    [Parameter(Mandatory=$false)] [string] $scriptName="unset" 
+    [Parameter(Mandatory=$false)] [string] $scriptName="unset",
+
+    [Parameter(Mandatory=$false)] [int] $retryCount=2 
 )
     
 $suffix = $suffix -replace "_","-"
@@ -24,7 +26,7 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-write-host "Copying file $file to $vmNameArray "
+write-Verbos "Copying file $file to $vmNameArray "
 
 #
 #  Session stuff
@@ -41,14 +43,19 @@ $commandBLock=[scriptblock]::Create($runCommand)
 
 foreach ($baseName in $vmNameArray) {
     $vm_name = $baseName
-
-    write-host "Executing remote command on machine $vm_name"
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
-    if ($? -eq $true -and $session -ne $null) {
-        invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $runCommand
-        Exit-PSSession
-
-    } else {
-        Write-Host "    FAILED to establish PSRP connection to machine $vm_name." -ForegroundColor Red
+    [int]$timesTried = 0
+    [bool]$success = $false
+    while ($timesTried -lt $retryCount) {
+        Write-Verbose "Executing copy command on machine $vm_name, resource gropu $destRG"
+        $timesTried = $timesTried + 1
+            Write-Verbose "Executing copy command on machine $vm_name"
+            [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
+            if ($? -eq $true -and $session -ne $null) {
+                invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $runCommand
+                Exit-PSSession
+            } else {
+                Write-Error "    FAILED to establish PSRP connection to machine $vm_name." -ForegroundColor Red
+            }
+        }
+        Start-Sleep -Seconds 10
     }
-}

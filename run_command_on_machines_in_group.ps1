@@ -9,7 +9,9 @@
     [Parameter(Mandatory=$false)] [string] $command="unset",
     [Parameter(Mandatory=$false)] [string] $asRoot="false",
 
-    [Parameter(Mandatory=$false)] [string] $location="westus"
+    [Parameter(Mandatory=$false)] [string] $location="westus",
+
+    [Parameter(Mandatory=$false)] [int] $retryCount=2
 )
     
     
@@ -35,7 +37,8 @@ $commandString =
             $suffix,
             $command,
             $asRoot,
-            $vm_name
+            $vm_name,
+            $retryCount
             )
 
     . C:\Framework-Scripts\common_functions.ps1
@@ -62,14 +65,23 @@ $commandString =
 
     $commandBLock=[scriptblock]::Create($runCommand)
 
-    # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
-    [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
-    if ($? -eq $true -and $session -ne $null) {
-        invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $command
-        Exit-PSSession
-
-    } else {
-        Write-Host "    FAILED to establish PSRP connection to machine $vm_name."
+    [int]$timesTried = 0
+    [bool]$success = $false
+    while ($timesTried -lt $retryCount) {
+        # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
+        $timesTried = $timesTried + 1
+        [System.Management.Automation.Runspaces.PSSession]$session = create_psrp_session $vm_name $destRG $destSA $location $cred $o
+        if ($? -eq $true -and $session -ne $null) {
+            invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $command
+            Exit-PSSession
+            $success = $true
+            break
+        } else {
+            if ($timesTried -lt $retryCount) {
+                Write-Host "    Try $timesTried of $retryCount -- FAILED to establish PSRP connection to machine $vm_name."
+            }
+        }
+        sleep 10
     }
 
     Stop-Transcript > $null
@@ -87,7 +99,7 @@ foreach ($baseName in $vmNameArray) {
 
     # write-host "Executing remote command on machine $vm_name, resource gropu $destRG"
 
-    start-job -Name $job_name -ScriptBlock $commandBLock -ArgumentList $DestRG, $DestSA, $location, $suffix, $command, $asRoot, $vm_name > $null
+    start-job -Name $job_name -ScriptBlock $commandBLock -ArgumentList $DestRG, $DestSA, $location, $suffix, $command, $asRoot, $vm_name, $retryCount > $null
 }
 
 $jobFailed = $false
@@ -137,8 +149,8 @@ foreach ($baseName in $vmNameArray) {
     $vm_name = $vm_name -replace ".vhd", "" 
     $job_name = "run_command_" + $vm_name
 
-    Get-Job $job_name | Receive-Job -OutVariable $jobText -ErrorAction SilentlyContinue
-    Write-Host $vm_name : $jobText
+    Write-Host $vm_name :
+    Get-Job $job_name | Receive-Job -ErrorAction SilentlyContinue
 }
 
 if ($jobFailed -eq $true -or $jobBlocked -eq $true)

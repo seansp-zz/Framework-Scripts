@@ -228,7 +228,7 @@ function copy_azure_machines {
 }
 
 
-function launch_azure_vms {
+function create_azure_topology {
     foreach ($vmName in $global:neededVms) {
         $machine = new-Object MonitoredMachine
         $machine.name = $vmName
@@ -237,7 +237,6 @@ function launch_azure_vms {
 
         $global:num_remaining += 1
         $jobname=$vmName + "-VMStart"
-        # launch_single_vm($vmName)
 
         $machine_log = New-Object MachineLogs
         $machine_log.name = $vmName
@@ -260,7 +259,7 @@ function launch_azure_vms {
     
         $suffix = "-BORG.vhd"
 
-        Start-Job -Name $jobname -ScriptBlock { c:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $args[0] -resourceGroup $args[1] -storageAccount $args[2] -containerName $args[3] `
+        Start-Job -Name $jobname -ScriptBlock { C:\Framework-Scripts\launch_single_asure_vm.ps1 -vmName $args[0] -resourceGroup $args[1] -storageAccount $args[2] -containerName $args[3] `
                                                     -network $args[4] -subnet $args[5] -NSG $args[6] -location $args[7] -VMFlavor $args[8] -addressPrefix $args[9] `
                                                     -subnetPrefix $args[10] -suffix $args[11] } `
                                                     -ArgumentList @($vmName),@($resourceGroup),@($storageAccount),@($containerName),@($network),@($subnet),@($NSG),@($global:location),`
@@ -643,7 +642,7 @@ copy_azure_machines
 #
 #  Launch the virtual machines
 #                
-launch_azure_vms
+create_azure_topology
 write-host "$global:num_remaining machines have been launched.  Waiting for completion..."
 
 #

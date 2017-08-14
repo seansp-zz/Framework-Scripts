@@ -53,21 +53,23 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [stri
 
     $vm_search_string = $vmName + "*" + $location + "*"
 
-    # Write-Host "Attempting to locate host by search string " $vm_search_string
+    Write-Verbose "Attempting to locate host by search string $vm_search_string"
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg | Where-Object -Property Name -Like $vm_search_string
-    # Write-Host "Got IP Address $($ipAddress.Name), with IP Address $($ipAddress.IpAddress)"
+    Write-Verbose "Got IP Address $($ipAddress.Name), with IP Address $($ipAddress.IpAddress)"
 
     if ($ipAddress.IpAddress -eq "Not Assigned") {
         Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
         return $null
     }
-    # Write-Host "Attempting contact at " $ipAddress.IpAddress
-    $thisSession = new-PSSession -computername $ipAddress.IpAddress -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
+
+    $remoteIP = $ipAddress.IpAddress
+    Write-Verbose "Attempting contact at $remoteIP"
+    $thisSession = new-PSSession -computername $remoteIP -credential $cred -authentication Basic -UseSSL -Port 443 -SessionOption $o
     if ($? -eq $false) {
         Write-Host "Contact failed..."
         return $null
     } else {
-        # write-host "Contact was successful"
+        Write-Verbose "Contact was successful"
         return $thisSession
     }
 }
@@ -78,11 +80,11 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
                                     [string] $location)
 {
     if ($null -eq $runningVMs) {
-        Write-Host "Cannot stop empty group"
+        Write-Error "Cannot stop empty group"
         return
     }
 
-    Write-Host "Removing from $destRG and $destSA"
+    Write-Verbose "Removing from $destRG and $destSA"
 
     $scriptBlockString =
     {
@@ -96,7 +98,7 @@ function stop_machines_in_group([Microsoft.Azure.Commands.Compute.Models.PSVirtu
         . C:\Framework-Scripts\secrets.ps1
 
         login_azure $destRG $destSA $location
-        Write-Host "Stopping machine $vm_name in RG $destRG"
+        Write-Verbose "Stopping machine $vm_name in RG $destRG"
         Stop-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
     }
 
@@ -134,10 +136,10 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
                                     [string] $destSA,
                                     [string] $location)
 {
-    Write-Host "Deprovisioning from $destRG and $destSA"
+    Write-Verbose "Deprovisioning from $destRG and $destSA"
 
     if ($null -eq $runningVMs) {
-        Write-Host "Cannot deprovision empty group"
+        Write-Error "Cannot deprovision empty group"
         return
     }
 
