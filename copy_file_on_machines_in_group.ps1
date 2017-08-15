@@ -54,7 +54,7 @@ foreach ($baseName in $vmNameArray) {
                 invoke-command -session $session -ScriptBlock $commandBLock -ArgumentList $runCommand
                 Exit-PSSession
             } else {
-                Write-Error "    FAILED to establish PSRP connection to machine $vm_name." -ForegroundColor Red
+                Write-Error "    FAILED to establish PSRP connection to machine $vm_name."
             }
         }
         Start-Sleep -Seconds 10

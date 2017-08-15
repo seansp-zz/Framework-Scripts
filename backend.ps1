@@ -147,6 +147,7 @@ class AzureBackend : Backend {
     [String] $addressPrefix = "172.19.0.0/16"
     [String] $subnetPrefix = "172.19.0.0/24"
     [String] $blobURN = "Unset"
+    [String] $blobURI = "Unset"
     [String] $suffix = "-Smoke-1"
 
     AzureBackend ($Params) : base ($Params) {
@@ -475,24 +476,24 @@ class AzureBackend : Backend {
 
         #
         #  Set up the OS disk
-        Write-Host "Setting up the OS disk.  Image name is $InstanceName"       
-        $blobURIRaw = ("https://{0}.blob.core.windows.net/{1}/{2}.vhd" -f `
-                       @($this.StorageAccountName, $this.ContainerName, $InstanceName))
+        $blobURIRaw = $this.blobURI        
+        Write-Host "Setting up the OS disk.  Image name is $InstanceName, from URI $blobURIRaw"
+        # $blobURIRaw = ("https://{0}.blob.core.windows.net/{1}/{2}.vhd" -f `
+        #               @($this.StorageAccountName, $this.ContainerName, $InstanceName))
 
         $imageConfig = New-AzureRmImageConfig -Location $this.Location
         $imageConfig = Set-AzureRmImageOsDisk -Image $imageConfig -OsType Windows -OsState Generalized -BlobUri $blobURIRaw
+
         $image = New-AzureRmImage -ImageName $InstanceName -ResourceGroupName $this.ResourceGroupName -Image $imageConfig
 
         $cred = make_cred_initial
         $vm = Set-AzureRmVMSourceImage -VM $vm -Id $image.Id
-        $vm = Set-AzureRmVMOSDisk -VM $vm -DiskSizeInGB 20 -name $InstanceName -CreateOption fromImage -Caching ReadWrite
-        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Windows -ComputerName $InstanceName `
-                    -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+        $vm = Set-AzureRmVMOSDisk -VM $vm -name $InstanceName -CreateOption fromImage -Caching ReadWrite
+        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $InstanceName -Credential $cred -
 
         Write-Host "Adding the network interface" -ForegroundColor Yellow
         Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id
-        
-        
+    
         try {
             Write-Host "Starting the VM" -ForegroundColor Yellow
             

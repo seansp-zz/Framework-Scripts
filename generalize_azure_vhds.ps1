@@ -31,6 +31,14 @@ if ($requestedNames -ne "Unset" -and $requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
+[System.Collections.ArrayList]$base_names_array
+$machineBaseNames = {$base_names_array}.Invoke()
+$machineBaseNames.Clear()
+
+[System.Collections.ArrayList]$full_names_array
+$machineFullNames = {$full_names_array}.Invoke()
+$machineFullNames.Clear()
+
 $regionSuffix = ("-" + $this.Location) -replace " ","-"
 foreach ($vmName in $vmNameArray) {
     $vmName = $vmName + $regionSuffix
@@ -43,13 +51,31 @@ if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[
     Write-Host "Must specify either a list of VMs in RequestedNames, or use MakeDronesFromAll.  Unable to process this request."
     Stop-Transcript
     exit 1
-} elseif ($generalizeAll -eq $true) {
+} else {
     $requestedNames = ""
     $runningVMs = Get-AzureRmVm -ResourceGroupName $sourceRG
-    foreach ($vm in $runningVMs) {
-        $vm_name=$vm.Name
-        $requestedNames = $requestedNames + $vm_name + ","
+
+    if ($generalizeAll -eq $true) {
+        foreach ($vm in $runningVMs) {
+            $vm_name=$vm.Name
+            $requestedNames = $requestedNames + $vm_name + ","
+            $machineBaseNames += $vm_name
+            $machineFullNames $= $vm_name
+        }
+    } else {
+        foreach ($vm in $runningVMs) {
+            $vm_name=$vm.Name
+            foreach ($name in $requestedNames) {
+                if ($vm_name.contains($name)) {
+                    $requestedNames = $requestedNames + $vm_name + ","
+                    $machineBaseNames += $name
+                    $machineFullNames += $vm_name
+                    break
+                }
+            }
+        }
     }
+
     $requestedNames = $requestedNames -replace ".$"
     $suffix = ""
 }
@@ -74,14 +100,13 @@ if ($? -eq $false) {
     exit 1
 }
 
-foreach ($vm in $runningVMs) {
-    $vm_name=$vm.Name
-
-    Write-Host "Now deallocating machine $vm_name..."
-    az vm deallocate --resource-group $sourceRG --name $vm_name
-
-    Write-Host "And finally generalizing machine $vm_name..."
-    az vm generalize --resource-group $sourceRG --name $vm_name
+[int]nameIndex = 0
+foreach ($vm_name in $machineBaseNames) {
+    $machine_name = $machineFullNames[i]
+    Stop-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
+    Set-AzureRmVM -Name $machine_name -ResourceGroupName sourceRG -Generalized
+    Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vm_name
+    Remove-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
 
     Write-Host "Generalization of machine $vm_name complete."
 }

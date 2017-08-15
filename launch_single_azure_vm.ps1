@@ -20,7 +20,8 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = ".vhd",
 
-    [Parameter(Mandatory=$false)] [switch] $imageIsGeneralized = $false
+    [Parameter(Mandatory=$false)] [string] $imageIsGeneralized = "false",
+    [Parameter(Mandatory=$false)] [string] $generalizedBlobURI = ".vhd"
 )
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -41,13 +42,16 @@ $azureBackend.NetworkSecGroupName = $NSG
 $azureBackend.addressPrefix = $vnetAddressPrefix
 $azureBackend.subnetPrefix = $vnetSubnetAddressPrefix
 $azureBackend.blobURN = $blobURN
+$azureBackend.blobURI = $generalizedBlobURI
 $azureBackend.suffix = $suffix
 
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()
 
 if ($false -eq $imageIsGeneralized) {
+    write-verbose "instantinating a VM from a Specialized image..."
     $azureInstance.CreateFromSpecialized()
 } else {
+    write-verbose "Instantinating a VM from a generalized image..."
     $azureInstance.CreateFromGeneralized()
 }
