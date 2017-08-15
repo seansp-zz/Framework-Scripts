@@ -182,7 +182,7 @@ class AzureBackend : Backend {
 
         $regionSuffix = ($this.Location + "-" + $this.VMFlavor) -replace " ","-"
         $regionSuffix = $regionSuffix -replace "_","-"
-        $imageName = $newVMName + $regionSuffix.ToLower()
+        $imageName = $InstanceName + $regionSuffix.ToLower()
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
         $imageName = $imageName  -replace ".vhd", ""
