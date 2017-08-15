@@ -132,9 +132,6 @@ $scriptBlockString =
     $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
     deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
-    $regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
-    $regionSuffix = $regionSuffix -replace "_","-"
-
     $newVMName = $vmName
     # $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
 
@@ -156,9 +153,8 @@ $scriptBlockString =
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
-    $myLoc = $location.tolower()
-    $regionSuffix = ("-" + $myLoc + "-" + $vmFlavor) -replace " ","-"
-    
+    $regionSuffix = ($this.Location + "-" + $this.VMFlavor) -replace " ","-"
+    $regionSuffix = $regionSuffix -replace "_","-"
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
