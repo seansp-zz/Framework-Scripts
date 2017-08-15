@@ -60,7 +60,7 @@ if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[
             $vm_name=$vm.Name
             $requestedNames = $requestedNames + $vm_name + ","
             $machineBaseNames += $vm_name
-            $machineFullNames $= $vm_name
+            $machineFullNames += $vm_name
         }
     } else {
         foreach ($vm in $runningVMs) {
@@ -100,9 +100,13 @@ if ($? -eq $false) {
     exit 1
 }
 
-[int]nameIndex = 0
-foreach ($vm_name in $machineBaseNames) {
-    $machine_name = $machineFullNames[i]
+$scriptBlockText = {
+    param (
+        [string] $machine_name,
+        [string] $sourceRG,
+        [string] $sourceContainer,
+        [string] $vm_name
+    )
     Stop-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
     Set-AzureRmVM -Name $machine_name -ResourceGroupName sourceRG -Generalized
     Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vm_name
@@ -110,3 +114,61 @@ foreach ($vm_name in $machineBaseNames) {
 
     Write-Host "Generalization of machine $vm_name complete."
 }
+
+$scriptBlock = [scriptblock]::Create($scriptBlockText)
+
+[int]$nameIndex = 0
+foreach ($vm_name in $machineBaseNames) {
+    $machine_name = $machineFullNames[$nameIndex]
+    $nameIndex = $nameIndex + 1
+    $jobName = "generalize_" + $machine_name
+
+    Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $machine_name, $sourceRG, $sourceContainer, $vm_name
+}
+
+$allDone = $false
+while ($allDone -eq $false) {
+    $allDone = $true
+    $numNeeded = $vmNameArray.Count
+    $vmsFinished = 0
+
+    [int]$nameIndex = 0
+    foreach ($vm_name in $machineBaseNames) {
+        $machine_name = $machineFullNames[$nameIndex]
+        $nameIndex = $nameIndex + 1
+        $jobName = "generalize_" + $machine_name
+        $job = Get-Job -Name $jobName
+        $jobState = $job.State
+
+        # write-host "    Job $job_name is in state $jobState" -ForegroundColor Yellow
+        if ($jobState -eq "Running") {
+            write-verbose "job $jobName is still running..."
+            $allDone = $false
+        } elseif ($jobState -eq "Failed") {
+            write-host "**********************  JOB ON HOST MACHINE $vmJobName HAS FAILED TO START." -ForegroundColor Red
+            # $jobFailed = $true
+            $vmsFinished = $vmsFinished + 1
+            $Failed = $true
+        } elseif ($jobState -eq "Blocked") {
+            write-host "**********************  HOST MACHINE $vmJobName IS BLOCKED WAITING INPUT.  COMMAND WILL NEVER COMPLETE!!" -ForegroundColor Red
+            # $jobBlocked = $true
+            $vmsFinished = $vmsFinished + 1
+            $Failed = $true
+        } else {
+            $vmsFinished = $vmsFinished + 1
+        }
+    }
+
+    if ($allDone -eq $false) {
+        Start-Sleep -Seconds 10
+    } elseif ($vmsFinished -eq $numNeeded) {
+        break
+    }
+}
+
+if ($Failed -eq $true) {
+    Write-Host "Machine generalization failed.  Please check the logs." -ForegroundColor Red
+    exit 1
+} 
+
+exit 0

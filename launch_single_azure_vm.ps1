@@ -20,7 +20,7 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = ".vhd",
 
-    [Parameter(Mandatory=$false)] [switcyh] $imageIsGeneralized = $false,
+    [Parameter(Mandatory=$false)] [switch] $imageIsGeneralized = $false,
     [Parameter(Mandatory=$false)] [string] $generalizedBlobURI = ".vhd"
 )
 
