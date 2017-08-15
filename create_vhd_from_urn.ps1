@@ -59,7 +59,7 @@ $vmName = $vmNameArray[0]
 . "C:\Framework-Scripts\common_functions.ps1"
 . "C:\Framework-Scripts\secrets.ps1"
 
-$location=($location.ToLower()).Replace(" ","")
+$location=($location.tolower()).Replace(" ","")
 
 #  Log in without changing to the RG or SA.  This is intentional
 login_azure

@@ -181,7 +181,7 @@ class AzureBackend : Backend {
         login_azure $this.ResourceGroupName $this.StorageAccountName $this.Location
 
         $myLoc = $this.Location
-        $myLoc.ToLower()
+        $myLoc.tolower()
         $regionSuffix = ("-" + $myLoc + "-" + $this.VMFlavor) -replace " ","-"
         $imageName = $InstanceName + $regionSuffix
         $imageName = $imageName -replace "_","-"

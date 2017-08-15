@@ -157,7 +157,7 @@ $scriptBlockString =
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
     $myLoc = $this.Location
-    $myLoc.ToLower()
+    $myLoc.tolower()
     $regionSuffix = ("-" + $myLoc + "-" + $this.VMFlavor) -replace " ","-"
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName -replace "_","-"

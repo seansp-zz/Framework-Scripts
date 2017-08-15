@@ -137,7 +137,7 @@ $comandScript = {
     #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
     #  but kept getting timeouts on the Ubuntu machines.
     $myLoc = $this.Location
-    $myLoc.ToLower()
+    $myLoc.tolower()
     $regionSuffix = ("-" + $myLoc + "-" + $this.VMFlavor) -replace " ","-"
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix
