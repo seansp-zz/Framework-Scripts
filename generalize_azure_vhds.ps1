@@ -101,18 +101,22 @@ if ($? -eq $false) {
 }
 
 $scriptBlockText = {
+    
     param (
         [string] $machine_name,
         [string] $sourceRG,
         [string] $sourceContainer,
         [string] $vm_name
     )
+    Start-Transcript -Path C:\temp\transcripts\generalize_$machine_name.transcript -Force
     Stop-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
     Set-AzureRmVM -Name $machine_name -ResourceGroupName sourceRG -Generalized
     Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vm_name
     Remove-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
 
     Write-Host "Generalization of machine $vm_name complete."
+
+    Stop-Transcript
 }
 
 $scriptBlock = [scriptblock]::Create($scriptBlockText)
@@ -145,14 +149,16 @@ while ($allDone -eq $false) {
             write-verbose "job $jobName is still running..."
             $allDone = $false
         } elseif ($jobState -eq "Failed") {
-            write-host "**********************  JOB ON HOST MACHINE $vmJobName HAS FAILED TO START." -ForegroundColor Red
+            write-host "**********************  JOB ON HOST MACHINE $jobName HAS FAILED TO START." -ForegroundColor Red
             # $jobFailed = $true
             $vmsFinished = $vmsFinished + 1
+            get-job -Name $jobName | receive-job
             $Failed = $true
         } elseif ($jobState -eq "Blocked") {
-            write-host "**********************  HOST MACHINE $vmJobName IS BLOCKED WAITING INPUT.  COMMAND WILL NEVER COMPLETE!!" -ForegroundColor Red
+            write-host "**********************  HOST MACHINE $jobName IS BLOCKED WAITING INPUT.  COMMAND WILL NEVER COMPLETE!!" -ForegroundColor Red
             # $jobBlocked = $true
             $vmsFinished = $vmsFinished + 1
+            get-job -Name $jobName | receive-job
             $Failed = $true
         } else {
             $vmsFinished = $vmsFinished + 1
