@@ -52,6 +52,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [stri
     login_azure $rg $sa $location > $null
 
     $vm_search_string = $vmName + "*" + $location + "*"
+    $vm_search_string.replace("_","-")
 
     Write-Verbose "Attempting to locate host by search string $vm_search_string"
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg | Where-Object -Property Name -Like $vm_search_string
