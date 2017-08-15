@@ -39,11 +39,11 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-$regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
+$regionSuffix = ("-" + $location + "-" + $VMFlavor) -replace " ","-"
 $regionSuffix = $regionSuffix -replace "_","-"
 
-$fullSuffix = "-" + $regionSuffix + $currentSuffix
-$fullDestSuffix = "-" + $regionSuffix + $newSuffix
+$fullSuffix = $regionSuffix + $currentSuffix
+$fullDestSuffix = $regionSuffix + $newSuffix
 
 [System.Collections.ArrayList]$copyblobs_array
 $copyblobs = {$copyblobs_array}.Invoke()
@@ -153,7 +153,7 @@ $scriptBlockString =
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
-    $regionSuffix = ($this.Location + "-" + $this.VMFlavor) -replace " ","-"
+    $regionSuffix = ("-" + $location + "-" + $vmFlavor) -replace " ","-"
     $regionSuffix = $regionSuffix -replace "_","-"
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix

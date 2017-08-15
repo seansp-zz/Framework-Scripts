@@ -107,7 +107,7 @@ $comandScript = {
     $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
     deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
-    $regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+    $regionSuffix = ("-" + $VMFlavor + "-" + $location) -replace " ","-"
     $regionSuffix = $regionSuffix -replace "_","-"
 
     $newVMName = $vmName
@@ -136,7 +136,7 @@ $comandScript = {
     #
     #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
     #  but kept getting timeouts on the Ubuntu machines.
-    $regionSuffix = ($location + "-" + $vmFlavor) -replace " ","-"
+    $regionSuffix = ("-" + $location + "-" + $vmFlavor) -replace " ","-"
     $regionSuffix = $regionSuffix -replace "_","-"
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix

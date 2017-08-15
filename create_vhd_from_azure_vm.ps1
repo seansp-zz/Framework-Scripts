@@ -24,10 +24,10 @@ param (
 )
 Start-Transcript C:\temp\transcripts\create_vhd_from_azure_vm.log -Force
 
-$regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
+$regionSuffix = ("-" + $location + "-" + $VMFlavor) -replace " ","-"
 $regionSuffix = $regionSuffix -replace "_","-"
 
-$fullSuffix = "-" + $regionSuffix + $destExtension
+$fullSuffix = $regionSuffix + $destExtension
 
 Write-Host "Launching jobs to copy machine image from $sourceRG/$sourceSA/$sourceContainer to $destRG/$destSA/$destContainer..." -ForegroundColor Yellow
 
