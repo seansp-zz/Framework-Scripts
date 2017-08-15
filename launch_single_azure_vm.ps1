@@ -20,7 +20,7 @@
 
     [Parameter(Mandatory=$false)] [string] $suffix = ".vhd",
 
-    [Parameter(Mandatory=$false)] [string] $imageIsGeneralized = "false",
+    [Parameter(Mandatory=$false)] [switcyh] $imageIsGeneralized = $false,
     [Parameter(Mandatory=$false)] [string] $generalizedBlobURI = ".vhd"
 )
 
@@ -48,7 +48,7 @@ $azureBackend.suffix = $suffix
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()
 
-if ($false -eq $imageIsGeneralized) {
+if ($true -ne $imageIsGeneralized) {
     write-verbose "instantinating a VM from a Specialized image..."
     $azureInstance.CreateFromSpecialized()
 } else {

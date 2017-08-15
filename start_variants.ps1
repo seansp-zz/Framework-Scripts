@@ -126,7 +126,7 @@ $comandScript = {
     Write-verbose "Attempting to create virtual machine $newVMName from source URI $sourceURI.  This may take some time."
     C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
                                                 -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor -suffix $newSuffix `
-                                                -imageIsGeneralized "True" -generalizedBlobURI $sourceURI
+                                                -imageIsGeneralized -generalizedBlobURI $sourceURI
     if ($? -ne $true) {
         Write-error "Error creating VM $newVMName.  This VM must be manually examined!!"
         Stop-Transcript

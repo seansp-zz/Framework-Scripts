@@ -482,14 +482,14 @@ class AzureBackend : Backend {
         #               @($this.StorageAccountName, $this.ContainerName, $InstanceName))
 
         $imageConfig = New-AzureRmImageConfig -Location $this.Location
-        $imageConfig = Set-AzureRmImageOsDisk -Image $imageConfig -OsType Windows -OsState Generalized -BlobUri $blobURIRaw
+        $imageConfig = Set-AzureRmImageOsDisk -Image $imageConfig -OsState Generalized -BlobUri $blobURIRaw
 
         $image = New-AzureRmImage -ImageName $InstanceName -ResourceGroupName $this.ResourceGroupName -Image $imageConfig
 
         $cred = make_cred_initial
         $vm = Set-AzureRmVMSourceImage -VM $vm -Id $image.Id
         $vm = Set-AzureRmVMOSDisk -VM $vm -name $InstanceName -CreateOption fromImage -Caching ReadWrite
-        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $InstanceName -Credential $cred -
+        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $InstanceName -Credential $cred
 
         Write-Host "Adding the network interface" -ForegroundColor Yellow
         Add-AzureRmVMNetworkInterface -VM $vm -Id $VNIC.Id

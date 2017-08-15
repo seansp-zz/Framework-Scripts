@@ -149,7 +149,8 @@ $scriptBlockString =
             [string] $suffix,
             [string] $NSG,
             [string] $vnetName,
-            [string] $subnetName
+            [string] $subnetName,
+            [string] $useExistingResources
             )    
     Start-Transcript C:\temp\transcripts\create_vhd_from_urn_$vmName.log -Force
 
@@ -180,6 +181,7 @@ $scriptBlockString =
     $azureBackend.StorageAccountName = $destSA
     $azureBackend.ContainerName = $destContainer
     $azureBackend.Location = $location
+    $azureBackend.UseExistingResources = $useExistingResources
     #
     #  These are intake VHDs, so they don't get a VM Flavor.
     $azureBackend.VMFlavor = $VMFlavor
