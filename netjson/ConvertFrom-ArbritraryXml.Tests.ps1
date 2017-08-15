@@ -64,6 +64,32 @@ Describe "ConvertFrom-JSON -- Simple Case" {
     }
     ####################################################################################################################
     ####################################################################################################################
+    It "One nested child -- XML" {
+      $simple="
+<TOP>
+<Child>
+  <Name>Alan</Name>
+</Child>
+</TOP>
+"
+      $xml = [xml] $simple
+      # Write-Host $xml -ForegroundColor Green
+      $SomeCrazyType = ConvertFrom-ArbritraryXml ( $xml )
+      # $foo = $SomeCrazyType | ConvertTo-Json -Depth 3
+      # Write-Host $foo -ForegroundColor Yellow
+      $testValue = $SomeCrazyType | ConvertTo-Json
+      $testValue | Should Be @'
+{
+    "TOP":  {
+                "Child":  {
+                              "Name":  "Alan"
+                          }
+            }
+}
+'@
+  }    
+    ####################################################################################################################
+    ####################################################################################################################
     It "Two nested children -- XML" {
         $simple="
 <TOP>
@@ -83,13 +109,14 @@ Describe "ConvertFrom-JSON -- Simple Case" {
         $testValue = $SomeCrazyType | ConvertTo-Json
         $testValue | Should Be @'
 {
-    "Name":  "TOP",
-    "Alan":  {
-                 "Name":  "Alan"
-             },
-    "Beth":  {
-                 "Name":  "Beth"
-             }
+    "TOP":  {
+            "Child":  {
+                      "Name":  "Alan"
+                      },
+            "Child":  {
+                      "Name":  "Beth"
+                      }
+            }
 }
 '@
     }

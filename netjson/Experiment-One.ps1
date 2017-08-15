@@ -9,24 +9,23 @@ Function ConvertFrom-ArbritraryXml( $Object )
     foreach( $child in $Object.DocumentElement.ChildNodes )
     {
         $inner = $child.InnerXml
-        Write-Host "Identified CHILD: $($child.Name)"
         if( $inner.StartsWith( "<" ) -and $inner.EndsWith( ">") )
         {
-            Write-Host "Identified CHILD: $($child.Name)"
+            Write-Host "Identified $($child.LocalName): $($child.Name)"
             # Recurse (TODO: DEPTH) to form the type.
             $childObject = ConvertFromInnerXml $child
             $array = @()
             try {
-                $array = $PSObject | Get-Member -Name $child.Name
+                $array = $PSObject | Get-Member -Name $child.LocalName
             }
             finally
             {
                 $array = $array + $childObject
             }
-            $PSObject | Add-Member -NotePropertyName $child.Name -NotePropertyValue $array -Force
+            $PSObject | Add-Member -NotePropertyName $child.LocalName -NotePropertyValue $array -Force
         }
         else {
-           $PSObject | Add-Member -NotePropertyName $child.Name -NotePropertyValue $child.InnerXml
+           $PSObject | Add-Member -NotePropertyName $child.LocalName -NotePropertyValue $child.InnerXml
         }
     }
     Write-Host "Storing result into $documentName."
