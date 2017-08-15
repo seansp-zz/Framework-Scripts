@@ -1,13 +1,21 @@
 
 Function ConvertFrom-ArbritraryXml( $Object )
 {
-  if (($null -ne $Object ) -and ($null -ne $Object.DocumentElement)) 
+  $originalObject = $null
+  if ($null -ne $Object ) 
   {
+
+    if( ($null -ne $Object.DocumentElement))
+    {
+      # Get to the document element.  We will use this for recursion.
+       $originalObject = $Object
+       $Object = $Object.DocumentElement
+    } 
+  
     $PSObject = New-Object PSObject
-    #document name is the enclosing XML object.
-    Write-Host "WOOOOOOOOOOOO: $($Object.LocalName)"
-    $documentName = $Object.DocumentElement.Name
-    foreach( $child in $Object.DocumentElement.ChildNodes )
+    $documentName = $Object.LocalName
+    Write-Host "DocumentName = $documentName"
+    foreach( $child in $Object.ChildNodes )
     {
       Write-Host ">>>>#########################"
       $temp = $PSObject | ConvertTo-Json 
@@ -22,7 +30,7 @@ Function ConvertFrom-ArbritraryXml( $Object )
         {
             Write-Host "Identified $($child.LocalName): $($child.Name)"
             # Recurse (TODO: DEPTH) to form the type.
-            $childObject = ConvertFromInnerXml $child
+            $childObject = ConvertFrom-ArbritraryXml $child
             $array = @()
             try {
                 Write-Host "I am a newly magical try."
@@ -71,55 +79,16 @@ Function ConvertFrom-ArbritraryXml( $Object )
     $temp = $PSObject | ConvertTo-Json 
     Write-Host $temp 
     Write-Host "++++#########################"    
-    Write-Host "Storing result into $documentName."
-    $returnValue = New-Object PSObject
-    $returnValue | Add-Member -NotePropertyName $documentName -NotePropertyValue $PSObject
-    $returnValue
-  }
-}
-
-Function ConvertFromInnerXml( $Object )
-{
-
-  if ($null -ne $Object) {
-
-    $PSObject = New-Object PSObject
-    $documentName = $Object.LocalName
-    foreach( $child in $Object.ChildNodes )
+    Write-Host "GLITCH!!!!Storing result into $documentName."
+    if( $null -ne $originalObject )
     {
-        $inner = $child.InnerXml
-        Write-Host "NESTED::---->$($Object.LocalName):$($child.LocalName)"
-
-        if( $inner.StartsWith( "<" ) -and $inner.EndsWith( ">") )
-        {
-            # Recurse (TODO: DEPTH) to form the type.
-            $childObject = ConvertFromInnerXml $child
-            $array = @()
-            try {
-                # $array = $PSObject | Get-Member -Name $child.Name
-                Write-Host "INNER:I am a newly magical try."
-                $array = $($PSObject.$($child.Name))
-                if( ($null -ne $array ) -and !(($array -is [array])) )
-                {
-                  Write-Host "INNER:The fix is IN."
-                  $array = @($array)
-                }                
-            }
-            finally
-            {
-                $array += $childObject
-            }
-            $PSObject | Add-Member -NotePropertyName $child.Name -NotePropertyValue $array -Force
-        }
-        else {
-           $PSObject | Add-Member -NotePropertyName $child.Name -NotePropertyValue $child.InnerXml
-        }
+      $returnValue = New-Object PSObject
+      $returnValue | Add-Member -NotePropertyName $documentName -NotePropertyValue $PSObject
+      $returnValue
     }
-    $PSObject
-    # Write-Host "INNER:Storing result into $documentName."
-    # $returnValue = New-Object PSObject
-    # $returnValue | Add-Member -NotePropertyName $documentName -NotePropertyValue $PSObject
-    # $returnValue
+    else {
+      $PSObject    
+    }
   }
 }
 
