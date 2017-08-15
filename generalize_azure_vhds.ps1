@@ -39,11 +39,6 @@ $machineBaseNames.Clear()
 $machineFullNames = {$full_names_array}.Invoke()
 $machineFullNames.Clear()
 
-$regionSuffix = ("-" + $this.Location) -replace " ","-"
-foreach ($vmName in $vmNameArray) {
-    $vmName = $vmName + $regionSuffix
-}
-
 login_azure $sourceRG $sourceSA $location
 
 $vmName = $vmNameArray[0]
@@ -80,7 +75,6 @@ if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[
     $suffix = ""
 }
 
-<#
 Write-Host "Replacing cloud-init..."
 C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $sourceSA -destRG $sourceRG `
                                                           -suffix $suffix -asRoot "True" -location $location -command "/bin/mv /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS /usr/bin/cloud-init"
@@ -100,7 +94,6 @@ if ($? -eq $false) {
     Write-Host "FAILED to stop machines" -ForegroundColor Red
     exit 1
 }
-#>
 
 $scriptBlockText = {
     

@@ -136,9 +136,9 @@ $comandScript = {
     #
     #  Just because it's up doesn't mean it's accepting connections yet.  Wait 2 minutes, then try to connect.  I tried 1 minute,
     #  but kept getting timeouts on the Ubuntu machines.
-    $regionSuffix = ("-" + $location) -replace " ","-"
-    $imageName = $newVMName + "-" + $vmFlavor + $regionSuffix.ToLower()
-    $imageName = $imageName -replace "_","-"
+    $regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
+    $regionSuffix = $regionSuffix -replace "_","-"
+    $imageName = $newVMName + $regionSuffix.ToLower()
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
 
