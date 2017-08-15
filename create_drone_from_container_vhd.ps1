@@ -159,6 +159,8 @@ $scriptBlockString =
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
 
+    write-host "------------------- &&&&&&&&&&  ******************* 11111 Calling Get IP Address with pip name $pipName"
+
     $pipName = $imageName
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {

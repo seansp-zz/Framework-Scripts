@@ -250,6 +250,7 @@ class AzureBackend : Backend {
         }
 
         Write-Host "Stopping machine $InstanceName.  Deleting PIP $InstanceName"
+        write-host "------------------- &&&&&&&&&&  ******************* 4444444 Calling Get IP Address with pip name $InstanceName"
         $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $InstanceName
         if ($pip) {
             Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $InstanceName -Force
@@ -315,6 +316,7 @@ class AzureBackend : Backend {
         write-host "CALL TO GETPIP -- INCOMING PIPNAME IS $pipName"
 
         $pipName = $pipName.replace("_","-")
+        write-host "------------------- &&&&&&&&&&  ******************* 5555555 Calling Get IP Address with pip name $pipName"
         $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
         if (!$pip) {
             write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
