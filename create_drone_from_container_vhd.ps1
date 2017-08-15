@@ -158,6 +158,7 @@ $scriptBlockString =
 
     $myLoc = $location.tolower()
     $regionSuffix = ("-" + $myLoc + "-" + $vmFlavor) -replace " ","-"
+    
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""

@@ -182,6 +182,7 @@ class AzureBackend : Backend {
 
         $myLoc = $this.Location
         $myLoc.tolower()
+        $this.suffix = $this.suffix -replace "_","-"
         $regionSuffix = ("-" + $myLoc + "-" + $this.VMFlavor) -replace " ","-"
         $imageName = $InstanceName + $regionSuffix
         $imageName = $imageName -replace "_","-"
