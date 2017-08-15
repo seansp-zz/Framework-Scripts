@@ -5,6 +5,8 @@ $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -replace '\.Tests\.', '.'
 . .\Experiment-One.ps1
 
 Describe "ConvertFrom-JSON -- Simple Case" {
+    ####################################################################################################################
+    ####################################################################################################################
     It "Generates simple JSON baseline for validation" {
         $PSObject = New-Object PSObject
         $PSObject | Add-Member -NotePropertyName "Name" -NotePropertyValue "Top"
@@ -14,7 +16,8 @@ Describe "ConvertFrom-JSON -- Simple Case" {
         $xml_simple_case = $PSObject | ConvertTo-Xml
         $true | Should Be $true
     }
-
+    ####################################################################################################################
+    ####################################################################################################################
     It "Verify Simple XML" {
         $simple="
 <TOP>
@@ -22,16 +25,23 @@ Describe "ConvertFrom-JSON -- Simple Case" {
 "
         $xml = [xml] $simple
         # Write-Host $xml -ForegroundColor Green
-        $SomeCrazyType = ConvertFromXml ( $xml )
+        $SomeCrazyType = ConvertFrom-ArbritraryXml ( $xml )
         # $foo = $SomeCrazyType | ConvertTo-Json -Depth 3
         # Write-Host $foo -ForegroundColor Yellow
 
-        $SomeCrazyType | ConvertTo-Json | Should Be @'
+        $convertedJSON = $SomeCrazyType | ConvertTo-Json 
+        #$stripSpaceAndReturns = $convertedJSON.Replace(" ","")
+
+        $convertedJSON | Should Be @'
 {
-    "Name":  "TOP"
+    "TOP":  {
+
+            }
 }
 '@
     }
+    ####################################################################################################################
+    ####################################################################################################################
     It "Simple Nested XML" {
         $simple="
 <TOP>
@@ -40,19 +50,20 @@ Describe "ConvertFrom-JSON -- Simple Case" {
 "
         $xml = [xml] $simple
         # Write-Host $xml -ForegroundColor Green
-        $SomeCrazyType = ConvertFromXml ( $xml )
+        $SomeCrazyType = ConvertFrom-ArbritraryXml ( $xml )
         # $foo = $SomeCrazyType | ConvertTo-Json -Depth 3
         # Write-Host $foo -ForegroundColor Yellow
-
         $testValue = $SomeCrazyType | ConvertTo-Json
-
         $testValue | Should Be @'
 {
-    "Name":  "TOP",
-    "Child":  ""
+    "TOP":  {
+                "Child":  ""
+            }
 }
 '@
     }
+    ####################################################################################################################
+    ####################################################################################################################
     It "Two nested children -- XML" {
         $simple="
 <TOP>
@@ -66,7 +77,7 @@ Describe "ConvertFrom-JSON -- Simple Case" {
 "
         $xml = [xml] $simple
         # Write-Host $xml -ForegroundColor Green
-        $SomeCrazyType = ConvertFromXml ( $xml )
+        $SomeCrazyType = ConvertFrom-ArbritraryXml ( $xml )
         # $foo = $SomeCrazyType | ConvertTo-Json -Depth 3
         # Write-Host $foo -ForegroundColor Yellow
         $testValue = $SomeCrazyType | ConvertTo-Json

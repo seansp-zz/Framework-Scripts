@@ -1,17 +1,18 @@
 
-Function ConvertFromXml( $Object )
+Function ConvertFrom-ArbritraryXml( $Object )
 {
-
-  if (($null -ne $Object ) -and ($null -ne $Object.DocumentElement)) {
-
+  if (($null -ne $Object ) -and ($null -ne $Object.DocumentElement)) 
+  {
     $PSObject = New-Object PSObject
-    $PSObject | Add-Member -NotePropertyName "Name" -NotePropertyValue $Object.DocumentElement.Name
+    #document name is the enclosing XML object.
+    $documentName = $Object.DocumentElement.Name
     foreach( $child in $Object.DocumentElement.ChildNodes )
     {
         $inner = $child.InnerXml
-
+        Write-Host "Identified CHILD: $($child.Name)"
         if( $inner.StartsWith( "<" ) -and $inner.EndsWith( ">") )
         {
+            Write-Host "Identified CHILD: $($child.Name)"
             # Recurse (TODO: DEPTH) to form the type.
             $childObject = ConvertFromInnerXml $child
             $array = @()
@@ -28,7 +29,10 @@ Function ConvertFromXml( $Object )
            $PSObject | Add-Member -NotePropertyName $child.Name -NotePropertyValue $child.InnerXml
         }
     }
-    $PSObject
+    Write-Host "Storing result into $documentName."
+    $returnValue = New-Object PSObject
+    $returnValue | Add-Member -NotePropertyName $documentName -NotePropertyValue $PSObject
+    $returnValue
   }
 }
 
