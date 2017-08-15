@@ -180,9 +180,9 @@ class AzureBackend : Backend {
         $this.suffix = $this.suffix -replace "_","-"
         login_azure $this.ResourceGroupName $this.StorageAccountName $this.Location
 
-        $regionSuffix = ($this.Location + "-" + $this.VMFlavor) -replace " ","-"
-        $regionSuffix = $regionSuffix -replace "_","-"
-        $imageName = $InstanceName + $regionSuffix.ToLower()
+        $myLoc = $this.Location.ToLower()
+        $regionSuffix = ("-" + $myLoc + "-" + $this.VMFlavor) -replace " ","-"
+        $imageName = $InstanceName + $regionSuffix
         $imageName = $imageName -replace "_","-"
         $imageName = $imageName + $this.suffix
         $imageName = $imageName  -replace ".vhd", ""

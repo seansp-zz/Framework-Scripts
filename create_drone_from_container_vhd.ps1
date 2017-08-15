@@ -156,9 +156,9 @@ $scriptBlockString =
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
-    $regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
-    $regionSuffix = $regionSuffix -replace "_","-"
-    $imageName = $newVMName + $regionSuffix.ToLower()
+    $myLoc = $this.Location.ToLower()
+    $regionSuffix = ("-" + $myLoc + "-" + $this.VMFlavor) -replace " ","-"
+    $imageName = $newVMName + $regionSuffix
     $imageName = $imageName -replace "_","-"
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
