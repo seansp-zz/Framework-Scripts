@@ -513,7 +513,7 @@ class AzureBackend : Backend {
     }
 
     [String] GetPublicIP ($InstanceName) {
-        write-host "CALL TO GETPIP -- INCOMING PIPNAME IS $pipName"
+        write-host "CALL TO GETPIP -- INCOMING PIPNAME IS $InstanceName"
         
         $pipName = $InstanceName.replace("_","-")
         $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
@@ -525,15 +525,6 @@ class AzureBackend : Backend {
         }
 
         return $pip
-
-        ([Backend]$this).GetPublicIP($InstanceName)
-
-        $ip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name ($InstanceName)
-        if ($ip) {
-            return $ip.IPAddress
-        } else {
-            return $null
-        }
     }
 
     [Object] GetPSSession ($InstanceName) {
