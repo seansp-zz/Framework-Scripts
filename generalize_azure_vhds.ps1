@@ -19,8 +19,8 @@ param (
 
 $suffix = $suffix -replace "_","-"
 
-. "C:\Framework-Scripts\common_functions.ps1"
-. "C:\Framework-Scripts\secrets.ps1"
+. C:\Framework-Scripts\common_functions.ps1
+. C:\Framework-Scripts\secrets.ps1
 
 [System.Collections.ArrayList]$vmNames_array
 $vmNameArray = {$vmNames_array}.Invoke()
@@ -80,6 +80,7 @@ if ($generalizeAll -eq $false -and ($vmNameArray.Count -eq 1  -and $vmNameArray[
     $suffix = ""
 }
 
+<#
 Write-Host "Replacing cloud-init..."
 C:\Framework-Scripts\run_command_on_machines_in_group.ps1 -requestedNames $requestedNames -destSA $sourceSA -destRG $sourceRG `
                                                           -suffix $suffix -asRoot "True" -location $location -command "/bin/mv /usr/bin/cloud-init.DO_NOT_RUN_THIS_POS /usr/bin/cloud-init"
@@ -99,6 +100,7 @@ if ($? -eq $false) {
     Write-Host "FAILED to stop machines" -ForegroundColor Red
     exit 1
 }
+#>
 
 $scriptBlockText = {
     
@@ -108,10 +110,16 @@ $scriptBlockText = {
         [string] $sourceContainer,
         [string] $vm_name
     )
+
+    . C:\Framework-Scripts\common_functions.ps1
+    . C:\Framework-Scripts\secrets.ps1
+
+    login_azure
+    
     Start-Transcript -Path C:\temp\transcripts\generalize_$machine_name.transcript -Force
     Stop-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
-    Set-AzureRmVM -Name $machine_name -ResourceGroupName sourceRG -Generalized
-    Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vm_name
+    Set-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Generalized
+    Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName $sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vm_name
     Remove-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
 
     Write-Host "Generalization of machine $vm_name complete."

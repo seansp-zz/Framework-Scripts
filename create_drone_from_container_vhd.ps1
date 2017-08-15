@@ -39,7 +39,7 @@ if ($requestedNames -like "*,*") {
     $vmNameArray += $requestedNames
 }
 
-$regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+$regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
 $regionSuffix = $regionSuffix -replace "_","-"
 
 $fullSuffix = "-" + $regionSuffix + $currentSuffix
@@ -132,7 +132,7 @@ $scriptBlockString =
     $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
     deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
-    $regionSuffix = $VMFlavor + ("-" + $location) -replace " ","-"
+    $regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
     $regionSuffix = $regionSuffix -replace "_","-"
 
     $newVMName = $vmName
@@ -156,8 +156,9 @@ $scriptBlockString =
     $username="$TEST_USER_ACCOUNT_NAME"
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
-    $regionSuffix = ("-" + $location) -replace " ","-"
-    $imageName = $newVMName + "-" + $vmFlavor + $regionSuffix.ToLower()
+    $regionSuffix = ($location + "-" + $VMFlavor) -replace " ","-"
+    $regionSuffix = $regionSuffix -replace "_","-"
+    $imageName = $newVMName + $regionSuffix.ToLower()
     $imageName = $imageName -replace "_","-"
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
