@@ -154,15 +154,13 @@ $scriptBlockString =
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
     $regionSuffix = ("-" + $location + "-" + $vmFlavor) -replace " ","-"
-    $regionSuffix = $regionSuffix -replace "_","-"
+    $regionSuffix.replace("_","-")
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
-
-    write-host "------------------- &&&&&&&&&&  ******************* 11111 Calling Get IP Address with pip name $pipName"
-
     $pipName = $imageName
-    $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
+
+    $ip = getPIP($pipName)
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript

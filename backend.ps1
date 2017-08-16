@@ -358,6 +358,7 @@ class AzureBackend : Backend {
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
         $ipName = $InstanceName
+        write-host "------------------>>>>> -------------------->>>> 1111111 CAlling GETPIP with $ipName"
         $pip = $this.getPIP($ipName)
 
         Write-Host "Assigning the network interface" -ForegroundColor Yellow
@@ -406,7 +407,9 @@ class AzureBackend : Backend {
         Write-Host "Assigning network $($this.NetworkName) and subnet config $($this.SubnetName) with NSG $($this.NetworkSecGroupName) to new machine" -ForegroundColor Yellow
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
+        
         $ipName = $InstanceName
+        write-host "------------------>>>>> -------------------->>>> 2222222 CAlling GETPIP with $ipName"
         $pip = $this.getPIP($ipName)
 
         Write-Host "Assigning the network interface" -ForegroundColor Yellow
@@ -469,6 +472,7 @@ class AzureBackend : Backend {
 
         Write-Host "Assigning the public IP address" -ForegroundColor Yellow
         $ipName = $InstanceName
+        write-host "------------------>>>>> -------------------->>>> 33333333 CAlling GETPIP with $ipName"
         $pip = $this.getPIP($ipName)
 
         Write-Host "Assigning the network interface" -ForegroundColor Yellow
