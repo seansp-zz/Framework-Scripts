@@ -150,6 +150,7 @@ class AzureBackend : Backend {
     [String] $blobURI = "Unset"
     [String] $suffix = "-Smoke-1"
     [String] $UseExistingResources = "yes"
+    [String] $enableBootDiagnostics = "yes"
 
     AzureBackend ($Params) : base ($Params) {
         if (Test-Path $this.CommonFunctionsPath) {
@@ -379,6 +380,10 @@ class AzureBackend : Backend {
 
         $vm = Set-AzureRmVMOSDisk -VM $vm -Name $InstanceName -VhdUri $blobURIRaw -CreateOption Attach -Linux
         try {
+            if ($this.enableBootDiagnostics -ne "Yes") {
+                Write-Host "Disabling boot diagnostics" -ForegroundColor Yellow
+                Set-AzureRmVMBootDiagnostics -VM $vm -Disable -ResourceGroupName $this.ResourceGroupName
+            }
             Write-Host "Starting the VM" -ForegroundColor Yellow
             $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
             if (!$NEWVM) {

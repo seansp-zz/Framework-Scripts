@@ -193,14 +193,11 @@ $scriptBlockString =
     $azureBackend.blobURN = $blobURN
     $azureBackend.suffix = $suffix
 
+    $azureInstance.enableBootDiagnostics = "No"
+
     $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 
     $azureInstance.CreateFromURN()
-
-    $VM = $azureInstance.GetVM()
-    # $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
-    Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG
-
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
     write-host "Attempting to contact the machine..." -ForegroundColor Green

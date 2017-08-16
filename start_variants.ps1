@@ -167,13 +167,10 @@ $copyblobs = {$copyblobs_array}.Invoke()
 $copyblobs.clear()
 
 foreach ($vmName in $vmNameArray) {
-
     $blobName = $vmName
-
     $copyblobs += $blobName
 
     write-verbose "Starting variants for machine $blobName"
-
     foreach ($oneFlavor in $flavorsArray) {
         $vmJobName = "start_" + $oneFlavor + $blobName
 
@@ -241,6 +238,6 @@ while ($allDone -eq $false) {
 }
 
 if ($Failed -eq $true) {
-    Write-Host "Remote command execution failed because we could not !" -ForegroundColor Red
+    Write-Host "We expected $numNeeded machies, but only $vmsFinished completed.  Command has failed." -ForegroundColor Red
     exit 1
 } 
