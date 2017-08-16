@@ -160,7 +160,7 @@ $scriptBlockString =
     $imageName = $imageName -replace ".vhd", ""
     $pipName = $imageName
 
-    $ip = getPIP($pipName)
+    $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
         Write-Host "Error getting IP address for VM $newVMName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript

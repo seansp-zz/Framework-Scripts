@@ -55,7 +55,6 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [stri
     $vm_search_string.replace("_","-")
 
     Write-Verbose "Attempting to locate host by search string $vm_search_string"
-    write-host "------------------- &&&&&&&&&&  ******************* 2222222 Calling Get IP Address with pip name $pipName"
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg | Where-Object -Property Name -Like $vm_search_string
     Write-Verbose "Got IP Address $($ipAddress.Name), with IP Address $($ipAddress.IpAddress)"
 
@@ -162,7 +161,6 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
 
         Get-AzureRmNetworkInterface -ResourceGroupName $destRG | Where-Object -Property Name -Like $vm_name | Remove-AzureRmNetworkInterface -Force
 
-        write-host "------------------- &&&&&&&&&&  ******************* 333333333 Calling Get IP Address with pip name $pipName"
         Get-AzureRmPublicIpAddress -ResourceGroupName $destRG | Where-Object -Property Name -Like $vm_name | Remove-AzureRmPublicIpAddress -Force
     }
 
