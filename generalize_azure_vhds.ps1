@@ -108,11 +108,13 @@ $scriptBlockText = {
     . C:\Framework-Scripts\secrets.ps1
 
     login_azure
-    
+    #
+    #  This might not be the best way, but I only have 23 characters here, so we'll go with what the user entered
+    $vhdPrefix = $vmName.substring(0,23)
     Start-Transcript -Path C:\temp\transcripts\generalize_$machine_name.transcript -Force
     Stop-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
     Set-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Generalized
-    Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName $sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vm_name
+    Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName $sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vhdPrefix
     Remove-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
 
     Write-Host "Generalization of machine $vm_name complete."
