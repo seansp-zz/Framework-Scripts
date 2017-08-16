@@ -154,11 +154,13 @@ $scriptBlockString =
     $password="$TEST_USER_ACCOUNT_PAS2" # Could just be "$TEST_USER_ACCOUNT_PASS1_K6"
 
     $regionSuffix = ("-" + $location + "-" + $vmFlavor) -replace " ","-"
-    $regionSuffix.replace("_","-")
+    $regionSuffix = $regionSuffix -replace "_","-"
     $imageName = $newVMName + $regionSuffix
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
     $pipName = $imageName
+
+    write-host "This had better be right:  $pipName"
 
     $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
     if ($? -ne $true) {
