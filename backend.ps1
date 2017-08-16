@@ -521,7 +521,7 @@ class AzureBackend : Backend {
         write-host "CALL TO GETPIP -- INCOMING PIPNAME IS $InstanceName"
         
         $pipName = $InstanceName.replace("_","-")
-        [Microsoft.Azure.Commands.Network.Models.PSPublicIpAddress]$pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
+        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
         if (!$pip) {
             write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
             New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
