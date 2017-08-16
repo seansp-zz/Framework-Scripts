@@ -2,7 +2,7 @@
 # $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -replace '\.Tests\.', '.'
 # . "$here\$sut"
 
-Import-Module .\ConvertFrom-ArbritraryXml.psm1
+Import-Module ..\ConvertFrom-ArbritraryXml.psm1
 
 Describe "ConvertFrom-JSON -- Simple Case" {
     ####################################################################################################################
