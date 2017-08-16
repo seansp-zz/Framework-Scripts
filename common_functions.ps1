@@ -210,6 +210,121 @@ function deallocate_machines_in_group([Microsoft.Azure.Commands.Compute.Models.P
     }
 }
 
+function stop_machines_in_list([stringe[]] $requestedNames,
+                                    [string] $destRG,
+                                    [string] $destSA,
+                                    [string] $location)
+{
+    $scriptBlockString =
+    {
+        param ([Parameter(Mandatory=$false)] [string] $vm_name,
+                [Parameter(Mandatory=$false)] [string] $destRG,
+                [Parameter(Mandatory=$false)] [string] $destSA,
+                [Parameter(Mandatory=$false)] [string] $location
+        )
+                
+        . C:\Framework-Scripts\common_functions.ps1
+        . C:\Framework-Scripts\secrets.ps1
+
+        login_azure $destRG $destSA $location
+        Write-Verbose "Stopping machine $vm_name in RG $destRG"
+        Stop-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
+    }
+
+    $scriptBlock = [scriptblock]::Create($scriptBlockString)
+
+    foreach ($vm_name in $requestedNames) {
+        $vmJobName = $vm_name + "-Src"
+        write-host "Starting job to stop VM $vm_name"
+        Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $vm_name,$destRG,$destSA,$location
+    }
+
+    $allDone = $false
+    while ($allDone -eq $false) {
+        $allDone = $true
+        foreach ($singleVM in $runningVMs) {
+            $vm_name = $singleVM.Name
+            $vmJobName = $vm_name + "-Src"
+            $job = Get-Job -Name $vmJobName
+            $jobState = $job.State
+            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor Yellow
+            if ($jobState -eq "Running") {
+                $allDone = $false
+            }
+        }
+
+        if ($allDone -eq $false) {
+            Start-Sleep -Seconds 10
+        }
+    }
+}
+
+function deallocate_machines_in_group([string[]] $requestedNames,
+                                    [string] $destRG,
+                                    [string] $destSA,
+                                    [string] $location)
+{
+    $scriptBlockString =
+    {
+        param ([Parameter(Mandatory=$false)] [string] $vm_name,
+                [Parameter(Mandatory=$false)] [string] $destRG,
+                [Parameter(Mandatory=$false)] [string] $destSA,
+                [Parameter(Mandatory=$false)] [string] $location
+        )
+                
+        . C:\Framework-Scripts\common_functions.ps1
+        . C:\Framework-Scripts\secrets.ps1
+
+        login_azure $destRG $destSA $location
+        Write-verbose "Deallocating machine $vm_name in RG $destRG"
+        Remove-AzureRmVM -Name $vm_name -ResourceGroupName $destRG -Force
+
+        Get-AzureRmNetworkInterface -ResourceGroupName $destRG | Where-Object -Property Name -Like $vm_name | Remove-AzureRmNetworkInterface -Force
+
+        Get-AzureRmPublicIpAddress -ResourceGroupName $destRG | Where-Object -Property Name -Like $vm_name | Remove-AzureRmPublicIpAddress -Force
+    }
+
+    $scriptBlock = [scriptblock]::Create($scriptBlockString)
+    foreach ($vm_name in $requestedNames) {
+        write-host "Starting job to deprovision VM $vm_name"
+        Start-Job -Name $vmJobName -ScriptBlock $scriptBlock -ArgumentList $vm_name,$destRG,$destSA
+    }
+
+    $allDone = $false
+    while ($allDone -eq $false) {
+        $allDone = $true
+        $timeNow = get-date
+        write-host "Checking jobs at time $timeNow :" -ForegroundColor Yellow
+        foreach ($singleVM in $runningVMs) {
+            $vm_name = $singleVM.Name
+            $vmJobName = $vm_name + "-Deprov"
+            $job = Get-Job -Name $vmJobName
+            $jobState = $job.State
+            $useColor = "Yellow"
+            if ($jobState -eq "Completed") {
+                $useColor="green"
+            } elseif ($jobState -eq "Failed") {
+                $useColor = "Red"
+            } elseif ($jobState -eq "Blocked") {
+                $useColor = "Magenta"
+            }
+            write-host "    Job $vmJobName is in state $jobState" -ForegroundColor $useColor
+            if ($jobState -eq "Running") {
+                $allDone = $false
+            }
+        }
+
+        if ($allDone -eq $false) {
+            Start-Sleep -Seconds 10
+        }
+    }
+
+    if ($allDone -eq $false) {
+        Start-Sleep -Seconds 10
+    }
+}
+
+
 function try_pscp([string] $file,
                   [string] $ipTemp)
 {

@@ -205,7 +205,26 @@ $scriptBlockString =
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
     write-host "Attempting to contact the machine..." -ForegroundColor Green
     
-    [string]$ip=$azureInstance.GetPublicIP()
+    $machineIsUp = $false
+    [int]$sleepCount = 0
+    while ($false -eq $machineIsUp -and $sleepCount -lt 30) {
+        [string]$ip=$azureInstance.GetPublicIP()
+        $machineIsUp = $true
+        $sleepCount = $sleepCount + 1
+        if ($ip -eq $null -or $ip -eq "Not Assigned") {
+            $machineIsIP = $false
+            start-sleep -Seconds 10
+        } else {
+            $machineIsUp = $true
+            break
+        }
+    }
+
+    if ($false =eq $machineIsUp) {
+        write-host "Could not contact machine $vmName.  Machine did not get IP address after 300 seconds"
+        return 1
+    }
+    
     $password=$TEST_USER_ACCOUNT_PAS2
     $username="$TEST_USER_ACCOUNT_NAME"
 
