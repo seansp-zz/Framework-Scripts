@@ -102,35 +102,30 @@ $comandScript = {
         }
     }
 
-    if ($startMachines -eq $true) {}
-    Write-verbose "Deallocating machine $vmName, if it is up"
-    $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
-    deallocate_machines_in_group $runningMachines $destRG $destSA $location
+    if ($startMachines -eq $true) {
+        Write-verbose "Deallocating machine $vmName, if it is up"
+        $runningMachines = Get-AzureRmVm -ResourceGroupName $destRG -status | Where-Object -Property Name -Like "$vmName*"
+        deallocate_machines_in_group $runningMachines $destRG $destSA $location
 
-    $regionSuffix = ("-" + $VMFlavor + "-" + $location) -replace " ","-"
-    $regionSuffix = $regionSuffix -replace "_","-"
-
-    $newVMName = $vmName
-    # $newVMName = $newVMName | % { $_ -replace ".vhd", "" }
-
-    foreach ($blob in $blobs) {
-        $blobName = $blob.Name
-        $vmSearch = "^" + $vmName + "*"
-        if ($blob.Name -like $vmName) {
-            $sourceVhdName = $blobName
+        foreach ($blob in $blobs) {
+            $blobName = $blob.Name
+            $vmSearch = "^" + $vmName + "*"
+            if ($blob.Name -like $vmName) {
+                $sourceVhdName = $blobName
+            }
         }
-    }
 
-    $sourceURI = ("https://{0}.blob.core.windows.net/{1}/{2}" -f @($sourceSA, $sourceContainer, $blobName))
+        $sourceURI = ("https://{0}.blob.core.windows.net/{1}/{2}" -f @($sourceSA, $sourceContainer, $blobName))
 
-    Write-verbose "Attempting to create virtual machine $newVMName from source URI $sourceURI.  This may take some time."
-    C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
-                                                -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor -suffix $newSuffix `
-                                                -imageIsGeneralized -generalizedBlobURI $sourceURI
-    if ($? -ne $true) {
-        Write-error "Error creating VM $newVMName.  This VM must be manually examined!!"
-        Stop-Transcript
-        exit 1
+        Write-verbose "Attempting to create virtual machine $newVMName from source URI $sourceURI.  This may take some time."
+        C:\Framework-Scripts\launch_single_azure_vm.ps1 -vmName $newVMName -resourceGroup $destRG -storageAccount $destSA -containerName $destContainer `
+                                                    -network $network -subnet $subnet -NSG $NSG -Location $location -VMFlavor $vmFlavor -suffix $newSuffix `
+                                                    -imageIsGeneralized -generalizedBlobURI $sourceURI
+        if ($? -ne $true) {
+            Write-error "Error creating VM $newVMName.  This VM must be manually examined!!"
+            Stop-Transcript
+            exit 1
+        }
     }
 
     #
@@ -142,9 +137,23 @@ $comandScript = {
     $imageName = $imageName + $newSuffix
     $imageName = $imageName -replace ".vhd", ""
 
-    $pipName = $imageName
-    $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
-    if ($? -ne $true) {
+    $machineIsUp = $false
+    [int]$sleepCount = 0
+    while ($false -eq $machineIsUp -and $sleepCount -lt 30) {
+        $machineIsUp = $true
+        $sleepCount = $sleepCount + 1
+        $pipName = $imageName
+        $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
+        if ($ip -eq $null -or $ip -contains "Not Assigned") {
+            $machineIsIP = $false
+            start-sleep -Seconds 10
+        } else {
+            $machineIsUp = $true
+            break
+        }
+    }
+
+    if ($true -ne $machineIsUp) {
         Write-errpr "Error getting IP address for VM $newVMName.  This VM must be manually examined!!"
         Stop-Transcript
         exit 1

@@ -211,7 +211,7 @@ $scriptBlockString =
         [string]$ip=$azureInstance.GetPublicIP()
         $machineIsUp = $true
         $sleepCount = $sleepCount + 1
-        if ($ip -eq $null -or $ip -eq "Not Assigned") {
+        if ($ip -eq $null -or $ip -contains "Not Assigned") {
             $machineIsIP = $false
             start-sleep -Seconds 10
         } else {
@@ -220,11 +220,11 @@ $scriptBlockString =
         }
     }
 
-    if ($false =eq $machineIsUp) {
+    if ($false -eq $machineIsUp) {
         write-host "Could not contact machine $vmName.  Machine did not get IP address after 300 seconds"
         return 1
     }
-    
+
     $password=$TEST_USER_ACCOUNT_PAS2
     $username="$TEST_USER_ACCOUNT_NAME"
 
