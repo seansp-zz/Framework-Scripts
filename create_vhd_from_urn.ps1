@@ -7,7 +7,7 @@
     [Parameter(Mandatory=$false)] [string] $destContainer="ready-for-bvt",
     [Parameter(Mandatory=$false)] [string] $location="westus",
 
-    [Parameter(Mandatory=$false)] [string] $useNewResourceGroup = "True",
+    [Parameter(Mandatory=$false)] [string] $useExistingResources = "True",
 
     [Parameter(Mandatory=$false)] [string] $vnetName = "SmokeVNet",
     [Parameter(Mandatory=$false)] [string] $subnetName = "SmokeSubnet-1",
@@ -66,16 +66,19 @@ login_azure
 
 Write-Host "Looking for storage account $destSA in resource group $destRG.  Length of name is $saLength"
 #
-$existingGroup = Get-AzureRmResourceGroup -Name $destRG 
-if ($? -eq $true -and $existingGroup -ne $null -and $useNewResourceGroup -eq $true) {
+$existingGroup = Get-AzureRmResourceGroup -Name $destRG
+$status = $? 
+if ($status -eq $true -and $existingGroup -ne $null -and $useExistingResources -eq $false) {
     write-host "Resource group already existed.  Deleting resource group." -ForegroundColor Yellow
     Remove-AzureRmResourceGroup -Name $destRG -Force
 
     write-host "Creating new resource group $destRG in loction $location"
     New-AzureRmResourceGroup -Name $destRG -Location $location
-} elseif ($existingGroup -eq $null -and $useNewResourceGroup -eq $true) {
+} elseif ($status -eq $false -and $existingGroup -eq $null) {
     write-host "Creating new resource group $destRG in loction $location"
     New-AzureRmResourceGroup -Name $destRG -Location $location
+} else {
+    write-host "Using existing resource group $destRG"
 }
 
 #
@@ -208,7 +211,7 @@ $scriptBlockString =
         [string]$ip=$azureInstance.GetPublicIP()
         $machineIsUp = $true
         $sleepCount = $sleepCount + 1
-        if ($ip -eq $null -or $ip -contains "Not Assigned") {
+        if ($ip -eq $null -or $ip.ToLower() -eq "not assigned") {
             $machineIsIP = $false
             start-sleep -Seconds 10
         } else {
@@ -253,7 +256,7 @@ $scriptBlockString =
             }
         }
     }
-    $sslReply=@(echo "y" |C:\azure-linux-automation\tools\pscp -pw $password -l $username  C:\Framework-Scripts\README.md $remoteAddress``:/tmp)
+    $sslReply=@(echo "y" | C:\azure-linux-automation\tools\pscp -pw $password -l $username C:\Framework-Scripts\README.md $remoteTmp)
 
     Write-Host "Setting SELinux into permissive mode" -ForegroundColor Green
     try_plink $ip $runDisableCommand0
@@ -280,7 +283,7 @@ foreach ($vmName in $vmNameArray) {
     $jobName=$vmName + "-intake-job"
     Start-Job -Name $jobName -ScriptBlock $scriptBlock -ArgumentList $vmName,$VMFlavor,$blobURN,$destRG,$destSA,`
                                                                       $destContainer,$location,$suffix,$NSG,`
-                                                                      $vnetName,$subnetName
+                                                                      $vnetName,$subnetName,$useExistingResources
     if ($? -ne $true) {
         Write-Host "Error starting intake_machine job ($jobName) for $vmName.  This VM must be manually examined!!" -ForegroundColor red
         Stop-Transcript

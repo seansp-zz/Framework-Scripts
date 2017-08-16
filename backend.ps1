@@ -245,17 +245,21 @@ class AzureBackend : Backend {
     [void] CleanupInstance ($InstanceName) {
         $this.RemoveInstance($InstanceName)
 
-        Write-Host "Stopping machine $InstanceName.  Deleting NIC " $InstanceName
-        $VNIC = Get-AzureRmNetworkInterface -Name $InstanceName -ResourceGroupName $this.ResourceGroupName 
-        if ($VNIC) {
-            Remove-AzureRmNetworkInterface -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
-        }
+        if ($this.UseExistingResources -eq "Yes") {
+            write-host "Preserving existing PIP and NIC for future use."
+        } else {
+            Write-Host "Deleting NIC " $InstanceName
+            $VNIC = Get-AzureRmNetworkInterface -Name $InstanceName -ResourceGroupName $this.ResourceGroupName 
+            if ($VNIC -and $this.UseExistingResources -ne "Yes") {
+                Remove-AzureRmNetworkInterface -Name $InstanceName -ResourceGroupName $this.ResourceGroupName -Force
+            }
 
-        Write-Host "Stopping machine $InstanceName.  Deleting PIP $InstanceName"
-        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $InstanceName
-        if ($pip) {
-            Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $InstanceName -Force
-        }        
+            Write-Host "Deleting PIP $InstanceName"
+            $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $InstanceName
+            if ($pip -and $this.UseExistingResources -ne "Yes") {
+                Remove-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $InstanceName -Force
+            }   
+        }     
     }
 
     # Microsoft.Azure.Commands.Network.Models.PSNetworkSecurityGroup
@@ -336,8 +340,12 @@ class AzureBackend : Backend {
         $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName 
         if (!$VNIC) {
             Write-Host "Creating new network interface" -ForegroundColor Yellow
+            #
+            #  Get the PIP
+            $pip2 = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $nicName
+
             New-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName `
-                -Location $this.Location -SubnetId $VMSubnetObject.Id -publicipaddressid $pip.Id
+                -Location $this.Location -SubnetId $VMSubnetObject.Id -publicipaddressid $pip2.Id
             $VNIC = Get-AzureRmNetworkInterface -Name $nicName -ResourceGroupName $this.ResourceGroupName
         }
 
@@ -444,6 +452,11 @@ class AzureBackend : Backend {
                     -Skus $blobParts[2] -Version $blobParts[3]
                 $vm = Set-AzureRmVMOSDisk -VM $vm -VhdUri $osDiskVhdUri -name $InstanceName -CreateOption fromImage -Caching ReadWrite
 
+                if ($this.enableBootDiagnostics -ne "Yes") {
+                    Write-Host "Disabling boot diagnostics" -ForegroundColor Yellow
+                    Set-AzureRmVMBootDiagnostics -VM $vm -Disable -ResourceGroupName $this.ResourceGroupName
+                }
+
                 $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
                 if (!$NEWVM) {
                     Write-Host "Failed to create VM" -ForegroundColor Red
@@ -510,6 +523,11 @@ class AzureBackend : Backend {
     
         try {
             Write-Host "Starting the VM" -ForegroundColor Yellow
+
+            if ($this.enableBootDiagnostics -ne "Yes") {
+                Write-Host "Disabling boot diagnostics" -ForegroundColor Yellow
+                Set-AzureRmVMBootDiagnostics -VM $vm -Disable -ResourceGroupName $this.ResourceGroupName
+            }
             
             $NEWVM = New-AzureRmVM -ResourceGroupName $this.ResourceGroupName -Location $this.Location -VM $vm
             if (!$NEWVM) {

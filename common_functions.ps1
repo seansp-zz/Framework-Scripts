@@ -58,7 +58,7 @@ function create_psrp_session([string] $vmName, [string] $rg, [string] $SA, [stri
     $ipAddress = Get-AzureRmPublicIpAddress -ResourceGroupName $rg | Where-Object -Property Name -Like $vm_search_string
     Write-Verbose "Got IP Address $($ipAddress.Name), with IP Address $($ipAddress.IpAddress)"
 
-    if ($ipAddress.IpAddress -eq "Not Assigned") {
+    if ($ipAddress.IpAddress.ToLower() -eq "Not Assigned") {
         Write-Error "Machine $vmName does not have an assigned IP address.  Cannot create PSRP session to the machine."
         return $null
     }

@@ -47,7 +47,7 @@ $azureBackend.blobURN = $blobURN
 $azureBackend.blobURI = $generalizedBlobURI
 $azureBackend.suffix = $suffix
 
-$azureInstance.enableBootDiagnostics = $enableBootDiagnostics
+$azureBackend.enableBootDiagnostics = $enableBootDiagnostics
 
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()

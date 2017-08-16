@@ -144,7 +144,7 @@ $comandScript = {
         $sleepCount = $sleepCount + 1
         $pipName = $imageName
         $ip=(Get-AzureRmPublicIpAddress -ResourceGroupName $destRG -Name $pipName).IpAddress
-        if ($ip -eq $null -or $ip -contains "Not Assigned") {
+        if ($ip -eq $null -or $ip.ToLower() -eq "not assigned") {
             $machineIsIP = $false
             start-sleep -Seconds 10
         } else {
