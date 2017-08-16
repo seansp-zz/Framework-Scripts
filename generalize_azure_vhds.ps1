@@ -112,9 +112,16 @@ $scriptBlockText = {
     #  This might not be the best way, but I only have 23 characters here, so we'll go with what the user entered
     $vhdPrefix = $vmName.substring(0,23)
     Start-Transcript -Path C:\temp\transcripts\generalize_$machine_name.transcript -Force
+    write-verbose "Stopping machine $machine_name for VHD generalization"
     Stop-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
+
+    write-verbose "Settng machine $machine_name to Generalized"
     Set-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Generalized
+
+    write-verbose "Saving image for machnine $machine_name to container $sourceContainer in RG $sourceRG"
     Save-AzureRmVMImage -VMName $machine_name -ResourceGroupName $sourceRG -DestinationContainerName $sourceContainer -VHDNamePrefix $vhdPrefix
+
+    write-verbose "Deleting machine $machine_name"
     Remove-AzureRmVM -Name $machine_name -ResourceGroupName $sourceRG -Force
 
     Write-Host "Generalization of machine $vm_name complete."
