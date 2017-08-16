@@ -22,6 +22,8 @@
 
     [Parameter(Mandatory=$false)] [switch] $imageIsGeneralized = $false,
     [Parameter(Mandatory=$false)] [string] $generalizedBlobURI = ".vhd"
+
+    [Parameter(Mandatory=$false)] [string] $enableBootDiagnostics = "No"    
 )
 
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -44,6 +46,8 @@ $azureBackend.subnetPrefix = $vnetSubnetAddressPrefix
 $azureBackend.blobURN = $blobURN
 $azureBackend.blobURI = $generalizedBlobURI
 $azureBackend.suffix = $suffix
+
+$azureInstance.enableBootDiagnostics = $enableBootDiagnostics
 
 $azureInstance = $azureBackend.GetInstanceWrapper($vmName)
 $azureInstance.Cleanup()
