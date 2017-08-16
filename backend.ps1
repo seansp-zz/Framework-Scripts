@@ -311,7 +311,7 @@ class AzureBackend : Backend {
     }
 
     # Microsoft.Azure.Commands.Network.Models.PSPublicIpAddress
-    [object] getPIP($pipName)
+    [string] getPIP($pipName)
     {
         write-host "CALL TO GETPIP -- INCOMING PIPNAME IS $pipName"
 
@@ -324,7 +324,7 @@ class AzureBackend : Backend {
             $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName
         }
 
-        return $pip
+        return $pip.IpAddress
     }
 
     # Microsoft.Azure.Commands.Network.Models.PSNetworkInterface
@@ -521,7 +521,7 @@ class AzureBackend : Backend {
         write-host "CALL TO GETPIP -- INCOMING PIPNAME IS $InstanceName"
         
         $pipName = $InstanceName.replace("_","-")
-        $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
+        [Microsoft.Azure.Commands.Network.Models.PSPublicIpAddress]$pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName 
         if (!$pip) {
             write-host "Public IP does not exist for this region.  Creating now..." -ForegroundColor Yellow
             New-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Location $this.Location `
@@ -529,7 +529,7 @@ class AzureBackend : Backend {
             $pip = Get-AzureRmPublicIpAddress -ResourceGroupName $this.ResourceGroupName -Name $pipName
         }
 
-        return $pip
+        return $pip.IpAddress
     }
 
     [Object] GetPSSession ($InstanceName) {
