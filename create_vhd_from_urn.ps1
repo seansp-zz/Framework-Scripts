@@ -205,7 +205,7 @@ $scriptBlockString =
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
     write-host "Attempting to contact the machine..." -ForegroundColor Green
     
-    $ip=$azureInstance.GetPublicIP()
+    [Microsoft.Azure.Commands.Network.Models.PSPublicIpAddress]$ip=$azureInstance.GetPublicIP()
     $password=$TEST_USER_ACCOUNT_PAS2
     $username="$TEST_USER_ACCOUNT_NAME"
 
@@ -216,7 +216,7 @@ $scriptBlockString =
 
     #
     #  Eat the prompt and get the host into .known_hosts
-    $remoteAddress = $ip.IPAddress
+    $remoteAddress = $ip.IpAddress
     $remoteTmp=$remoteAddress + ":/tmp"
     Write-Host "Attempting to contact remote macnhine using $remoteAddress" -ForegroundColor Green
     $timeOut = 0
