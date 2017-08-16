@@ -149,6 +149,7 @@ class AzureBackend : Backend {
     [String] $blobURN = "Unset"
     [String] $blobURI = "Unset"
     [String] $suffix = "-Smoke-1"
+    [String] $UseExistingResources = "yes"
 
     AzureBackend ($Params) : base ($Params) {
         if (Test-Path $this.CommonFunctionsPath) {

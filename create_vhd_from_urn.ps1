@@ -199,7 +199,7 @@ $scriptBlockString =
 
     $VM = $azureInstance.GetVM()
     # $VM = Get-AzureRmVM -ResourceGroupName $destRG -Name $vmName
-    Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG  -StorageAccountName $destSA
+    Set-AzureRmVMBootDiagnostics -VM $VM -Disable -ResourceGroupName $destRG
 
     #
     #  Disable Cloud-Init so it doesn't try to deprovision the machine (known bug in Azure)
@@ -216,7 +216,7 @@ $scriptBlockString =
 
     #
     #  Eat the prompt and get the host into .known_hosts
-    $remoteAddress = $ip
+    $remoteAddress = $ip.IPAddress
     $remoteTmp=$remoteAddress + ":/tmp"
     Write-Host "Attempting to contact remote macnhine using $remoteAddress" -ForegroundColor Green
     $timeOut = 0
