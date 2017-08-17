@@ -27,6 +27,7 @@ LogMsg "Building Topology $($json.Topology.Name)" "cyan"
 #TODO: Security Groups could be multiple.
 #LogMsg "Checking to see if security group exists already."
 LogMsg "Using ResourceGroup :: $($json.Topology.ResourceGroup)"
+
 $rg = Get-AzureRmResourceGroup `
   -Name $json.Topology.ResourceGroup `
   -ErrorAction Ignore
@@ -77,17 +78,20 @@ $sg = Get-AzureRmNetworkSecurityGroup `
    -ErrorAction Ignore
 
    LogMsg "Now building the Network -- $($json.Topology.Network.Name)"
-   $vnet = Get-AzureRmVirtualNetwork -Name $json.Topology.Network.Name -ResourceGroupName $json.Topology.ResourceGroup
-   if ($null -eq $vnet) {
-       write-host "Network does not exist for this region.  Creating now..." -ForegroundColor Yellow
-       $vsubnet = New-AzureRmVirtualNetworkSubnetConfig -Name $json.Topology.Network.Subnet.Name `
-        -AddressPrefix $json.Topology.Network.Subnet.AddressPrefix -NetworkSecurityGroup $sg
-       New-AzureRmVirtualNetwork  -Name $json.Topology.Network.Name `
-        -ResourceGroupName $json.Topology.ResourceGroup -Location $json.Topology.Location `
-        -AddressPrefix $json.Topology.Network.AddressPrefix -Subnet $vsubnet
-        $vnet = Get-AzureRmVirtualNetwork -Name $json.Topology.Network.Name `
-          -ResourceGroupName $json.Topology.ResourceGroup
-   }
+   $vnet = Get-AzureRmVirtualNetwork `
+    -Name $json.Topology.Network.Name `
+    -ResourceGroupName $json.Topology.ResourceGroup
+    if ($null -eq $vnet) {
+        LogMsg "Network does not exist for this region.  Creating now..." "yellow"
+        write-host "Network does not exist for this region.  Creating now..." -ForegroundColor Yellow
+        $vsubnet = New-AzureRmVirtualNetworkSubnetConfig -Name $json.Topology.Network.Subnet.Name `
+          -AddressPrefix $json.Topology.Network.Subnet.AddressPrefix -NetworkSecurityGroup $sg
+        New-AzureRmVirtualNetwork  -Name $json.Topology.Network.Name `
+          -ResourceGroupName $json.Topology.ResourceGroup -Location $json.Topology.Location `
+          -AddressPrefix $json.Topology.Network.AddressPrefix -Subnet $vsubnet
+          $vnet = Get-AzureRmVirtualNetwork -Name $json.Topology.Network.Name `
+            -ResourceGroupName $json.Topology.ResourceGroup
+    }
  }
 
  LogMsg "Now building the computers." "magenta"
@@ -96,11 +100,64 @@ foreach( $def in $json.Topology.VirtualMachine )
 {
   LogMsg $def.Name "green"
   $vm = New-AzureRmVMConfig -VMName $def.Name -VMSize $def.VMSize
-  #TODO: Public IP
-  #TODO: NIC
-  #TODO: Set OSDisk
-  #TODO: Boot Diagnostics.
-  #TODO: Launch
+  LogMsg "Creating Public IP $($def.PublicNIC.PublicIP)"
+  #TODO These checks don't make sense if I am creating from scratch.
+  $pip = Get-AzureRmPublicIPAddress `
+    -ResourceGroupName $json.Topology.ResourceGroup `
+    -Name $def.NIC.PublicIPName `
+    -ErrorAction Continue
+  if( $null -eq $pip )
+  {
+    LogMsg "Building Public IP $($def.NIC.PublicIPName)"
+    $pip = New-AzureRmPublicIPAddress `
+      -ResourceGroupName $json.Topology.ResourceGroup `
+      -Name $def.NIC.PublicIPName `
+      -Location $json.Topology.Location `
+      -AllocationMethod $def.NIC.Allocation  #TODO: Add option for DNSPrefix. 
+    LogMsg "IP: $($pip.IpAddress)"
+  }
+  if( $null -eq $pip )
+  {
+    LogMsg "Unable to allocate PIP" "red"
+  } 
+  LogMsg "Creating NIC $($def.NIC.Name)"
+  $nic = New-AzureRmNetworkInterface -Name $def.NIC.Name -ResourceGroupName $json.Topology.ResourceGroup `
+    -Location $json.Topology.Location `
+    -Subnet $vsubnet -PublicIpAddress $pip `
+    -NetworkSecurityGroup $sg
+  
+  if( $null -eq $nic )
+  {
+    LogMsg "Unable to allocate NIC" "red"
+    break
+  }
+  # Enable the NIC
+  LogMsg "Enabling the NIC..."
+  $nic | Set-AzureRmNetworkInterface 
+  LogMsg "Adding the NIC to the VM"
+  Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+  LogMsg "Hooking up the hard drive..."
+  Set-AzureRmVMOSDisk -VM $vm -Name $def.Name `
+    -VhdUri $def.OSDisk.Uri -CreateOption $def.OSDisk.CreateOption `
+    -Linux  #TODO Use my option instead of asserting this switch.
 
+  if( $def.EnableBootDiagnostics -eq "Yes" )
+  {
+    LogMsg "Enabling Boot Diagnostics." "yellow"
+    LogMsg "Really just doing nothing." "cyan"
+  } else {
+    LogMsg "Boot Diagnostics Disabled." "yellow"
+    Set-AzureRmVMBootDiagnostics -VM $vm -Disable -ResourceGroupName $json.Topology.ResourceGroup
+  }
+  LogMsg "Starting the VM..."
+  $NewVM = New-AxureRmVM -ResourceGroupName $json.Topology.ResourceGroup `
+    -Location $json.Topology.Location -VM $vm -ErrorAction continue
+
+  if( $null -eq $NewVM )
+  {
+    LogMsg "Error occurred. Null result." "red"
+  } else {
+    LogMsg "Success: $($pip.IpAddress)"
+  }
 }
 

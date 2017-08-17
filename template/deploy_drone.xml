@@ -42,13 +42,15 @@
     <Name>OpenLogic-CentOS-73-LATEST</Name>
     <VMSize>Standard_D2_v2</VMSize>
     <EnableBootDiagnostics>Yes</EnableBootDiagnostics>
-    <PublicNIC>
+    <NIC>
+      <Name>OpenLogic-CentOS-73-LATEST-NIC</Name>
       <Subnet>Subnet1</Subnet>
-      <PublicIP>OpenLogic-CentOS-73-LATEST</PublicIP>
+      <PublicIPName>OpenLogic-CentOS-73-LATEST</PublicIPName>
       <NetworkSecurityGroup>nsg</NetworkSecurityGroup>
-    </PublicNIC>
+      <Allocation>Dynamic</Allocation>
+    </NIC>
     <OSDisk>
-      <Uri></Uri>
+      <Uri>https://jplintakex.blob.core.windows.net/ready-for-bvt/OpenLogic-CentOS-73-LATEST.vhd</Uri>
       <CreateOption>attach</CreateOption>
       <Linux>Yes</Linux>
     </OSDisk>
@@ -56,14 +58,16 @@
   <VirtualMachine>
     <Name>Ubuntu1604-LTS-LATEST</Name>
     <VMSize>Standard_D2_v2</VMSize>
-    <EnableBootDiagnostics>Yes</EnableBootDiagnostics>
-    <PublicNIC>
+    <EnableBootDiagnostics>No</EnableBootDiagnostics>
+    <NIC>
+      <Name>Ubuntu1604-LTS-LATEST-NIC</Name>
       <Subnet>Subnet1</Subnet>
-      <PublicIP>Ubuntu1604-LTS-LATEST</PublicIP>
+      <PublicIPName>Ubuntu1604-LTS-LATEST</PublicIPName>
       <NetworkSecurityGroup>nsg</NetworkSecurityGroup>
-    </PublicNIC>
+      <Allocation>Dynamic</Allocation>
+    </NIC>
     <OSDisk>
-      <Uri></Uri>
+      <Uri>https://jplintakex.blob.core.windows.net/ready-for-bvt/Ubuntu1604-LTS-LATEST.vhd</Uri>
       <CreateOption>attach</CreateOption>
       <Linux>Yes</Linux>
     </OSDisk>
