@@ -1,0 +1,77 @@
+{
+  "Topology":  {
+                   "Name":  "Create-Drone-From-Container-VHD",
+                   "Location":  "westus",
+                   "ResourceGroup":  "my_resource_group",
+                   "NetworkSecurityGroup":  {
+                                                "Name":  "nsg",
+                                                "Rule":  [
+                                                             {
+                                                                 "Name":  "ssl-rule",
+                                                                 "Description":  "Allow SSL over HTTP",
+                                                                 "Access":  "Allow",
+                                                                 "Protocol":  "Tcp",
+                                                                 "Direction":  "Inbound",
+                                                                 "Priority":  "100",
+                                                                 "SourceAddressPrefix":  "Internet",
+                                                                 "SourcePortRange":  "*",
+                                                                 "DestinationAddressPrefix":  "*",
+                                                                 "DestinationPortRange":  "443"
+                                                             },
+                                                             {
+                                                                 "Name":  "ssh-rule",
+                                                                 "Description":  "Allow SSH",
+                                                                 "Access":  "Allow",
+                                                                 "Protocol":  "Tcp",
+                                                                 "Direction":  "Inbound",
+                                                                 "Priority":  "101",
+                                                                 "SourceAddressPrefix":  "Internet",
+                                                                 "SourcePortRange":  "*",
+                                                                 "DestinationAddressPrefix":  "*",
+                                                                 "DestinationPortRange":  "22"
+                                                             }
+                                                         ]
+                                            },
+                   "Network":  {
+                                   "Name":  "network",
+                                   "AddressPrefix":  "172.19.0.0/16",
+                                   "Subnet":  {
+                                                  "Name":  "Subnet1",
+                                                  "AddressPrefix":  "172.19.0.0/24",
+                                                  "NetworkSecurityGroup":  "nsg"
+                                              }
+                               },
+                   "VirtualMachine":  [
+                                          {
+                                              "Name":  "OpenLogic-CentOS-73-LATEST",
+                                              "VMSize":  "Standard_D2_v2",
+                                              "EnableBootDiagnostics":  "Yes",
+                                              "PublicNIC":  {
+                                                                "Subnet":  "Subnet1",
+                                                                "PublicIP":  "OpenLogic-CentOS-73-LATEST",
+                                                                "NetworkSecurityGroup":  "nsg"
+                                                            },
+                                              "OSDisk":  {
+                                                             "Uri":  "",
+                                                             "CreateOption":  "attach",
+                                                             "Linux":  "Yes"
+                                                         }
+                                          },
+                                          {
+                                              "Name":  "Ubuntu1604-LTS-LATEST",
+                                              "VMSize":  "Standard_D2_v2",
+                                              "EnableBootDiagnostics":  "Yes",
+                                              "PublicNIC":  {
+                                                                "Subnet":  "Subnet1",
+                                                                "PublicIP":  "Ubuntu1604-LTS-LATEST",
+                                                                "NetworkSecurityGroup":  "nsg"
+                                                            },
+                                              "OSDisk":  {
+                                                             "Uri":  "",
+                                                             "CreateOption":  "attach",
+                                                             "Linux":  "Yes"
+                                                         }
+                                          }
+                                      ]
+               }
+}

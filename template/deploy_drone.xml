@@ -1,0 +1,74 @@
+<Topology>
+  <Name>Create-Drone-From-Container-VHD</Name>
+  <Location>westus</Location>
+  <ResourceGroup>my_resource_group</ResourceGroup>
+  <NetworkSecurityGroup>
+    <Name>nsg</Name>
+    <Rule>
+      <Name>ssl-rule</Name>
+      <Description>Allow SSL over HTTP</Description>
+      <Access>Allow</Access>
+      <Protocol>Tcp</Protocol>
+      <Direction>Inbound</Direction>
+      <Priority>100</Priority>
+      <SourceAddressPrefix>Internet</SourceAddressPrefix>
+      <SourcePortRange>*</SourcePortRange>
+      <DestinationAddressPrefix>*</DestinationAddressPrefix>
+      <DestinationPortRange>443</DestinationPortRange>
+    </Rule>
+    <Rule>
+      <Name>ssh-rule</Name>
+      <Description>Allow SSH</Description>
+      <Access>Allow</Access>
+      <Protocol>Tcp</Protocol>
+      <Direction>Inbound</Direction>
+      <Priority>101</Priority>
+      <SourceAddressPrefix>Internet</SourceAddressPrefix>
+      <SourcePortRange>*</SourcePortRange>
+      <DestinationAddressPrefix>*</DestinationAddressPrefix>
+      <DestinationPortRange>22</DestinationPortRange>
+    </Rule>
+  </NetworkSecurityGroup>
+  <Network>
+    <Name>network</Name>
+    <AddressPrefix>172.19.0.0/16</AddressPrefix>
+    <Subnet>
+      <Name>Subnet1</Name>
+      <AddressPrefix>172.19.0.0/24</AddressPrefix>
+      <NetworkSecurityGroup>nsg</NetworkSecurityGroup>
+    </Subnet>
+  </Network>
+  <VirtualMachine>
+    <Name>OpenLogic-CentOS-73-LATEST</Name>
+    <VMSize>Standard_D2_v2</VMSize>
+    <EnableBootDiagnostics>Yes</EnableBootDiagnostics>
+    <PublicNIC>
+      <Subnet>Subnet1</Subnet>
+      <PublicIP>OpenLogic-CentOS-73-LATEST</PublicIP>
+      <NetworkSecurityGroup>nsg</NetworkSecurityGroup>
+    </PublicNIC>
+    <OSDisk>
+      <Uri></Uri>
+      <CreateOption>attach</CreateOption>
+      <Linux>Yes</Linux>
+    </OSDisk>
+  </VirtualMachine>
+  <VirtualMachine>
+    <Name>Ubuntu1604-LTS-LATEST</Name>
+    <VMSize>Standard_D2_v2</VMSize>
+    <EnableBootDiagnostics>Yes</EnableBootDiagnostics>
+    <PublicNIC>
+      <Subnet>Subnet1</Subnet>
+      <PublicIP>Ubuntu1604-LTS-LATEST</PublicIP>
+      <NetworkSecurityGroup>nsg</NetworkSecurityGroup>
+    </PublicNIC>
+    <OSDisk>
+      <Uri></Uri>
+      <CreateOption>attach</CreateOption>
+      <Linux>Yes</Linux>
+    </OSDisk>
+  </VirtualMachine>  
+</Topology>
+
+
+
