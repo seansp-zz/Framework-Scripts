@@ -123,7 +123,7 @@ foreach( $def in $json.Topology.VirtualMachine )
   LogMsg "Creating NIC $($def.NIC.Name)"
   $nic = New-AzureRmNetworkInterface -Name $def.NIC.Name -ResourceGroupName $json.Topology.ResourceGroup `
     -Location $json.Topology.Location `
-    -Subnet $vsubnet -PublicIpAddress $pip `
+    -Subnet $vnet.Subnets[0] -PublicIpAddress $pip `
     -NetworkSecurityGroup $sg
   
   if( $null -eq $nic )
@@ -147,10 +147,10 @@ foreach( $def in $json.Topology.VirtualMachine )
     LogMsg "Really just doing nothing." "cyan"
   } else {
     LogMsg "Boot Diagnostics Disabled." "yellow"
-    Set-AzureRmVMBootDiagnostics -VM $vm -Disable -ResourceGroupName $json.Topology.ResourceGroup
+    Set-AzureRmVMBootDiagnostics -VM $vm -Disable
   }
   LogMsg "Starting the VM..."
-  $NewVM = New-AxureRmVM -ResourceGroupName $json.Topology.ResourceGroup `
+  $NewVM = New-AzureRmVM -ResourceGroupName $json.Topology.ResourceGroup `
     -Location $json.Topology.Location -VM $vm -ErrorAction continue
 
   if( $null -eq $NewVM )
