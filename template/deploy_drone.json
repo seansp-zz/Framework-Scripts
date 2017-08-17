@@ -54,7 +54,7 @@
                                                             "Allocation":  "Dynamic"
                                                         },
                                                 "OSDisk":  {
-                                                               "Uri":  "https://jplintakex.blob.core.windows.net/ready-for-bvt/OpenLogic-CentOS-73-LATEST.vhd",
+                                                               "Uri":  "https://jplintakex.blob.core.windows.net/ready-for-bvt/OpenLogic-CentOS-73-LATEST---westus-Standard-D2-v2-Smoke-1.vhd",
                                                                "CreateOption":  "attach",
                                                                "Linux":  "Yes"
                                                            }
@@ -71,7 +71,7 @@
                                                             "Allocation":  "Dynamic"
                                                         },
                                                 "OSDisk":  {
-                                                               "Uri":  "https://jplintakex.blob.core.windows.net/ready-for-bvt/Ubuntu1604-LTS-LATEST.vhd",
+                                                               "Uri":  "https://jplintakex.blob.core.windows.net/ready-for-bvt/Ubuntu1604-LTS-LATEST---westus-Standard-D2-v2-Smoke-1.vhd",
                                                                "CreateOption":  "attach",
                                                                "Linux":  "Yes"
                                                            }
